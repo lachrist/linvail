@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Aran</title>
+      <style>
+      #main {
+        width: 500px;
+        margin: auto;
+      }
+      .code {
+        font-family: "Lucida Console", Monaco, monospace;
+      }
+      .error {
+        color: red;
+      }
+      button {
+        margin-bottom: 30px;
+      }
+    </style>
+    <script src="demo-bundle.js"></script>
+    <script>
+      window.onload = function () {
+        document.getElementById("options").value  = "var aran = {};\n"
+        document.getElementById("options").value += "aran.ignore = [\'Aran\'];\\\\ Properties of the global object to be ignored\n"
+        document.getElementById("options").value += "aran.hooks = {};\\\\ Hooks for tracing\n"
+        document.getElementById("options").value += "aran.traps = {};\\\\ Traps for shadow execution\n"
+        document.getElementById("reinit").onclick = function () {
+          eval(document.getElementById("options").value)
+          if (!aran) { return alert("The initialization should define the aran object") }
+          Aran(aran)
+          document.getElementById("instr").disabled = false
+          document.getElementById("instr").onclick = function () {
+            document.getElementById("instr-code").value = aran.compile(document.getElementById("code").value)
+          }
+          document.getElementById("run").disabled = false
+          document.getElementById("run").onclick = function () {
+            try { var res = aran.eval(document.getElementById("code")) } catch (e) {
+              document.getElementById("result").className = "code error"
+              document.getElementById("result").textContent = String(e)
+              return e
+            }
+            document.getElementById("result").className = "code"
+            if (res === undefined) { res = "undefined" }
+            else { try { res = JSON.stringify(res) } catch (e) { res = String(res)+" (circular dependency)" } }
+            document.getElementById("result").textContent = res
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="main">
+      <label>Options: </label><br/>
+      <textarea id="options" class="code" cols="70" rows="10" ></textarea><br/>
+      <button id="reinit" onclick="reinit()">Reinitialize</button><br/>
+      <label>JavaScript code:</label><br/>
+      <textarea id="code" class="code" cols="70" rows="10"></textarea><br/>
+      <button id="instr" disabled>Instrument</button><br/>
+      <label>Instrumented code:</label><br/>
+      <textarea id="instr-code" class="code" cols="70" rows="10" disabled></textarea><br/>
+      <button id="run" disabled>Run</button><br/>
+      <label>Result:</label><br/>
+      <p id="result"></p>
+    </div>
+  </body>
+</html>

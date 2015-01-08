@@ -1,0 +1,11 @@
+{ "name" : "linvail"
+, "version" : "0.0.0"
+, "dependencies": {"aran":"*", "htmlparser2":"*"}
+, "files" : ["browser-bundle.js", "demo-bundle.js", "demo.html", "node-bundle.js", "run.js"]
+, "bin": "run.js"
+, "description" : "Linvail is a JavaScript instrumenter"
+, "keywords" : ["Instrumenter", "ECMAScript5", "Shadow Execution"]
+, "homepage": "http://github.com/lachrist/linvail"
+, "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
+, "license" : "MIT"
+}

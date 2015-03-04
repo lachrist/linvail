@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <title>Aran</title>
       <style>
       #main {
@@ -21,9 +22,9 @@
     <script>
       window.onload = function () {
         document.getElementById("options").value  = "var aran = {};\n"
-        document.getElementById("options").value += "aran.ignore = [\'Aran\'];\\\\ Properties of the global object to be ignored\n"
-        document.getElementById("options").value += "aran.hooks = {};\\\\ Hooks for tracing\n"
-        document.getElementById("options").value += "aran.traps = {};\\\\ Traps for shadow execution\n"
+        document.getElementById("options").value += "aran.ignore = [\'Aran\', \'global\']; // Global properties to be ignored\n"
+        document.getElementById("options").value += "aran.hooks = {}; // Hooks for tracing\n"
+        document.getElementById("options").value += "aran.traps = {}; // Traps for shadow execution\n"
         document.getElementById("reinit").onclick = function () {
           eval(document.getElementById("options").value)
           if (!aran) { return alert("The initialization should define the aran object") }

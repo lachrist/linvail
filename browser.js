@@ -11,7 +11,7 @@ aran.load = function (src, async) {
     req.onreadystatechange = function () {
       if (req.readyState === 4) {
         if (req.status !== 200) { throw new Error("Cannot fetch resource "+src) }
-        window.eval(aran.compile(req.responseText))
+        window.aran.eval(req.responseText)
       }
     }
     req.open("get", src)

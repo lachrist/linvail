@@ -1,11 +1,11 @@
 { "name" : "linvail"
-, "version" : "0.0.0"
-, "dependencies": {"aran":"*", "htmlparser2":"*"}
-, "files" : ["browser-bundle.js", "demo-bundle.js", "demo.html", "node-bundle.js", "run.js"]
-, "bin": "run.js"
-, "description" : "Linvail is a JavaScript instrumenter"
-, "keywords" : ["Instrumenter", "ECMAScript5", "Shadow Execution"]
-, "homepage": "http://github.com/lachrist/linvail"
+, "description" : "Linvail is a JavaScript shadow executer"
+, "version" : "0.0.1"
 , "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
+, "repository": "lachrist/linvail"
+, "homepage": "http://github.com/lachrist/linvail"
 , "license" : "MIT"
+, "files" : ["apply.js", "composite.js", "main.js", "membrane.js", "primitive.js", "reflect.js"]
+, "main": "main.js"
+, "keywords" : ["JavaScript", "Shadow Execution", "ECMAScript5", "ECMAScript6"]
 }

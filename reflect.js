@@ -2,8 +2,9 @@
 // Reflect polyfill waiting for JS engines to support ES6 Reflect.
 // N.B. Reflect.binary and Reflect.unary are NOT standard.
 
-var undefined = (typeof window === "undefined") : global.undefined : window.undefined;
-var eval = (typeof window === "undefined") : global.eval : window.eval;
+var g = (typeof window === "undefined") : global ? window;
+var undefined = g.undefined;
+var eval = g.eval;
 var getOwnPropertyNames = Object.getOwnPropertyNames;
 var getOwnPropertySymbols = Object.getOwnPropertySymbols;
 

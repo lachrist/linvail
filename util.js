@@ -1,5 +1,5 @@
 
-modules.exports = function (x) {
+exports.primitive = function (x) {
   var t = typeof x;
   return x === null
       || x === undefined

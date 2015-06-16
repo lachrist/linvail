@@ -8,7 +8,7 @@ modules.exports = function (onprimitive) {
   function enter (val, info) {
     if (util.primitive(val)) {
       var wrapper = onprimitive(val, info);
-      if (wrapper) {
+      if (typeof wrapper === "object") {
         wrappers.add(wrapper);
         return wrapper;
       }
@@ -16,11 +16,7 @@ modules.exports = function (onprimitive) {
     return val;
   }
 
-  function leave (val, info) {
-    if (wrappers.has(val))
-      return val.unwrap();
-    return val;
-  }
+  function leave (val, info) { return wrappers.has(val) ? val.unwrap() : val }
 
   return {enter:enter, leave:leave};
 

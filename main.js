@@ -1,36 +1,36 @@
 
-var Reflect = require("./reflect.js");
+require("./reflect.js");
 var Membrane = require("./membrane.js");
-var Composite = require("./composite.js");
+var OObject = require("./object.js");
 var Apply = require("./apply.js");
 
-function Linvail (intercept, callstack) {
+module.exports = function (intercept, callstack) {
 
   var membrane = Membrane(intercept.primitive);
 
-  var composite = Composite(intercept.object, callstack, membrane);
+  var object = OObject(intercept.object, callstack, membrane);
 
   var aran = Aran({
     primitive: membrane.enter,
     test: membrane.leave,
     eval: membrane.leave,
-    regexp: composite.register,
-    array: composite.register,
+    regexp: object.register,
+    array: object.register,
     object: function (props, ast) {
-      var obj = composite.register({}, ast);
+      var obj = object.register({}, ast);
       for (var k in props)
         apply.irregular(Reflect.defineProperty, null, [obj, k, props[k]], ast);
       return obj;
     },
     try: function (ast) { callstack.try(ast) },
     catch: function (err, ast) {
-      if (!composite.bypass(err))
-        err = composite.register(err, ast);
+      if (!object.bypass(err))
+        err = object.register(err, ast);
       callstack.catch(err);
       return err;
     },
-    arguments: composite.register,
-    function: composite.register,
+    arguments: object.register,
+    function: object.register,
     apply: function (fct, ctx, args, ast) { return apply(fct, ctx, args, ast) },
     construct: function (fct, args, ast) { return apply.construct(fct, args, ast) },
     unary: function (op, arg, ast) { return apply.irregular(Reflect.unary, null, [op,arg], ast) },
@@ -41,15 +41,10 @@ function Linvail (intercept, callstack) {
     enumerate: function (obj, ast) { return apply.irregular(Reflect.enumerate, null, [obj,key], ast) }
   });
   
-  var apply = Apply(membrane, composite, aran);
+  var apply = Apply(membrane, object);
 
-  return function (x, y, z) {
-    if (arguments.length === 3)
-      return meta.wrap(x, y, z);
-    return aran(x);
-  }
+  apply.initialize(aran);
+
+  return aran;
 
 }
-
-Linvail.reflect = Reflect;
-modules.exports = Linvail;

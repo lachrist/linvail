@@ -1,11 +1,10 @@
 
-var Reflect = require("./reflect.js");
 var IFunction = require("./apply/irregular/function.js");
 var IConstructor = require("./apply/irregular/constructor.js");
 var Polyfill = require("./apply/polyfill.js");
 var Util = require("./util.js");
 
-modules.exports = function (membrane, composite, aran) {
+modules.exports = function (membrane, object, aran) {
 
   function leave1 (arg, idx) { return membrane.leave(arg, "arguments["+idx+"]") }
   function leave2 (arg, idx) { return membrane.leave(arg, "arguments[1]["+idx+"]") }
@@ -14,7 +13,7 @@ modules.exports = function (membrane, composite, aran) {
     callstack.push(fct, ctx, args, info);
     fct = membrane.leave(fct, "function");
     fct = polyfill(fct) || fct;
-    var res, raw = composite.bypass(fct) || ifunction(fct);
+    var res, raw = object.bypass(fct) || ifunction(fct);
     if (raw)
       res = Reflect.apply(raw, ctx, args);
     else
@@ -32,32 +31,30 @@ modules.exports = function (membrane, composite, aran) {
 
   apply.construct = function (cst, args, info) {
     callstack.push(Reflect.construct, null, [cst, args], info);
-    cst = membrane.leave(cst, "arguments[0]");
-    var res, raw = iconstructor(cst);
-    if (raw)
-      res = Reflect.apply(cst, null, args);
-    else {
-      cst = polyfill(cst) || cst;
-      raw = composite.bypass(cst) || ifunction(fct);
-      if (raw) {
-        var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "arguments[0].prototype");
-        var ctx = composite.register(Object.create(proto), "new"), Object.create(proto));
-        res = membrane.leave(apply(cst, ctx, args, "construct"), "construct");
-        res = Util.primitive(res) ? ctx : res;
-      }
-      else
-        res = Reflect.construct(cst, args.map(leave2));
+    var icst = iconstructor(cst);
+    if (icst) {
+      callstack.push(cst, null, args, "construct");
+      var res = Reflect.construct(icst, args);
+      callstack.pop(res);
+    } else {
+      var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "arguments[0].prototype");
+      var ctx = object.register(Object.create(proto), "new");
+      var res = apply(cst, ctx, args, "construct");
+      if (Util.primitive(membrane.leave(res)))
+        res = ctx;
     }
     callstack.pop(res);
     return res;
   }
 
-  var iconstructor = IConstructor(membrane, composite, apply);
+  apply.initialize = function (aran) { polyfill = Polyfill(aran) }
 
-  var ifunction = IFunction(membrane, composite, apply);
+  var iconstructor = IConstructor(membrane, object, apply);
 
-  var polyfill = Polyfill(aran);
+  var ifunction = IFunction(membrane, object, apply);
 
-  return apply;
+  var polyfill = function () {};
+
+  return aran;
 
 };

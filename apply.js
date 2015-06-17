@@ -4,7 +4,7 @@ var IConstructor = require("./apply/irregular/constructor.js");
 var Polyfill = require("./apply/polyfill.js");
 var Util = require("./util.js");
 
-modules.exports = function (membrane, object, aran) {
+module.exports = function (membrane, object) {
 
   function leave1 (arg, idx) { return membrane.leave(arg, "arguments["+idx+"]") }
   function leave2 (arg, idx) { return membrane.leave(arg, "arguments[1]["+idx+"]") }
@@ -55,6 +55,6 @@ modules.exports = function (membrane, object, aran) {
 
   var polyfill = function () {};
 
-  return aran;
+  return apply;
 
 };

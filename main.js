@@ -3,6 +3,7 @@ require("./reflect.js");
 var Membrane = require("./membrane.js");
 var OObject = require("./object.js");
 var Apply = require("./apply.js");
+var Aran = require("aran");
 
 module.exports = function (intercept, callstack) {
 
@@ -10,7 +11,7 @@ module.exports = function (intercept, callstack) {
 
   var object = OObject(intercept.object, callstack, membrane);
 
-  var aran = Aran({
+  var aran = Aran(null, {
     primitive: membrane.enter,
     test: membrane.leave,
     eval: membrane.leave,
@@ -39,7 +40,7 @@ module.exports = function (intercept, callstack) {
     set: function (obj, key, val, ast) { return apply.irregular(Reflect.set, null, [obj,key,val,obj], ast) },
     delete: function (obj, key, ast) { return apply.irregular(Reflect.deleteProperty, null, [obj,key], ast) },
     enumerate: function (obj, ast) { return apply.irregular(Reflect.enumerate, null, [obj,key], ast) }
-  });
+  }, {ast:true, loc:true});
   
   var apply = Apply(membrane, object);
 

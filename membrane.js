@@ -1,7 +1,7 @@
 
 var Util = require("./util.js");
 
-modules.exports = function (onprimitive) {
+module.exports = function (onprimitive) {
 
   var wrappers = new WeakSet();
 
@@ -16,7 +16,7 @@ modules.exports = function (onprimitive) {
     return val;
   }
 
-  function leave (val, info) { return wrappers.has(val) ? val.unwrap() : val }
+  function leave (val, info) { return wrappers.has(val) ? val.unwrap(info) : val }
 
   return {enter:enter, leave:leave};
 

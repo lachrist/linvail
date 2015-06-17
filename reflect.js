@@ -2,7 +2,7 @@
 // Reflect polyfill waiting for JS engines to support ES6 Reflect.
 // N.B. Reflect.binary and Reflect.unary are NOT standard.
 
-var g = (typeof window === "undefined") : global ? window;
+var g = (typeof window === "undefined") ? global : window;
 var undefined = g.undefined;
 var eval = g.eval;
 var defineProperty = Object.defineProperty;
@@ -12,7 +12,7 @@ var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var getPrototypeOf = Object.getPrototypeOf;
 
 // Changing Function.prototype.apply will affect Reflect.apply *sigh*
-function apply (f, t, xs) { return f.apply(t, xs) }, 
+function apply (f, t, xs) { return f.apply(t, xs) }
 
 function get (o, k, r) {
   var d = getOwnPropertyDescriptor(o, k);
@@ -51,7 +51,7 @@ if (!g.Reflect)
         return eval("new f");
       var code = "new f(x[0]";
       for (var i=1; i<xs.length; i++)
-        code += ", x["i+"]";
+        code += ", x["+i+"]";
       return eval(code+")");
     },
     defineProperty: Object.defineProperty,
@@ -67,7 +67,7 @@ if (!g.Reflect)
     getPrototypeOf: Object.getPrototypeOf,
     has: function (o, k) { return k in o },
     isExtensible: Object.isExtensible,
-    ownKeys = function (o) {
+    ownKeys: function (o) {
       var ks1 = getOwnPropertyNames(o);
       var ks2 = getOwnPropertySymbols(o);
       for (var i=0; i<ks2.length; i++)

@@ -12,10 +12,10 @@ module.exports = function (membrane, object, apply, map) {
   map.set(Reflect.apply, function (fct, ctx, args) {
     fct = membrane.leave(fct, "arguments[0]");
     var clean = [];
-    var length = apply.reflect(Reflect.get, null, [args, "length", args], "arguments[2].length");
+    var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[2].length");
     for (var i=0; i<length; i++)
-      clean[i] = apply.reflect(Reflect.get, null, [args, i, args], "arguments[2]["+i+"]");
-    return apply.clean(fct, ctx, clean, "apply");
+      clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[2]["+i+"]");
+    return apply(fct, ctx, clean, "apply");
   });
 
   map.set(Reflect.binary, function (op, left, right) {
@@ -28,9 +28,9 @@ module.exports = function (membrane, object, apply, map) {
   map.set(Reflect.construct, function (cst, args) {
     fct = membrane.leave(fct, "arguments[0]");
     var clean = [];
-    var length = apply.reflect(Reflect.get, null, [args, "length", args], "arguments[1].length");
+    var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[1].length");
     for (var i=0; i<length; i++)
-      clean[i] = apply.reflect(Reflect.get, null, [args, i, args], "arguments[1]["+i+"]");
+      clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[1]["+i+"]");
     return apply.construct(fct, clean, "construct");
   });
 
@@ -87,10 +87,10 @@ module.exports = function (membrane, object, apply, map) {
       if ("value" in des)
         return rawobj ? des.value : membrane.enter(des.value, "result");
       if (des.get)
-        return apply.clean(des.get, rec, [], "getter");
+        return apply(des.get, rec, [], "getter");
       return membrane.enter(undefined, "result");
     }
-    return apply.reflect(Reflect.get, null, [Reflect.getPrototypeOf(rawobj||obj), key, rec], "prototype");
+    return apply.irregular(Reflect.get, null, [Reflect.getPrototypeOf(rawobj||obj), key, rec], "prototype");
   });
 
   map.set(Reflect.getOwnPropertyDescriptor, function (obj, key) {
@@ -148,8 +148,7 @@ module.exports = function (membrane, object, apply, map) {
     return obj;
   });
 
-  map.set(Reflect.set, set);
-  function set (obj, key, val, rec) {
+  map.set(Reflect.set, function (obj, key, val, rec) {
     obj = membrane.leave(obj, "arguments[0]");
     key = membrane.leave(key, "arguments[1]");
     var des = Reflect.getOwnPropertyDescriptor(object.bypass(obj)||obj, key);
@@ -160,14 +159,14 @@ module.exports = function (membrane, object, apply, map) {
           configurable: true,
           enumerable: true,
           writable: true,
-          value: rawrec ? val : membrane.leave(val, "arguments[2]");
+          value: rawrec ? val : membrane.leave(val, "arguments[2]")
         });
       }
       if (des.set)
         apply.clean(des.set, rec, [val], "setter");
       return val;
     }
-    return apply.reflect(Reflect.set, null, [Reflect.getPrototypeOf(obj), key, rec], "prototype");
+    return apply.irregular(Reflect.set, null, [Reflect.getPrototypeOf(obj), key, rec], "prototype");
   });
 
   map.set(Reflect.setPrototypeOf, function (obj, proto) {

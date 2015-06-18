@@ -5,47 +5,45 @@ var IConstructor = require("./apply/irregular/constructor.js");
 var Polyfill = require("./apply/polyfill.js");
 var Util = require("./util.js");
 
-module.exports = function (membrane, object) {
+module.exports = function (callstack, membrane, object) {
 
-  function leave1 (arg, idx) { return membrane.leave(arg, "arguments["+idx+"]") }
-  function leave2 (arg, idx) { return membrane.leave(arg, "arguments[1]["+idx+"]") }
+  function leave (arg, idx) { return membrane.leave(arg, "arguments["+idx+"]") }
 
   function apply (fct, ctx, args, info) {
-    callstack.push(fct, ctx, args, info);
+    callstack.apply(fct, ctx, args, info);
     fct = membrane.leave(fct, "function");
     fct = polyfill(fct) || fct;
     var res, raw = object.bypass(fct) || ifunction(fct);
     if (raw)
       res = Reflect.apply(raw, ctx, args);
     else
-      res = membrane.enter(Reflect.apply(raw, membrane.leave(ctx, "this"), args.map(leave1)));
-    callstack.pop(res);
-    return res;
+      res = membrane.enter(Reflect.apply(fct, membrane.leave(ctx, "this"), args.map(leave)), "result");
+    return callstack.return(res);
   }
 
   apply.irregular = function (fct, ctx, args, info) {
-    callstack.push(fct, ctx, args, info);
-    var res = Reflect.apply(ifunction(fct), ctx, args);  
-    callstack.pop(res);
-    return res;
+    callstack.apply(fct, ctx, args, info);
+    return callstack.return(Reflect.apply(ifunction(fct), ctx, args));
   }
 
   apply.construct = function (cst, args, info) {
-    callstack.push(Reflect.construct, null, [cst, args], info);
+    callstack.construct(cst, args, info);
     var icst = iconstructor(cst);
-    if (icst) {
-      callstack.push(cst, null, args, "construct");
-      var res = Reflect.construct(icst, args);
-      callstack.pop(res);
-    } else {
-      var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "arguments[0].prototype");
-      var ctx = object.register(Object.create(proto), "new");
-      var res = apply(cst, ctx, args, "construct");
-      if (Util.primitive(membrane.leave(res)))
-        res = ctx;
-    }
-    callstack.pop(res);
-    return res;
+    if (icst)
+      return callstack.return(Reflect.construct(icst, args));
+    var res;
+    var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "constructor.prototype");
+    var ctx = object.register(Object.create(proto), "this");
+    cst = membrane.leave(cst, "constructor");
+    cst = polyfill(cst) || cst;
+    var raw = object.bypass(cst) || ifunction(cst);
+    if (raw)
+      res = Reflect.apply(raw, ctx, args);
+    else
+      res = membrane.enter(Reflect.apply(raw, ctx, args.map(leave)), "result");
+    if (Util.primitive(membrane.leave(res, "result")))
+      res = ctx;
+    return callstack.return(res);
   }
 
   apply.initialize = function (aran) { polyfill = Polyfill(aran) }
@@ -60,7 +58,7 @@ module.exports = function (membrane, object) {
 
 };
 
-},{"./apply/irregular/constructor.js":2,"./apply/irregular/function.js":3,"./apply/polyfill.js":5,"./util.js":10}],2:[function(require,module,exports){
+},{"./apply/irregular/constructor.js":2,"./apply/irregular/function.js":3,"./apply/polyfill.js":5,"./util.js":11}],2:[function(require,module,exports){
 
 // Irregular built-in functions that behave specially when used as constructor
 
@@ -126,87 +124,74 @@ module.exports = function (membrane, object, apply, map) {
   });
 
   map.set(Reflect.construct, function (cst, args) {
-    fct = membrane.leave(fct, "arguments[0]");
+    cst = membrane.leave(cst, "arguments[0]");
     var clean = [];
     var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[1].length");
     for (var i=0; i<length; i++)
       clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[1]["+i+"]");
-    return apply.construct(fct, clean, "construct");
+    return apply.construct(cst, clean, "construct");
   });
 
+  // If obj is internal and des contains "value" then we have to create a mixed descriptor
+  // that returns raw values for ["configurable", etc] and let des.value intact.
   map.set(Reflect.defineProperty, function (obj, key, des) {
-    throw new Error("TODO");
-    // var res = obj;
-    // var rawobj = composite.bypass(obj);
-    // var rawdes = composite.bypass(des);
-    // key = membrane.leave(key, "arguments[1]");
-    
-    // if (rawobj) {
-    //   obj = rawobj;
-    //   var copy = {}
-    //   if ("value" in des) copy.value = apply(Reflect.get, null, [des, "value", des], "arguments[2].value");
-    //   ["configurable", "enumerable", "writable", "get", "set"].forEach(function (k) {
-    //     if (k in rawdes) des[k] = membrane.leave(apply(Reflect.get, null, [des, k, des], "arguments[2]."+k), "arguments[2]."+k)
-    //   });
-    // } else {
-    //   var copy = {}
-    //   if ("value" in des) copy.value = apply(Reflect.get, null [des, "value", des], "arguments[2].value")
-    // }if (rawobj) {
-    //   obj = rawobj;
-    //   for (var k in )
-    // } else if (rawdes) {
-    // } else {
-    // } 
-    // return res;
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    des = membrane.leave(des, "arguments[2]");
+    var robj = object.bypass(obj);
+    if (robj && ("value" in des)) {
+      var copy = {};
+      ["configurable", "enumerable", "writable", "get", "set"].forEach(function (k) {
+        if (k in des)
+          copy[k] = des[k];
+      });
+      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
+    }
+    Reflect.defineProperty(robj||obj, key, des);
+    return obj;
   });
 
   map.set(Reflect.deleteProperty, function (obj, key) {
     obj = membrane.leave(obj, "arguments[0]");
-    obj = object.bypass(obj) || obj;
     key = membrane.leave(key, "arguments[1]");
+    obj = object.bypass(obj) || obj;
     return membrane.leave(Reflect.deleteProperty(obj, key), "result");
   });
 
   map.set(Reflect.enumerate, function (obj) {
     obj = membrane.leave(obj, "arguments[0]");
-    obj = object.bypass(obj) || obj;
-    var keys = Reflect.enumerate(obj);
-    var res = object.register([], "result");
-    var rawres = object.bypass(res);
-    for (var i=0; i<keys.length; i++)
-      (rawres||res)[i] = membrane.enter(keys[i], "result["+i+"]");
-    return res;
+    return object.register(Reflect.enumerate(object.bypass(obj)||obj).map(function (k, i) {
+      return membrane.enter(k, "result["+i+"]");
+    }));
   });
 
   map.set(Reflect.get, function (obj, key, rec) {
     obj = membrane.leave(obj, "arguments[0]");
     key = membrane.leave(key, "arguments[1]");
-    var rawobj = object.bypass(obj);
-    var des = Reflect.getOwnPropertyDescriptor(rawobj||obj, key);
-    if (des) {
-      if ("value" in des)
-        return rawobj ? des.value : membrane.enter(des.value, "result");
-      if (des.get)
-        return apply(des.get, rec, [], "getter");
-      return membrane.enter(undefined, "result");
-    }
-    return apply.irregular(Reflect.get, null, [Reflect.getPrototypeOf(rawobj||obj), key, rec], "prototype");
+    do {
+      var robj = object.bypass(obj);
+      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+      if (des) {
+        if ("value" in des)
+          return robj ? des.value : membrane.enter(des.value, "result");
+        if (des.get)
+          return apply(des.get, rec, [], "getter");
+        return membrane.enter(undefined, "result");
+      }
+      obj = Reflect.getPrototypeOf(robj||obj);
+    } while (obj)
+    return membrane.enter(undefined, "result");
   });
 
   map.set(Reflect.getOwnPropertyDescriptor, function (obj, key) {
-    throw new Error("TODO");
-    // key = membrane.leave(key, "arguments[1]");
-    // var raw = composite.bypass(obj);
-    // var des = Reflect.getOwnPropertyDescriptor(raw||obj, key);
-    // var res = composite.object(Object.prototype, "result");
-    // res.configurable = membrane.enter();
-    // if (raw) {
-    //   des = Reflect.getOwnPropertyDescriptor(raw, key);
-
-    // } else {
-
-    // }
-    // return des;
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    var robj = object.bypass(obj);
+    var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+    var copy = object.register({}, "result");
+    for (var k in des)
+      copy[k] = (k === "value" && robj) ? des.value : membrane.enter(des[k], "result."+k)
+    return copy;
   });
 
   map.set(Reflect.getPrototypeOf, function (obj) {
@@ -234,12 +219,9 @@ module.exports = function (membrane, object, apply, map) {
 
   map.set(Reflect.ownKeys, function (obj) {
     obj = membrane.leave(obj, "arguments[0]");
-    var keys = Reflect.ownKeys(object.bypass(obj) || obj);
-    var res = object.register([], "result");
-    var rawres = object.bypass(res);
-    for (var i=0; i<keys.length; i++)
-      (rawres||res)[i] = membrane.enter(keys[i], "result["+i+"]");
-    return res;
+    return object.register(Reflect.ownKeys(object.bypass(obj)||obj).map(function (k, i) {
+      return membrane.enter(k, "result["+i+"]");
+    }));
   });
 
   map.set(Reflect.preventExtensions, function (obj) {
@@ -248,25 +230,34 @@ module.exports = function (membrane, object, apply, map) {
     return obj;
   });
 
+  function write (rec, key, val) {
+    rec = membrane.leave(rec, "arguments[3]");
+    var rrec = object.bypass(rec);
+    Reflect.defineProperty(rrec||rec, key, {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: rrec ? val : membrane.leave(val, "arguments[2]")
+    });
+    return val;
+  }
+
   map.set(Reflect.set, function (obj, key, val, rec) {
     obj = membrane.leave(obj, "arguments[0]");
     key = membrane.leave(key, "arguments[1]");
-    var des = Reflect.getOwnPropertyDescriptor(object.bypass(obj)||obj, key);
-    if (des) {
-      if (des.writable) {
-        var rawrec = object.bypass(obj);
-        Reflect.defineProperty(rawrec||rec, key, {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: rawrec ? val : membrane.leave(val, "arguments[2]")
-        });
+    do {
+      var robj = object.bypass(obj);
+      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+      if (des) {
+        if (des.writable)
+          return write(rec, key, val);
+        if (des.set)
+          apply(des.set, rec, [val], "setter");
+        return val;
       }
-      if (des.set)
-        apply.clean(des.set, rec, [val], "setter");
-      return val;
-    }
-    return apply.irregular(Reflect.set, null, [Reflect.getPrototypeOf(obj), key, rec], "prototype");
+      obj = Reflect.getPrototypeOf(robj||obj);
+    } while (obj)
+    return write(rec, key, val);
   });
 
   map.set(Reflect.setPrototypeOf, function (obj, proto) {
@@ -293,39 +284,95 @@ module.exports = function (aran) {
 
 },{}],6:[function(require,module,exports){
 
+module.exports = function (stack) {
+
+  var object = null;
+  var xs = [];
+
+  return {
+    initialize: function (o) { object = o },
+    apply: function (fct, ctx, args, info) {
+      var x = Object.create(null);
+      x.function = fct;
+      x.this = ctx;
+      x.length = args.length;
+      x.context = info;
+      for (var i=0; i<args.length; i++)
+        x[i] = args[i];
+      xs.push(x);
+      stack.push(x);
+    },
+    construct: function (cst, args, info) {
+      var x = Object.create(null);
+      x.constructor = cst;
+      x.length = args.length;
+      xcontext = info;
+      for (var i=0; i<args.length; i++)
+        x[i] = args[i];
+      xs.push(x);
+      stack.push(x);
+    },
+    return: function (res) {
+      stack.pop(res);
+      return res;
+    },
+    try: function (ast) { xs.push(null) },
+    catch: function (ast) {
+      while (xs.pop())
+        stack.pop();
+    }
+  }
+
+}
+
+},{}],7:[function(require,module,exports){
+
 require("./reflect.js");
 var Membrane = require("./membrane.js");
-var OObject = require("./object.js");
+var Object = require("./object.js");
+var CallStack = require("./callstack.js");
 var Apply = require("./apply.js");
 var Aran = require("aran");
 
-module.exports = function (intercept, callstack) {
+module.exports = function (intercept, stack) {
 
-  var membrane = Membrane(intercept.primitive);
+  var membrane = Membrane(intercept, stack);
 
-  var object = OObject(intercept.object, callstack, membrane);
+  var callstack = CallStack(stack);
+
+  var object = Object(intercept.object, callstack, membrane);
+
+  var thrown = {};
+ 
+  callstack.initialize(object);
 
   var aran = Aran(null, {
     primitive: membrane.enter,
     test: membrane.leave,
     eval: membrane.leave,
-    regexp: object.register,
     array: object.register,
+    arguments: object.register,
+    function: object.register,
+    regexp: function (pattern, flags, ast) { return object.register(new RegExp(pattern, flags), ast) },
     object: function (props, ast) {
-      var obj = object.register({}, ast);
-      for (var k in props)
-        apply.irregular(Reflect.defineProperty, null, [obj, k, props[k]], ast);
-      return obj;
+      var o = {};
+      props.forEach(function (p) {
+        p.configurable = true
+        p.enumerable = true
+        if (p.value)
+          p.writable = true
+        Reflect.defineProperty(o, p.key, p);
+      });
+      return object.register(o, ast);
     },
+    throw: function (err, ast) { return thrown = err },
     try: function (ast) { callstack.try(ast) },
     catch: function (err, ast) {
-      if (!object.bypass(err))
-        err = object.register(err, ast);
+      err = (err === thrown) ? err : object.register(err, ast);
+      thrown = {};
       callstack.catch(err);
       return err;
     },
-    arguments: object.register,
-    function: object.register,
     apply: function (fct, ctx, args, ast) { return apply(fct, ctx, args, ast) },
     construct: function (fct, args, ast) { return apply.construct(fct, args, ast) },
     unary: function (op, arg, ast) { return apply.irregular(Reflect.unary, null, [op,arg], ast) },
@@ -333,10 +380,10 @@ module.exports = function (intercept, callstack) {
     get: function (obj, key, ast) { return apply.irregular(Reflect.get, null, [obj,key,obj], ast) },
     set: function (obj, key, val, ast) { return apply.irregular(Reflect.set, null, [obj,key,val,obj], ast) },
     delete: function (obj, key, ast) { return apply.irregular(Reflect.deleteProperty, null, [obj,key], ast) },
-    enumerate: function (obj, ast) { return apply.irregular(Reflect.enumerate, null, [obj,key], ast) }
+    enumerate: function (obj, ast) { return apply.irregular(Reflect.enumerate, null, [obj], ast) }
   }, {ast:true, loc:true});
   
-  var apply = Apply(membrane, object);
+  var apply = Apply(callstack, membrane, object);
 
   apply.initialize(aran);
 
@@ -344,32 +391,47 @@ module.exports = function (intercept, callstack) {
 
 }
 
-},{"./apply.js":1,"./membrane.js":7,"./object.js":8,"./reflect.js":9,"aran":"aran"}],7:[function(require,module,exports){
+},{"./apply.js":1,"./callstack.js":6,"./membrane.js":8,"./object.js":9,"./reflect.js":10,"aran":"aran"}],8:[function(require,module,exports){
 
 var Util = require("./util.js");
 
-module.exports = function (onprimitive) {
+module.exports = function (intercept, stack) {
+
+  // Turn the membrane off when analysis code is executing //
+  var on = true;
+  var toogle = function (fct) {
+    return function () {
+      var save = on;
+      on = false;
+      var res = fct.apply(this, arguments);
+      on = save;
+      return res;
+    }
+  };
+  intercept.primitive = toogle(intercept.primitive);
+  intercept.object = toogle(intercept.object);
+  stack.push = toogle(stack.push);
+  stack.pop = toogle(stack.pop);
 
   var wrappers = new WeakSet();
 
   function enter (val, info) {
-    if (util.primitive(val)) {
-      var wrapper = onprimitive(val, info);
-      if (typeof wrapper === "object") {
+    if (on&&Util.primitive(val)) {
+      var wrapper = intercept.primitive(val, info);
+      if (typeof wrapper === "object")
         wrappers.add(wrapper);
-        return wrapper;
-      }
+      return wrapper;
     }
     return val;
   }
 
-  function leave (val, info) { return wrappers.has(val) ? val.unwrap(info) : val }
+  function leave (val, info) { return (on&&wrappers.has(val)) ? toogle(val.unwrap).call(val, info) : val }
 
   return {enter:enter, leave:leave};
 
 }
 
-},{"./util.js":10}],8:[function(require,module,exports){
+},{"./util.js":11}],9:[function(require,module,exports){
 
 var Util = require("./util.js");
 
@@ -379,26 +441,23 @@ module.exports = function (onobject, callstack, membrane) {
 
   var handlers = {
     apply: function (fct, ctx, args) {
-      callstack.apply(fct, ctx, args);
+      callstack.apply(fct, ctx, args, null);
       ctx = membrane.enter(ctx, "this");
       for (var i=0; i<args.length; i++)
         args[i] = membrane.enter(args[0], "arguments["+i+"]");
-      var res = membrane.leave(Reflect.apply(fct, ctx, args), "result");
-      callstack.pop();
-      return res;
+      return callstack.return(membrane.leave(Reflect.apply(fct, ctx, args), "result"));
     },
     construct: function (cst, args) {
-      callstack.construct(cst, args);
+      callstack.construct(cst, args, null);
       var proto = handlers.get(cst, "prototype", cst);
       var ctx = register(Object.create(proto), "this");
       for (var i=0; i<args.length; i++)
         args[i] = membrane.enter(args[0], "arguments["+i+"]");
-      var res = membrane.leave(Reflect.apply(fct, ctx, args), "result");
-      callstack.pop();
-      return Util.primitive(res) ? ctx : res;
+      var res = membrane.leave(Reflect.apply(cst, ctx, args), "result");
+      return callstack.return(Util.primitive(res) ? ctx : res);
     },
     get: function (obj, key, rec) {
-      var des = Reflect.getOwnPropertyDescriptor(obj);
+      var des = Reflect.getOwnPropertyDescriptor(obj, key);
       if (des) {
         if ("value" in des)
           return membrane.leave(des.value, "get");
@@ -406,10 +465,13 @@ module.exports = function (onobject, callstack, membrane) {
           return Reflect.apply(des.get, rec, []);
         return undefined;
       }
-      return Reflect.get(Reflect.getPrototypeOf(obj), key, rec);
+      var proto = Reflect.getPrototypeOf(obj);
+      if (proto === null)
+        return undefined;
+      return Reflect.get(proto, key, rec);
     },
     set: function (obj, key, val, rec) {
-      var des = Reflect.getOwnPropertyDescriptor(obj);
+      var des = Reflect.getOwnPropertyDescriptor(obj, key);
       if (des) {
         if (des.writable)
           Reflect.defineProperty(rec, key, {
@@ -422,11 +484,15 @@ module.exports = function (onobject, callstack, membrane) {
           Reflect.apply(des.set, rec, [val]);
         return val;
       }
-      return Reflect.set(Reflect.getPrototypeOf(obj), key, val, rec);
+      var proto = Reflect.getPrototypeOf(obj);
+      if (proto === null)
+        return val;
+      return Reflect.set(proto, key, val, rec);
     },
     getOwnPropertyDescriptor: function (obj, key) {
       var des = Reflect.getOwnPropertyDescriptor(obj, key);
-      des.value = membrane.leave(des.value, "getOwnPropertyDescriptor");
+      if (des)
+        des.value = membrane.leave(des.value, "getOwnPropertyDescriptor");
       return des;
     },
     defineProperty: function (obj, key, des) {
@@ -438,8 +504,9 @@ module.exports = function (onobject, callstack, membrane) {
   function bypass (val) { return proxies.get(val) }
 
   function register (val, info) {
-    var p = new Proxy(onobject(val, info), handlers);
+    var p = new Proxy(val, handlers);
     proxies.set(p, val);
+    onobject(p, info);
     return p;
   }
 
@@ -447,11 +514,12 @@ module.exports = function (onobject, callstack, membrane) {
 
 }
 
-},{"./util.js":10}],9:[function(require,module,exports){
+},{"./util.js":11}],10:[function(require,module,exports){
 (function (global){
 
 // Reflect polyfill waiting for JS engines to support ES6 Reflect.
 // N.B. Reflect.binary and Reflect.unary are NOT standard.
+// Changing Function.prototype.apply will affect Reflect.apply *sigh*
 
 var g = (typeof window === "undefined") ? global : window;
 var undefined = g.undefined;
@@ -462,39 +530,57 @@ var getOwnPropertySymbols = Object.getOwnPropertySymbols;
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var getPrototypeOf = Object.getPrototypeOf;
 
-// Changing Function.prototype.apply will affect Reflect.apply *sigh*
-function apply (f, t, xs) { return f.apply(t, xs) }
+if (!g.Proxy)
+  throw new Error("Linvail requires ES6 proxies...");
 
-function get (o, k, r) {
-  var d = getOwnPropertyDescriptor(o, k);
-  if (d) {
-    if ("value" in d)
-      return d.value;
-    if (d.get)
-      return apply(d.get, r, []);
-    return undefined
+if (!g.Reflect) {
+  var Proxy = g.Proxy;
+  var proxies = new WeakMap(); 
+  g.Proxy = function (target, handlers) {
+    var p = new Proxy(target, handlers);
+    proxies.set(p, {target:target, handlers:handlers});
+    return p;
   }
-  return get(getPrototypeOf(o), k, r);
-}
-
-function set(o, k, v, r) {
-  var d = getOwnPropertyDescriptor(o, k);
-  if (d) {
-    if (d.writable)
-      defineProperty(o, k, {
-        configurable: true,
-        enumerable: true,
-        writable: true,
-        value: v
-      });
-    else if (d.set)
-      apply(d.set, r, [v]);
-    return v;
+  function apply (f, t, xs) { return f.apply(t, xs) }
+  function get (o, k, r) {
+    var d = getOwnPropertyDescriptor(o, k);
+    if (d) {
+      if ("value" in d)
+        return d.value;
+      if (d.get)
+        return apply(d.get, r, []);
+      return undefined
+    }
+    var proto = getPrototypeOf(o);
+    var _proto = proxies.get(proto);
+    if (_proto && _proto.handlers.get)
+      return _proto.handlers.get(_proto.target, k, r);
+    if (_proto)
+      proto = _proto.target;
+    return (proto === null) ? undefined : get(proto, k, r);
   }
-  return set(getPrototypeOf(o), k, v, r);
-}
-
-if (!g.Reflect)
+  function set(o, k, v, r) {
+    var d = getOwnPropertyDescriptor(o, k);
+    if (d) {
+      if (d.writable)
+        defineProperty(o, k, {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: v
+        });
+      else if (d.set)
+        apply(d.set, r, [v]);
+      return v;
+    }
+    var proto = getPrototypeOf(o);
+    var _proto = proxies.get(proto);
+    if (_proto && _proto.handlers.set)
+      return _proto.handlers.set(_proto.target, k, v, r);
+    if (_proto)
+      proto = _proto.target;
+    return (proto === null) ? v : set(proto, k, v, r);
+  }
   g.Reflect = {
     apply: apply,
     construct: function (f, xs) {
@@ -530,12 +616,14 @@ if (!g.Reflect)
     setPrototypeOf: Object.setPrototypeOf
   };
 
+}
+
 g.Reflect.unary = function (o, x) { return eval(o+" x") }
 
 g.Reflect.binary = function (o, l, r) { return eval("l "+o+" r") }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 exports.primitive = function (x) {
   var t = typeof x;
@@ -550,35 +638,72 @@ exports.primitive = function (x) {
 },{}],"master":[function(require,module,exports){
 
 var Linvail = require("..");
-var id = 0;
 
-function printi (x) { x.type ? x.type+"@"+x.loc.start.line+":"+x.loc.start.column : x }
-
-var intercept = {
-  primitive: function (val, info) {
-    console.log("primitive"+(++id)+" ["+JSON.stringify(val)+"] intercepted @ "+printi(info));
-    return {
-      id: id,
-      inner: val,
-      unwrap: function (info) {
-        console.log("primitive"+this.id+" accessed @ "+printi(info));
-        return this.inner;
-      }
-    };
-  },
-  object: function (obj, info) {
-    console.log("object"+(++id)+" ["+obj+"] intercepted @ "+printi(info));
-    return obj;
-  }
-}
-
-var callstack = {
-  push: function (fct, ctx, args, info) { console.log("PUSH "+printi(info)) },
-  pop: function (res) { console.log("POP") },
-  try: function (info) { console.log("TRY") },
-  catch: function (err, info) { console.log("CATCH") }
+var depth = 0;
+function log (msg) {
+  var indent = Array(depth+1).join("    ");
+  msg = indent+msg.split("\n").join("\n"+indent);
+  (typeof out === "undefined") ? console.log(msg) : out(msg+"\n");
 };
 
-module.exports = Linvail(intercept, callstack, Aran);
+var print = {
+  context: function (ctx) { return "@" + ((ctx&&ctx.type) ? (ctx.type+"("+ctx.loc.start.line+":"+ctx.loc.start.column+")") : ctx) },
+  wrapper: function (wrp) { return "wrapper-"+wrp.id+"-["+JSON.stringify(wrp.inner)+"]" },
+  value: function (val) {
+    if (wrappers.has(val))
+      return print.wrapper(val);
+    if (store.has(val))
+      return "object-"+store.get(val);
+    if (typeof val === "function")
+      return String(val).split("\n")[0].replace(/(function| |{.*)/g, "");
+    return val;
+  },
+  call: function (call) {
+    var str;
+    if ("constructor" in call)
+      str = "construct "+print.value(call.constructor)+" "+print.context(call.context);
+    else {
+      str = "apply "+print.value(call.function)+" "+print.context(call.context);
+      str += "\n  this >> "+print.value(call.this);
+    }
+    for (var i=0; i<call.length; i++)
+      str += "\n  "+i+" >> "+print.value(call[i]);
+    return str;
+  }
+};
 
-},{"..":6}]},{},[]);
+function unwrap (ctx) {
+  log("unwrap: "+print.wrapper(this)+" "+print.context(ctx));
+  return this.inner;
+}
+
+var id = 0;
+var wrappers = new WeakSet();
+var store = new WeakMap();
+var intercept = {
+  primitive: function (val, ctx) {
+    var wrp = {id:++id, inner:val, unwrap:unwrap};
+    wrappers.add(wrp);
+    log("create: "+print.wrapper(wrp)+" "+print.context(ctx));
+    return wrp;
+  },
+  object: function (obj, ctx) {
+    store.set(obj, ++id);
+    log("register: "+print.value(obj)+" "+print.context(ctx));
+  }
+};
+
+var stack = {
+  push: function (call) {
+    log("push "+print.call(call));
+    depth++;
+  },
+  pop: function (res) {
+    depth--;
+    log("pop "+print.value(res))
+  }
+};
+
+module.exports = Linvail(intercept, stack);
+
+},{"..":7}]},{},[]);

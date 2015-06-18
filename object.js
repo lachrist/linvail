@@ -7,26 +7,23 @@ module.exports = function (onobject, callstack, membrane) {
 
   var handlers = {
     apply: function (fct, ctx, args) {
-      callstack.apply(fct, ctx, args);
+      callstack.apply(fct, ctx, args, null);
       ctx = membrane.enter(ctx, "this");
       for (var i=0; i<args.length; i++)
         args[i] = membrane.enter(args[0], "arguments["+i+"]");
-      var res = membrane.leave(Reflect.apply(fct, ctx, args), "result");
-      callstack.pop();
-      return res;
+      return callstack.return(membrane.leave(Reflect.apply(fct, ctx, args), "result"));
     },
     construct: function (cst, args) {
-      callstack.construct(cst, args);
+      callstack.construct(cst, args, null);
       var proto = handlers.get(cst, "prototype", cst);
       var ctx = register(Object.create(proto), "this");
       for (var i=0; i<args.length; i++)
         args[i] = membrane.enter(args[0], "arguments["+i+"]");
-      var res = membrane.leave(Reflect.apply(fct, ctx, args), "result");
-      callstack.pop();
-      return Util.primitive(res) ? ctx : res;
+      var res = membrane.leave(Reflect.apply(cst, ctx, args), "result");
+      return callstack.return(Util.primitive(res) ? ctx : res);
     },
     get: function (obj, key, rec) {
-      var des = Reflect.getOwnPropertyDescriptor(obj);
+      var des = Reflect.getOwnPropertyDescriptor(obj, key);
       if (des) {
         if ("value" in des)
           return membrane.leave(des.value, "get");
@@ -34,10 +31,13 @@ module.exports = function (onobject, callstack, membrane) {
           return Reflect.apply(des.get, rec, []);
         return undefined;
       }
-      return Reflect.get(Reflect.getPrototypeOf(obj), key, rec);
+      var proto = Reflect.getPrototypeOf(obj);
+      if (proto === null)
+        return undefined;
+      return Reflect.get(proto, key, rec);
     },
     set: function (obj, key, val, rec) {
-      var des = Reflect.getOwnPropertyDescriptor(obj);
+      var des = Reflect.getOwnPropertyDescriptor(obj, key);
       if (des) {
         if (des.writable)
           Reflect.defineProperty(rec, key, {
@@ -50,11 +50,15 @@ module.exports = function (onobject, callstack, membrane) {
           Reflect.apply(des.set, rec, [val]);
         return val;
       }
-      return Reflect.set(Reflect.getPrototypeOf(obj), key, val, rec);
+      var proto = Reflect.getPrototypeOf(obj);
+      if (proto === null)
+        return val;
+      return Reflect.set(proto, key, val, rec);
     },
     getOwnPropertyDescriptor: function (obj, key) {
       var des = Reflect.getOwnPropertyDescriptor(obj, key);
-      des.value = membrane.leave(des.value, "getOwnPropertyDescriptor");
+      if (des)
+        des.value = membrane.leave(des.value, "getOwnPropertyDescriptor");
       return des;
     },
     defineProperty: function (obj, key, des) {
@@ -66,8 +70,9 @@ module.exports = function (onobject, callstack, membrane) {
   function bypass (val) { return proxies.get(val) }
 
   function register (val, info) {
-    var p = new Proxy(onobject(val, info), handlers);
+    var p = new Proxy(val, handlers);
     proxies.set(p, val);
+    onobject(p, info);
     return p;
   }
 

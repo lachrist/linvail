@@ -26,87 +26,74 @@ module.exports = function (membrane, object, apply, map) {
   });
 
   map.set(Reflect.construct, function (cst, args) {
-    fct = membrane.leave(fct, "arguments[0]");
+    cst = membrane.leave(cst, "arguments[0]");
     var clean = [];
     var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[1].length");
     for (var i=0; i<length; i++)
       clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[1]["+i+"]");
-    return apply.construct(fct, clean, "construct");
+    return apply.construct(cst, clean, "construct");
   });
 
+  // If obj is internal and des contains "value" then we have to create a mixed descriptor
+  // that returns raw values for ["configurable", etc] and let des.value intact.
   map.set(Reflect.defineProperty, function (obj, key, des) {
-    throw new Error("TODO");
-    // var res = obj;
-    // var rawobj = composite.bypass(obj);
-    // var rawdes = composite.bypass(des);
-    // key = membrane.leave(key, "arguments[1]");
-    
-    // if (rawobj) {
-    //   obj = rawobj;
-    //   var copy = {}
-    //   if ("value" in des) copy.value = apply(Reflect.get, null, [des, "value", des], "arguments[2].value");
-    //   ["configurable", "enumerable", "writable", "get", "set"].forEach(function (k) {
-    //     if (k in rawdes) des[k] = membrane.leave(apply(Reflect.get, null, [des, k, des], "arguments[2]."+k), "arguments[2]."+k)
-    //   });
-    // } else {
-    //   var copy = {}
-    //   if ("value" in des) copy.value = apply(Reflect.get, null [des, "value", des], "arguments[2].value")
-    // }if (rawobj) {
-    //   obj = rawobj;
-    //   for (var k in )
-    // } else if (rawdes) {
-    // } else {
-    // } 
-    // return res;
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    des = membrane.leave(des, "arguments[2]");
+    var robj = object.bypass(obj);
+    if (robj && ("value" in des)) {
+      var copy = {};
+      ["configurable", "enumerable", "writable", "get", "set"].forEach(function (k) {
+        if (k in des)
+          copy[k] = des[k];
+      });
+      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
+    }
+    Reflect.defineProperty(robj||obj, key, des);
+    return obj;
   });
 
   map.set(Reflect.deleteProperty, function (obj, key) {
     obj = membrane.leave(obj, "arguments[0]");
-    obj = object.bypass(obj) || obj;
     key = membrane.leave(key, "arguments[1]");
+    obj = object.bypass(obj) || obj;
     return membrane.leave(Reflect.deleteProperty(obj, key), "result");
   });
 
   map.set(Reflect.enumerate, function (obj) {
     obj = membrane.leave(obj, "arguments[0]");
-    obj = object.bypass(obj) || obj;
-    var keys = Reflect.enumerate(obj);
-    var res = object.register([], "result");
-    var rawres = object.bypass(res);
-    for (var i=0; i<keys.length; i++)
-      (rawres||res)[i] = membrane.enter(keys[i], "result["+i+"]");
-    return res;
+    return object.register(Reflect.enumerate(object.bypass(obj)||obj).map(function (k, i) {
+      return membrane.enter(k, "result["+i+"]");
+    }));
   });
 
   map.set(Reflect.get, function (obj, key, rec) {
     obj = membrane.leave(obj, "arguments[0]");
     key = membrane.leave(key, "arguments[1]");
-    var rawobj = object.bypass(obj);
-    var des = Reflect.getOwnPropertyDescriptor(rawobj||obj, key);
-    if (des) {
-      if ("value" in des)
-        return rawobj ? des.value : membrane.enter(des.value, "result");
-      if (des.get)
-        return apply(des.get, rec, [], "getter");
-      return membrane.enter(undefined, "result");
-    }
-    return apply.irregular(Reflect.get, null, [Reflect.getPrototypeOf(rawobj||obj), key, rec], "prototype");
+    do {
+      var robj = object.bypass(obj);
+      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+      if (des) {
+        if ("value" in des)
+          return robj ? des.value : membrane.enter(des.value, "result");
+        if (des.get)
+          return apply(des.get, rec, [], "getter");
+        return membrane.enter(undefined, "result");
+      }
+      obj = Reflect.getPrototypeOf(robj||obj);
+    } while (obj)
+    return membrane.enter(undefined, "result");
   });
 
   map.set(Reflect.getOwnPropertyDescriptor, function (obj, key) {
-    throw new Error("TODO");
-    // key = membrane.leave(key, "arguments[1]");
-    // var raw = composite.bypass(obj);
-    // var des = Reflect.getOwnPropertyDescriptor(raw||obj, key);
-    // var res = composite.object(Object.prototype, "result");
-    // res.configurable = membrane.enter();
-    // if (raw) {
-    //   des = Reflect.getOwnPropertyDescriptor(raw, key);
-
-    // } else {
-
-    // }
-    // return des;
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    var robj = object.bypass(obj);
+    var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+    var copy = object.register({}, "result");
+    for (var k in des)
+      copy[k] = (k === "value" && robj) ? des.value : membrane.enter(des[k], "result."+k)
+    return copy;
   });
 
   map.set(Reflect.getPrototypeOf, function (obj) {
@@ -134,12 +121,9 @@ module.exports = function (membrane, object, apply, map) {
 
   map.set(Reflect.ownKeys, function (obj) {
     obj = membrane.leave(obj, "arguments[0]");
-    var keys = Reflect.ownKeys(object.bypass(obj) || obj);
-    var res = object.register([], "result");
-    var rawres = object.bypass(res);
-    for (var i=0; i<keys.length; i++)
-      (rawres||res)[i] = membrane.enter(keys[i], "result["+i+"]");
-    return res;
+    return object.register(Reflect.ownKeys(object.bypass(obj)||obj).map(function (k, i) {
+      return membrane.enter(k, "result["+i+"]");
+    }));
   });
 
   map.set(Reflect.preventExtensions, function (obj) {
@@ -148,25 +132,34 @@ module.exports = function (membrane, object, apply, map) {
     return obj;
   });
 
+  function write (rec, key, val) {
+    rec = membrane.leave(rec, "arguments[3]");
+    var rrec = object.bypass(rec);
+    Reflect.defineProperty(rrec||rec, key, {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: rrec ? val : membrane.leave(val, "arguments[2]")
+    });
+    return val;
+  }
+
   map.set(Reflect.set, function (obj, key, val, rec) {
     obj = membrane.leave(obj, "arguments[0]");
     key = membrane.leave(key, "arguments[1]");
-    var des = Reflect.getOwnPropertyDescriptor(object.bypass(obj)||obj, key);
-    if (des) {
-      if (des.writable) {
-        var rawrec = object.bypass(obj);
-        Reflect.defineProperty(rawrec||rec, key, {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: rawrec ? val : membrane.leave(val, "arguments[2]")
-        });
+    do {
+      var robj = object.bypass(obj);
+      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+      if (des) {
+        if (des.writable)
+          return write(rec, key, val);
+        if (des.set)
+          apply(des.set, rec, [val], "setter");
+        return val;
       }
-      if (des.set)
-        apply.clean(des.set, rec, [val], "setter");
-      return val;
-    }
-    return apply.irregular(Reflect.set, null, [Reflect.getPrototypeOf(obj), key, rec], "prototype");
+      obj = Reflect.getPrototypeOf(robj||obj);
+    } while (obj)
+    return write(rec, key, val);
   });
 
   map.set(Reflect.setPrototypeOf, function (obj, proto) {

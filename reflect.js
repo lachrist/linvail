@@ -1,6 +1,7 @@
 
 // Reflect polyfill waiting for JS engines to support ES6 Reflect.
 // N.B. Reflect.binary and Reflect.unary are NOT standard.
+// Changing Function.prototype.apply will affect Reflect.apply *sigh*
 
 var g = (typeof window === "undefined") ? global : window;
 var undefined = g.undefined;
@@ -11,39 +12,57 @@ var getOwnPropertySymbols = Object.getOwnPropertySymbols;
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var getPrototypeOf = Object.getPrototypeOf;
 
-// Changing Function.prototype.apply will affect Reflect.apply *sigh*
-function apply (f, t, xs) { return f.apply(t, xs) }
+if (!g.Proxy)
+  throw new Error("Linvail requires ES6 proxies...");
 
-function get (o, k, r) {
-  var d = getOwnPropertyDescriptor(o, k);
-  if (d) {
-    if ("value" in d)
-      return d.value;
-    if (d.get)
-      return apply(d.get, r, []);
-    return undefined
+if (!g.Reflect) {
+  var Proxy = g.Proxy;
+  var proxies = new WeakMap(); 
+  g.Proxy = function (target, handlers) {
+    var p = new Proxy(target, handlers);
+    proxies.set(p, {target:target, handlers:handlers});
+    return p;
   }
-  return get(getPrototypeOf(o), k, r);
-}
-
-function set(o, k, v, r) {
-  var d = getOwnPropertyDescriptor(o, k);
-  if (d) {
-    if (d.writable)
-      defineProperty(o, k, {
-        configurable: true,
-        enumerable: true,
-        writable: true,
-        value: v
-      });
-    else if (d.set)
-      apply(d.set, r, [v]);
-    return v;
+  function apply (f, t, xs) { return f.apply(t, xs) }
+  function get (o, k, r) {
+    var d = getOwnPropertyDescriptor(o, k);
+    if (d) {
+      if ("value" in d)
+        return d.value;
+      if (d.get)
+        return apply(d.get, r, []);
+      return undefined
+    }
+    var proto = getPrototypeOf(o);
+    var _proto = proxies.get(proto);
+    if (_proto && _proto.handlers.get)
+      return _proto.handlers.get(_proto.target, k, r);
+    if (_proto)
+      proto = _proto.target;
+    return (proto === null) ? undefined : get(proto, k, r);
   }
-  return set(getPrototypeOf(o), k, v, r);
-}
-
-if (!g.Reflect)
+  function set(o, k, v, r) {
+    var d = getOwnPropertyDescriptor(o, k);
+    if (d) {
+      if (d.writable)
+        defineProperty(o, k, {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: v
+        });
+      else if (d.set)
+        apply(d.set, r, [v]);
+      return v;
+    }
+    var proto = getPrototypeOf(o);
+    var _proto = proxies.get(proto);
+    if (_proto && _proto.handlers.set)
+      return _proto.handlers.set(_proto.target, k, v, r);
+    if (_proto)
+      proto = _proto.target;
+    return (proto === null) ? v : set(proto, k, v, r);
+  }
   g.Reflect = {
     apply: apply,
     construct: function (f, xs) {
@@ -78,6 +97,8 @@ if (!g.Reflect)
     set: set,
     setPrototypeOf: Object.setPrototypeOf
   };
+
+}
 
 g.Reflect.unary = function (o, x) { return eval(o+" x") }
 

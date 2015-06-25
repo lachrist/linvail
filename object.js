@@ -70,10 +70,10 @@ module.exports = function (onobject, callstack, membrane) {
   function bypass (val) { return proxies.get(val) }
 
   function register (val, info) {
-    var p = new Proxy(val, handlers);
-    proxies.set(p, val);
-    onobject(p, info);
-    return p;
+    val = onobject(val, info);
+    var pxy = new Proxy(val, handlers);
+    proxies.set(pxy, val);
+    return pxy;
   }
 
   return {bypass:bypass, register:register}

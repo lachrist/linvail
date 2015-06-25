@@ -52,6 +52,7 @@ var intercept = {
   object: function (obj, ctx) {
     store.set(obj, ++id);
     log("register: "+print.value(obj)+" "+print.context(ctx));
+    return obj;
   }
 };
 

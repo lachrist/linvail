@@ -145,7 +145,7 @@ module.exports = function (membrane, object, apply, map) {
         if (k in des)
           copy[k] = des[k];
       });
-      copy.value = map.get(Reflect.get).apply(null, [des, "value", des])
+      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
     }
     Reflect.defineProperty(robj||obj, key, des);
     return obj;
@@ -175,7 +175,7 @@ module.exports = function (membrane, object, apply, map) {
         if ("value" in des)
           return robj ? des.value : membrane.enter(des.value, "result");
         if (des.get)
-          return Reflect.apply(des.get, rec);
+          return apply(des.get, rec, [], "getter");
         return membrane.enter(undefined, "result");
       }
       obj = Reflect.getPrototypeOf(robj||obj);
@@ -231,7 +231,6 @@ module.exports = function (membrane, object, apply, map) {
   });
 
   function write (rec, key, val) {
-    debugger;
     rec = membrane.leave(rec, "arguments[3]");
     var rrec = object.bypass(rec);
     Reflect.defineProperty(rrec||rec, key, {
@@ -253,7 +252,7 @@ module.exports = function (membrane, object, apply, map) {
         if (des.writable)
           return write(rec, key, val);
         if (des.set)
-          Reflect.apply(des.set, rec, [object.bypass(rec)?val:membrane.leave(val, "arguments[2]")]);
+          apply(des.set, rec, [val], "setter");
         return val;
       }
       obj = Reflect.getPrototypeOf(robj||obj);
@@ -419,7 +418,7 @@ module.exports = function (intercept, stack) {
   function enter (val, info) {
     if (on&&Util.primitive(val)) {
       var wrapper = intercept.primitive(val, info);
-      if (!Util.primitive(wrapper))
+      if (!Util.primitive(val))
         wrappers.add(wrapper);
       return wrapper;
     }
@@ -15734,76 +15733,22 @@ exports.primitive = function (x) {
       || t === "symbol";
 }
 
-},{}],"logger":[function(require,module,exports){
+},{}],"identity":[function(require,module,exports){
 
 var Linvail = require("..");
 
-var depth = 0;
-function log (msg) {
-  var indent = Array(depth+1).join("    ");
-  msg = indent+msg.split("\n").join("\n"+indent);
-  (typeof out === "undefined") ? console.log(msg) : out(msg+"\n");
-};
+function unwrap () { return this.inner }
 
-var print = {
-  context: function (ctx) { return "@" + ((ctx&&ctx.type) ? (ctx.type+"("+ctx.loc.start.line+":"+ctx.loc.start.column+")") : ctx) },
-  wrapper: function (wrp) { return "wrapper-"+wrp.id+"-["+JSON.stringify(wrp.inner)+"]" },
-  value: function (val) {
-    if (wrappers.has(val))
-      return print.wrapper(val);
-    if (store.has(val))
-      return "object-"+store.get(val);
-    if (typeof val === "function")
-      return String(val).split("\n")[0].replace(/(function| |{.*)/g, "");
-    return val;
-  },
-  call: function (call) {
-    var str;
-    if ("constructor" in call)
-      str = "construct "+print.value(call.constructor)+" "+print.context(call.context);
-    else {
-      str = "apply "+print.value(call.function)+" "+print.context(call.context);
-      str += "\n  this >> "+print.value(call.this);
-    }
-    for (var i=0; i<call.length; i++)
-      str += "\n  "+i+" >> "+print.value(call[i]);
-    return str;
-  }
-};
-
-function unwrap (ctx) {
-  log("unwrap: "+print.wrapper(this)+" "+print.context(ctx));
-  return this.inner;
-}
-
-var id = 0;
-var wrappers = new WeakSet();
-var store = new WeakMap();
 var intercept = {
-  primitive: function (val, ctx) {
-    var wrp = {id:++id, inner:val, unwrap:unwrap};
-    wrappers.add(wrp);
-    log("create: "+print.wrapper(wrp)+" "+print.context(ctx));
-    return wrp;
-  },
-  object: function (obj, ctx) {
-    store.set(obj, ++id);
-    log("register: "+print.value(obj)+" "+print.context(ctx));
-    return obj;
-  }
+  primitive: function (val, ctx) { return {inner:val, unwrap:unwrap} },
+  object: function (obj, ctx) { return obj }
 };
 
-var stack = {
-  push: function (call) {
-    log("push "+print.call(call));
-    depth++;
-  },
-  pop: function (res) {
-    depth--;
-    log("pop "+print.value(res))
-  }
+var callstack = {
+  push: function (call) {},
+  pop: function (res) {}
 };
 
-module.exports = Linvail(intercept, stack);
+module.exports = Linvail(intercept, callstack);
 
 },{"..":7}]},{},[]);

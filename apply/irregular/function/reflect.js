@@ -47,7 +47,7 @@ module.exports = function (membrane, object, apply, map) {
         if (k in des)
           copy[k] = des[k];
       });
-      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
+      copy.value = map.get(Reflect.get).apply(null, [des, "value", des])
     }
     Reflect.defineProperty(robj||obj, key, des);
     return obj;
@@ -77,7 +77,7 @@ module.exports = function (membrane, object, apply, map) {
         if ("value" in des)
           return robj ? des.value : membrane.enter(des.value, "result");
         if (des.get)
-          return apply(des.get, rec, [], "getter");
+          return Reflect.apply(des.get, rec);
         return membrane.enter(undefined, "result");
       }
       obj = Reflect.getPrototypeOf(robj||obj);
@@ -133,6 +133,7 @@ module.exports = function (membrane, object, apply, map) {
   });
 
   function write (rec, key, val) {
+    debugger;
     rec = membrane.leave(rec, "arguments[3]");
     var rrec = object.bypass(rec);
     Reflect.defineProperty(rrec||rec, key, {
@@ -154,7 +155,7 @@ module.exports = function (membrane, object, apply, map) {
         if (des.writable)
           return write(rec, key, val);
         if (des.set)
-          apply(des.set, rec, [val], "setter");
+          Reflect.apply(des.set, rec, [object.bypass(rec)?val:membrane.leave(val, "arguments[2]")]);
         return val;
       }
       obj = Reflect.getPrototypeOf(robj||obj);

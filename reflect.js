@@ -11,6 +11,8 @@ var getOwnPropertyNames = Object.getOwnPropertyNames;
 var getOwnPropertySymbols = Object.getOwnPropertySymbols;
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var getPrototypeOf = Object.getPrototypeOf;
+var functionToString = Function.prototype.toString;
+
 
 if (!g.Proxy)
   throw new Error("Linvail requires ES6 proxies...");
@@ -97,7 +99,9 @@ if (!g.Reflect) {
     set: set,
     setPrototypeOf: Object.setPrototypeOf
   };
-
+  g.Function.prototype.toString = function () {
+    return functionToString.apply(proxies.has(this)?proxies.get(this).target:this);
+  }
 }
 
 g.Reflect.unary = function (o, x) { return eval(o+" x") }

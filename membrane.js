@@ -24,7 +24,7 @@ module.exports = function (intercept, stack) {
   function enter (val, info) {
     if (on&&Util.primitive(val)) {
       var wrapper = intercept.primitive(val, info);
-      if (typeof wrapper === "object")
+      if (!Util.primitive(wrapper))
         wrappers.add(wrapper);
       return wrapper;
     }

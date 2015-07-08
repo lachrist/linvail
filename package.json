@@ -1,12 +1,12 @@
 { "name" : "linvail"
 , "description" : "Linvail is a JavaScript shadow executer"
-, "version" : "0.0.11"
+, "version" : "0.0.12"
 , "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
 , "dependencies": {"aran":"*", "otiluke":"*"}
 , "repository": "lachrist/linvail"
 , "homepage": "http://github.com/lachrist/linvail"
 , "license" : "MIT"
-, "files" : ["apply", "apply.js", "callstack.js", "main.js", "membrane.js", "object.js", "reflect.js", "run.js", "standalone", "util.js"]
+, "files" : ["apply", "apply.js", "callstack.js", "main.js", "membrane.js", "object.js", "reflect.js", "run.js", "standalone.js", "util.js"]
 , "main": "main.js"
 , "bin": "run.js"
 , "keywords" : ["JavaScript", "Shadow Execution", "ECMAScript5", "ECMAScript6"]

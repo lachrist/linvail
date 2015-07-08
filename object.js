@@ -5,6 +5,13 @@ module.exports = function (onobject, callstack, membrane) {
 
   var proxies = new WeakMap();
 
+  function write (rec, key, val) {
+    rec = membrane.leave(rec, "arguments[3]");
+    var rrec = bypass(rec);
+    Reflect.write(rrec||rec, key, rrec ? val : membrane.leave(val, "arguments[2]"));
+    return val
+  }
+
   var handlers = {
     apply: function (fct, ctx, args) {
       callstack.apply(fct, ctx, args, null);
@@ -40,19 +47,14 @@ module.exports = function (onobject, callstack, membrane) {
       var des = Reflect.getOwnPropertyDescriptor(obj, key);
       if (des) {
         if (des.writable)
-          Reflect.defineProperty(rec, key, {
-            configurable: true,
-            enumerable: true,
-            writable: true,
-            value: val
-          });
+          return write(rec, key, val);
         else if (des.set)
           Reflect.apply(des.set, rec, [val]);
         return val;
       }
       var proto = Reflect.getPrototypeOf(obj);
       if (proto === null)
-        return val;
+        return write(rec, key, val);
       return Reflect.set(proto, key, val, rec);
     },
     getOwnPropertyDescriptor: function (obj, key) {
@@ -70,8 +72,8 @@ module.exports = function (onobject, callstack, membrane) {
   function bypass (val) { return proxies.get(val) }
 
   function register (val, info) {
-    val = onobject(val, info);
     var pxy = new Proxy(val, handlers);
+    pxy = onobject(pxy, info);
     proxies.set(pxy, val);
     return pxy;
   }

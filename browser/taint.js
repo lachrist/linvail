@@ -7,9 +7,10 @@
 //   output.textContent = input.value;
 // }
 
-
-
 var Linvail = require("..");
+
+var valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
+var textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").set;
 
 // Callstack //
 var calls = [];
@@ -17,15 +18,14 @@ var taintedObjects = new WeakSet();
 function lastCall () { return calls[calls.length-1] }
 var callstack = {
   push: function (call) {
-    debugger;
-    var src1 = call.function === Reflect.get
-            && call[0] instanceof HTMLInputElement
-            && call[0].type === "password"
+    var src1 = call.function === valueGetter
+            && call.this instanceof HTMLInputElement
+            && call.this.type === "password"
     var src2 = call.function === Reflect.enumerate
             && taintedObjects.has(call[0]);
     call.tainted = src1 || src2;
-    call.leak = call.function === Reflect.set
-             && call[0] instanceof HTMLElement
+    call.leak = call.function === textContentSetter
+             && call.this instanceof HTMLElement
     calls.push(call);
   },
   pop: function (res) { calls.pop() }
@@ -33,7 +33,7 @@ var callstack = {
 
 // Intercept //
 function unwrap (ctx) {
-  if (/^(Conditional|If|While|Do|For)/.test(ast.type))
+  if (/^(Conditional|If|While|Do|For)/.test(ctx.type))
     return Boolean(this.inner);
   if (lastCall().leak) {
     var msg = "Tainted value from "+this.context;

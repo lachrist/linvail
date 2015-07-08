@@ -13983,8 +13983,8 @@ module.exports = function (aran, save) {
       program.body.unshift(Ptah.Declaration(topvars.map(function (v) { return Ptah.Declarator(v, null) })))
     }
     // console.log(Esvisit.View(program))
-    // var errors = Esvalid.errors(program)
-    // if (errors.length > 0) { Util.log("Compilation warning", errors.map(summarize), errors) }
+    var errors = Esvalid.errors(program)
+    if (errors.length > 0) { Util.log("Compilation warning", errors.map(summarize), errors) }
     return Escodegen.generate(program)
   }
 
@@ -15646,11 +15646,7 @@ g.Proxy = function (target, handlers) {
 ////////////////////
 
 if (!g.Reflect) {
-  function apply (f, t, xs) {
-    try {var r = f.apply(t, xs) }
-    catch (e) {debugger}
-    return r
-  }
+  function apply (f, t, xs) { return f.apply(t, xs) }
   g.Reflect = {
     apply: apply,
     construct: function (f, xs) {
@@ -15736,24 +15732,14 @@ g.Reflect.write = function (rec, key, val) {
 // Transparency //
 //////////////////
 
-var constructors = [Function, Boolean, Number, String, Date];
-constructors.forEach(function (F) {
-  var toString = F.prototype.toString;
-  var valueOf = F.prototype.valueOf;
-  F.prototype.toString = function () { return toString.apply(proxies.has(this)?proxies.get(this).target:this) }
-  F.prototype.valueOf = function () { return valueOf.apply(proxies.has(this)?proxies.get(this).target:this) }
-});
+var functionToString = Function.prototype.toString;
+g.Function.prototype.toString = function () { return functionToString.apply(proxies.has(this)?proxies.get(this).target:this) }
 
-// var functionToString = Function.prototype.toString;
-// g.Function.prototype.toString = function () { return functionToString.apply(proxies.has(this)?proxies.get(this).target:this) }
-
-// var dateToString = Date.prototype.toString;
-// g.Date.prototype.toString = function () { debugger; return dateToString.apply(proxies.has(this)?proxies.get(this).target:this) }
+var dateToString = Date.prototype.toString;
+g.Date.prototype.toString = function () { return dateToString.apply(proxies.has(this)?proxies.get(this).target:this) }
 
 var regexpTest = RegExp.prototype.test;
 g.RegExp.prototype.test = function () { return regexpTest.apply(proxies.has(this)?proxies.get(this).target:this, arguments) }
-
-
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],56:[function(require,module,exports){
@@ -15768,15 +15754,38 @@ exports.primitive = function (x) {
       || t === "symbol";
 }
 
-},{}],"identity":[function(require,module,exports){
+},{}],"track-nan":[function(require,module,exports){
+
 var Linvail = require("..");
+
+function unwrap (ctx) {
+  lastCall().NaNs.push(this);
+  return NaN;
+}
+
 var intercept = {
-  primitive: function (val, ctx) { return val },
+  primitive: function (val, ctx) {
+    if (val === val) 
+      return val;
+    if (ctx.type === "Identifier")
+      return {ast:ctx, unwrap:unwrap}
+    return {call:lastCall(), unwrap:unwrap}
+  },
   object: function (obj, ctx) { return obj }
 };
+
+calls = [];
+
+function lastCall() { return calls[calls.length-1] }
+
 var callstack = {
-  push: function (call) {},
-  pop: function (res) {}
+  push: function (call) {
+    call.NaNs = [];
+    calls.push(call);
+  },
+  pop: function (res) { calls.pop() }
 };
+
 module.exports = Linvail(intercept, callstack);
+
 },{"..":7}]},{},[]);

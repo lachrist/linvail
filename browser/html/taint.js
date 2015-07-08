@@ -145,7 +145,7 @@ module.exports = function (membrane, object, apply, map) {
         if (k in des)
           copy[k] = des[k];
       });
-      copy.value = map.get(Reflect.get).apply(null, [des, "value", des])
+      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
     }
     Reflect.defineProperty(robj||obj, key, des);
     return obj;
@@ -170,12 +170,14 @@ module.exports = function (membrane, object, apply, map) {
     key = membrane.leave(key, "arguments[1]");
     do {
       var robj = object.bypass(obj);
-      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+
+      try { var des = Reflect.getOwnPropertyDescriptor(robj||obj, key); }
+      catch (e) { debugger }
       if (des) {
         if ("value" in des)
           return robj ? des.value : membrane.enter(des.value, "result");
         if (des.get)
-          return Reflect.apply(des.get, rec);
+          return apply(des.get, rec, [], "getter");
         return membrane.enter(undefined, "result");
       }
       obj = Reflect.getPrototypeOf(robj||obj);
@@ -233,12 +235,7 @@ module.exports = function (membrane, object, apply, map) {
   function write (rec, key, val) {
     rec = membrane.leave(rec, "arguments[3]");
     var rrec = object.bypass(rec);
-    Reflect.defineProperty(rrec||rec, key, {
-      configurable: true,
-      enumerable: true,
-      writable: true,
-      value: rrec ? val : membrane.leave(val, "arguments[2]")
-    });
+    Reflect.write(rrec||rec, key, rrec ? val : membrane.leave(val, "arguments[2]"))
     return val;
   }
 
@@ -252,7 +249,7 @@ module.exports = function (membrane, object, apply, map) {
         if (des.writable)
           return write(rec, key, val);
         if (des.set)
-          Reflect.apply(des.set, rec, [val]);
+          apply(des.set, rec, [val], "setter");
         return val;
       }
       obj = Reflect.getPrototypeOf(robj||obj);
@@ -13988,8 +13985,8 @@ module.exports = function (aran, save) {
       program.body.unshift(Ptah.Declaration(topvars.map(function (v) { return Ptah.Declarator(v, null) })))
     }
     // console.log(Esvisit.View(program))
-    var errors = Esvalid.errors(program)
-    if (errors.length > 0) { Util.log("Compilation warning", errors.map(summarize), errors) }
+    // var errors = Esvalid.errors(program)
+    // if (errors.length > 0) { Util.log("Compilation warning", errors.map(summarize), errors) }
     return Escodegen.generate(program)
   }
 
@@ -14405,7 +14402,7 @@ module.exports = function (visit, mark, traps, save) {
   onexpressions.Object = function (node) {
     if (traps.object) {
       var os = [];
-      var dico = {};
+      var dico = Object.create(null); // to avoid access Object.prototype
       node.properties.forEach(function (p) {
         var k = (p.key.type === "Identifier") ? p.key.name : p.key.value
         var o = dico[k]
@@ -14531,6 +14528,12 @@ module.exports = function (visit, mark, traps, save) {
         Ptah.Binary("===", Nasus.push(Ptah.Identifier("undefined")), Shadow("global", "undefined")),
         Ptah.Sequence([Nasus.pop(), undef(null, node)]),
         Nasus.pop())
+    }
+    if (traps.primitive && (node.name === "NaN")) {
+      return Ptah.Conditional(
+        Ptah.Binary("!==", Ptah.Identifier("NaN"), Ptah.Identifier("NaN")),
+        trap("primitive", [Ptah.Identifier("NaN")], node),
+        Ptah.Identifier("NaN"))
     }
   }
 
@@ -15533,6 +15536,13 @@ module.exports = function (onobject, callstack, membrane) {
 
   var proxies = new WeakMap();
 
+  function write (rec, key, val) {
+    rec = membrane.leave(rec, "arguments[3]");
+    var rrec = bypass(rec);
+    Reflect.write(rrec||rec, key, rrec ? val : membrane.leave(val, "arguments[2]"));
+    return val
+  }
+
   var handlers = {
     apply: function (fct, ctx, args) {
       callstack.apply(fct, ctx, args, null);
@@ -15568,19 +15578,14 @@ module.exports = function (onobject, callstack, membrane) {
       var des = Reflect.getOwnPropertyDescriptor(obj, key);
       if (des) {
         if (des.writable)
-          Reflect.defineProperty(rec, key, {
-            configurable: true,
-            enumerable: true,
-            writable: true,
-            value: val
-          });
+          return write(rec, key, val);
         else if (des.set)
           Reflect.apply(des.set, rec, [val]);
         return val;
       }
       var proto = Reflect.getPrototypeOf(obj);
       if (proto === null)
-        return val;
+        return write(rec, key, val);
       return Reflect.set(proto, key, val, rec);
     },
     getOwnPropertyDescriptor: function (obj, key) {
@@ -15623,60 +15628,27 @@ var getOwnPropertyNames = Object.getOwnPropertyNames;
 var getOwnPropertySymbols = Object.getOwnPropertySymbols;
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var getPrototypeOf = Object.getPrototypeOf;
-var functionToString = Function.prototype.toString;
 
+//////////////////
+// global.Proxy //
+//////////////////
 
 if (!g.Proxy)
   throw new Error("Linvail requires ES6 proxies...");
+var Proxy = g.Proxy;
+var proxies = new WeakMap(); 
+g.Proxy = function (target, handlers) {
+  var p = new Proxy(target, handlers);
+  proxies.set(p, {target:target, handlers:handlers});
+  return p;
+}
+
+////////////////////
+// global.Reflect //
+////////////////////
 
 if (!g.Reflect) {
-  var Proxy = g.Proxy;
-  var proxies = new WeakMap(); 
-  g.Proxy = function (target, handlers) {
-    var p = new Proxy(target, handlers);
-    proxies.set(p, {target:target, handlers:handlers});
-    return p;
-  }
-  function apply (f, t, xs) { return f.apply(t, xs) }
-  function get (o, k, r) {
-    var d = getOwnPropertyDescriptor(o, k);
-    if (d) {
-      if ("value" in d)
-        return d.value;
-      if (d.get)
-        return apply(d.get, r, []);
-      return undefined
-    }
-    var proto = getPrototypeOf(o);
-    var _proto = proxies.get(proto);
-    if (_proto && _proto.handlers.get)
-      return _proto.handlers.get(_proto.target, k, r);
-    if (_proto)
-      proto = _proto.target;
-    return (proto === null) ? undefined : get(proto, k, r);
-  }
-  function set(o, k, v, r) {
-    var d = getOwnPropertyDescriptor(o, k);
-    if (d) {
-      if (d.writable)
-        defineProperty(o, k, {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: v
-        });
-      else if (d.set)
-        apply(d.set, r, [v]);
-      return v;
-    }
-    var proto = getPrototypeOf(o);
-    var _proto = proxies.get(proto);
-    if (_proto && _proto.handlers.set)
-      return _proto.handlers.set(_proto.target, k, v, r);
-    if (_proto)
-      proto = _proto.target;
-    return (proto === null) ? v : set(proto, k, v, r);
-  }
+  function apply (f, t, xs) { if (f===undefined) debugger; return f.apply(t, xs) }
   g.Reflect = {
     apply: apply,
     construct: function (f, xs) {
@@ -15695,7 +15667,23 @@ if (!g.Reflect) {
         ks[ks.length] = k;
       return ks;
     },
-    get: get,
+    get: function get (o, k, r) {
+      var d = getOwnPropertyDescriptor(o, k);
+      if (d) {
+        if ("value" in d)
+          return d.value;
+        if (d.get)
+          return apply(d.get, r, []);
+        return undefined
+      }
+      var proto = getPrototypeOf(o);
+      var _proto = proxies.get(proto);
+      if (_proto && _proto.handlers.get)
+        return _proto.handlers.get(_proto.target, k, r);
+      if (_proto)
+        proto = _proto.target;
+      return (proto === null) ? undefined : g.Reflect.get(proto, k, r);
+    },
     getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor,
     getPrototypeOf: Object.getPrototypeOf,
     has: function (o, k) { return k in o },
@@ -15708,17 +15696,52 @@ if (!g.Reflect) {
       return ks1;
     },
     preventExtensions: Object.preventExtensions,
-    set: set,
+    set: function (o, k, v, r) {
+      var d = getOwnPropertyDescriptor(o, k);
+      if (d) {
+        if (d.writable)
+          return g.Reflect.write(r, k, v);
+        else if (d.set)
+          apply(d.set, r, [v]);
+        return v;
+      }
+      var proto = getPrototypeOf(o);
+      var _proto = proxies.get(proto);
+      if (_proto && _proto.handlers.set)
+        return _proto.handlers.set(_proto.target, k, v, r);
+      if (_proto)
+        proto = _proto.target;
+      if (proto === null)
+        return g.Reflect.write(r, k, v);
+      return g.Reflect.set(proto, k, v, r);
+    },
     setPrototypeOf: Object.setPrototypeOf
   };
-  g.Function.prototype.toString = function () {
-    return functionToString.apply(proxies.has(this)?proxies.get(this).target:this);
-  }
 }
 
 g.Reflect.unary = function (o, x) { return eval(o+" x") }
-
 g.Reflect.binary = function (o, l, r) { return eval("l "+o+" r") }
+g.Reflect.write = function (rec, key, val) {
+  var des = Reflect.getOwnPropertyDescriptor(rec, key);
+  if (!des)
+    des = {configurable:true, enumerable:true, writable:true};
+  des.value = val;
+  Reflect.defineProperty(rec, key, des);
+  return val;
+}
+
+//////////////////
+// Transparency //
+//////////////////
+
+var functionToString = Function.prototype.toString;
+g.Function.prototype.toString = function () { return functionToString.apply(proxies.has(this)?proxies.get(this).target:this) }
+
+var dateToString = Date.prototype.toString;
+g.Date.prototype.toString = function () { return dateToString.apply(proxies.has(this)?proxies.get(this).target:this) }
+
+var regexpTest = RegExp.prototype.test;
+g.RegExp.prototype.test = function () { return regexpTest.apply(proxies.has(this)?proxies.get(this).target:this, arguments) }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],56:[function(require,module,exports){
@@ -15743,9 +15766,10 @@ exports.primitive = function (x) {
 //   output.textContent = input.value;
 // }
 
-
-
 var Linvail = require("..");
+
+var valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
+var textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").set;
 
 // Callstack //
 var calls = [];
@@ -15753,15 +15777,14 @@ var taintedObjects = new WeakSet();
 function lastCall () { return calls[calls.length-1] }
 var callstack = {
   push: function (call) {
-    debugger;
-    var src1 = call.function === Reflect.get
-            && call[0] instanceof HTMLInputElement
-            && call[0].type === "password"
+    var src1 = call.function === valueGetter
+            && call.this instanceof HTMLInputElement
+            && call.this.type === "password"
     var src2 = call.function === Reflect.enumerate
             && taintedObjects.has(call[0]);
     call.tainted = src1 || src2;
-    call.leak = call.function === Reflect.set
-             && call[0] instanceof HTMLElement
+    call.leak = call.function === textContentSetter
+             && call.this instanceof HTMLElement
     calls.push(call);
   },
   pop: function (res) { calls.pop() }
@@ -15769,7 +15792,7 @@ var callstack = {
 
 // Intercept //
 function unwrap (ctx) {
-  if (/^(Conditional|If|While|Do|For)/.test(ast.type))
+  if (/^(Conditional|If|While|Do|For)/.test(ctx.type))
     return Boolean(this.inner);
   if (lastCall().leak) {
     var msg = "Tainted value from "+this.context;

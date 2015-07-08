@@ -4,6 +4,13 @@ module.exports = function (stack) {
   var object = null;
   var xs = [];
 
+  // function toString () {
+  //   var msg = this.constructor ? "new "+this.constructor.name : this.function.name;
+  //   if (this.context.type)
+  //     return msg+" @ "+this.context.loc.start.line+":"+this.context.loc.start.column;
+  //   return msg+" "+this.context;
+  // }
+  
   return {
     initialize: function (o) { object = o },
     apply: function (fct, ctx, args, info) {
@@ -14,6 +21,7 @@ module.exports = function (stack) {
       x.context = info;
       for (var i=0; i<args.length; i++)
         x[i] = args[i];
+      // x.toString = toString;
       xs.push(x);
       stack.push(x);
     },
@@ -24,6 +32,7 @@ module.exports = function (stack) {
       xcontext = info;
       for (var i=0; i<args.length; i++)
         x[i] = args[i];
+      // x.toString = toString;
       xs.push(x);
       stack.push(x);
     },

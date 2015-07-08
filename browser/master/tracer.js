@@ -678,61 +678,77 @@ exports.primitive = function (x) {
 }
 
 },{}],"master":[function(require,module,exports){
-// var input = document.createElement("input");
-// var output = document.createElement("p");
-// input.type = "password";
-// document.body.appendChild(input);
-// document.body.appendChild(output);
-// input.onchange = function () {
-//   output.textContent = input.value;
-// }
 
 var Linvail = require("..");
 
-var valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
-var textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").set;
-
-// Callstack //
-var calls = [];
-var taintedObjects = new WeakSet();
-function lastCall () { return calls[calls.length-1] }
-var callstack = {
-  push: function (call) {
-    var src1 = call.function === valueGetter
-            && call.this instanceof HTMLInputElement
-            && call.this.type === "password"
-    var src2 = call.function === Reflect.enumerate
-            && taintedObjects.has(call[0]);
-    call.tainted = src1 || src2;
-    call.leak = call.function === textContentSetter
-             && call.this instanceof HTMLElement
-    calls.push(call);
-  },
-  pop: function (res) { calls.pop() }
-};
-
-// Intercept //
-function unwrap (ctx) {
-  if (/^(Conditional|If|While|Do|For)/.test(ctx.type))
-    return Boolean(this.inner);
-  if (lastCall().leak) {
-    var msg = "Tainted value from "+this.context;
-    msg += " leaks in the DOM at "+lastCall().context;
-    throw new Error(msg);
-  }
-  if (ctx === 1 && lastCall().function === Reflect.set)
-    taintedObjects.add(lastCall()[0])
-  lastCall().tainted = true;
-  return this.inner;
+var depth = 0;
+var trace = [];
+function log (msg) {
+  trace.push(msg);
+  // var indent = Array(depth+1).join("    ");
+  // msg = indent+msg.split("\n").join("\n"+indent);
+  // (typeof out === "undefined") ? console.log(msg) : out(msg+"\n");
 }
-var intercept = {
-  primitive: function (val, ctx) {
-    if (lastCall() && lastCall().tainted)
-      return {inner:val, unwrap:unwrap, context:ctx};
+
+var print = {
+  context: function (ctx) { return "@" + ((ctx&&ctx.type) ? (ctx.type+"("+ctx.loc.start.line+":"+ctx.loc.start.column+")") : ctx) },
+  wrapper: function (wrp) { return "wrapper-"+wrp.id+"-["+JSON.stringify(wrp.inner)+"]" },
+  value: function (val) {
+    if (wrappers.has(val))
+      return print.wrapper(val);
+    if (store.has(val))
+      return "object-"+store.get(val);
+    if (typeof val === "function")
+      return String(val).split("\n")[0].replace(/(function| |{.*)/g, "");
     return val;
   },
-  object: function (val, ctx) { return val }
+  call: function (call) {
+    var str;
+    if ("constructor" in call)
+      str = "construct "+print.value(call.constructor)+" "+print.context(call.context);
+    else {
+      str = "apply "+print.value(call.function)+" "+print.context(call.context);
+      str += "\n  this >> "+print.value(call.this);
+    }
+    for (var i=0; i<call.length; i++)
+      str += "\n  "+i+" >> "+print.value(call[i]);
+    return str;
+  }
 };
 
-module.exports = Linvail(intercept, callstack);
+function unwrap (ctx) {
+  log("unwrap: "+print.wrapper(this)+" "+print.context(ctx));
+  return this.inner;
+}
+
+var id = 0;
+var wrappers = new WeakSet();
+var store = new WeakMap();
+var intercept = {
+  primitive: function (val, ctx) {
+    var wrp = {id:++id, inner:val, unwrap:unwrap};
+    wrappers.add(wrp);
+    log("create: "+print.wrapper(wrp)+" "+print.context(ctx));
+    return wrp;
+  },
+  object: function (obj, ctx) {
+    store.set(obj, ++id);
+    log("register: "+print.value(obj)+" "+print.context(ctx));
+    return obj;
+  }
+};
+
+var stack = {
+  push: function (call) {
+    log("push "+print.call(call));
+    depth++;
+  },
+  pop: function (res) {
+    depth--;
+    log("pop "+print.value(res))
+  }
+};
+
+module.exports = Linvail(intercept, stack);
+
 },{"..":7}]},{},[]);

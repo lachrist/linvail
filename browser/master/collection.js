@@ -678,61 +678,46 @@ exports.primitive = function (x) {
 }
 
 },{}],"master":[function(require,module,exports){
-// var input = document.createElement("input");
-// var output = document.createElement("p");
-// input.type = "password";
-// document.body.appendChild(input);
-// document.body.appendChild(output);
-// input.onchange = function () {
-//   output.textContent = input.value;
-// }
+var arrays = [];
+var intercept = {
+  primitive: function (val, ast) { return val },
+  object: function (val, ast) {
+    if (Array.isArray(val))
+      arrays.push({key:val, value:[]})
+    return val;
+  }
+}
+
+var calls = {
+  push: function (call) {
+    for (var i=0; i<arrays.length; i++)
+      if (arrays[i].key === call.this)
+        arrays[i].value.push(call);
+  },
+  pop: function () {}
+};
 
 var Linvail = require("..");
+module.exports = Linvail(intercept, calls);
 
-var valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
-var textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").set;
+// Print Shadow Memory //
 
-// Callstack //
-var calls = [];
-var taintedObjects = new WeakSet();
-function lastCall () { return calls[calls.length-1] }
-var callstack = {
-  push: function (call) {
-    var src1 = call.function === valueGetter
-            && call.this instanceof HTMLInputElement
-            && call.this.type === "password"
-    var src2 = call.function === Reflect.enumerate
-            && taintedObjects.has(call[0]);
-    call.tainted = src1 || src2;
-    call.leak = call.function === textContentSetter
-             && call.this instanceof HTMLElement
-    calls.push(call);
-  },
-  pop: function (res) { calls.pop() }
-};
-
-// Intercept //
-function unwrap (ctx) {
-  if (/^(Conditional|If|While|Do|For)/.test(ctx.type))
-    return Boolean(this.inner);
-  if (lastCall().leak) {
-    var msg = "Tainted value from "+this.context;
-    msg += " leaks in the DOM at "+lastCall().context;
-    throw new Error(msg);
-  }
-  if (ctx === 1 && lastCall().function === Reflect.set)
-    taintedObjects.add(lastCall()[0])
-  lastCall().tainted = true;
-  return this.inner;
+var button = document.createElement("button");
+button.textContent = "Shadow";
+button.onclick = function () {
+  debugger;
+  // var keys = arrays.keys();
+  // for (var key = keys.next(); !key.done; key = keys.next()) {
+  //   console.log("Key - value pair:")
+  //   console.dir(key.value);
+  //   console.dir(arrays.get(key.value));
+  // }
 }
-var intercept = {
-  primitive: function (val, ctx) {
-    if (lastCall() && lastCall().tainted)
-      return {inner:val, unwrap:unwrap, context:ctx};
-    return val;
-  },
-  object: function (val, ctx) { return val }
-};
+document.body.appendChild(button);
 
-module.exports = Linvail(intercept, callstack);
+// var xs = [1,2,3];
+// function f () {}
+// xs.map(f);
+// xs.filter(f);
+
 },{"..":7}]},{},[]);

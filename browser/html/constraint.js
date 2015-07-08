@@ -170,7 +170,9 @@ module.exports = function (membrane, object, apply, map) {
     key = membrane.leave(key, "arguments[1]");
     do {
       var robj = object.bypass(obj);
-      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+
+      try { var des = Reflect.getOwnPropertyDescriptor(robj||obj, key); }
+      catch (e) { debugger }
       if (des) {
         if ("value" in des)
           return robj ? des.value : membrane.enter(des.value, "result");
@@ -15646,11 +15648,7 @@ g.Proxy = function (target, handlers) {
 ////////////////////
 
 if (!g.Reflect) {
-  function apply (f, t, xs) {
-    try {var r = f.apply(t, xs) }
-    catch (e) {debugger}
-    return r
-  }
+  function apply (f, t, xs) { if (f===undefined) debugger; return f.apply(t, xs) }
   g.Reflect = {
     apply: apply,
     construct: function (f, xs) {
@@ -15736,24 +15734,14 @@ g.Reflect.write = function (rec, key, val) {
 // Transparency //
 //////////////////
 
-var constructors = [Function, Boolean, Number, String, Date];
-constructors.forEach(function (F) {
-  var toString = F.prototype.toString;
-  var valueOf = F.prototype.valueOf;
-  F.prototype.toString = function () { return toString.apply(proxies.has(this)?proxies.get(this).target:this) }
-  F.prototype.valueOf = function () { return valueOf.apply(proxies.has(this)?proxies.get(this).target:this) }
-});
+var functionToString = Function.prototype.toString;
+g.Function.prototype.toString = function () { return functionToString.apply(proxies.has(this)?proxies.get(this).target:this) }
 
-// var functionToString = Function.prototype.toString;
-// g.Function.prototype.toString = function () { return functionToString.apply(proxies.has(this)?proxies.get(this).target:this) }
-
-// var dateToString = Date.prototype.toString;
-// g.Date.prototype.toString = function () { debugger; return dateToString.apply(proxies.has(this)?proxies.get(this).target:this) }
+var dateToString = Date.prototype.toString;
+g.Date.prototype.toString = function () { return dateToString.apply(proxies.has(this)?proxies.get(this).target:this) }
 
 var regexpTest = RegExp.prototype.test;
 g.RegExp.prototype.test = function () { return regexpTest.apply(proxies.has(this)?proxies.get(this).target:this, arguments) }
-
-
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],56:[function(require,module,exports){
@@ -15768,15 +15756,77 @@ exports.primitive = function (x) {
       || t === "symbol";
 }
 
-},{}],"identity":[function(require,module,exports){
+},{}],"constraint":[function(require,module,exports){
+// var input1 = document.createElement("input");
+// input1.type = "text";
+// document.body.appendChild(input1);
+// var input2 = document.createElement("input");
+// input2.type = "text";
+// document.body.appendChild(input2);
+// function identity (x) { return x }
+// input1.onchange = update;
+// input2.onchange = update;
+// function update () {
+//   var x = input1.value;
+//   var y = input2.value;
+//   var z = x+y;
+//   if (identity(z))
+//     console.log("hey");
+//   else
+//     console.log("ohh");
+// }
+
 var Linvail = require("..");
+
+var inputGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
+
+var store, path
+(function () {
+  var storeIdx = 0;
+  var pathIdx = 0;
+  function symbolToString () { r}
+  store = {
+    push: function (right) {
+      console.log("STORE: sym"+storeIdx+" = "+right);
+      return "sym"+storeIdx++;
+    }
+  }
+  path = { push: function (test) { console.log("PATH: "+test) } }
+} ());
+
+function unwrap (ctx) {
+  debugger;
+  var call = lastCall();
+  if (/^(If|Conditional|For|ForIn|While|DoWhile)/.test(ctx.type))
+    path.push(this.symbol)
+  if (call && call.function === Reflect.binary)
+    call[(ctx==="arguments[1]")?"left":"right"] = this.symbol;
+  this.inner;
+}
+
 var intercept = {
-  primitive: function (val, ctx) { return val },
+  primitive: function (val, ctx) {
+    var call = lastCall();
+    if (call && call.function === inputGetter)
+      return {symbol:store.push(null), inner:val, unwrap:unwrap};
+    if (call && (call.left || call.right)) {
+      var left = call.left || Number(call[1]);
+      var right = call.right || Number(call[2]);
+      var symbol = store.push(left+" "+call[0]+" "+right);
+      return {symbol:symbol, inner:val, unwrap:unwrap}
+    }
+    return val;
+  },
   object: function (obj, ctx) { return obj }
 };
+
+function lastCall () { return calls[calls.length-1] }
+var calls = [];
 var callstack = {
-  push: function (call) {},
-  pop: function (res) {}
+  push: function (call) { calls.push(call) },
+  pop: function (res) { calls.pop() }
 };
+
 module.exports = Linvail(intercept, callstack);
+
 },{"..":7}]},{},[]);

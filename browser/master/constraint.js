@@ -678,61 +678,75 @@ exports.primitive = function (x) {
 }
 
 },{}],"master":[function(require,module,exports){
-// var input = document.createElement("input");
-// var output = document.createElement("p");
-// input.type = "password";
-// document.body.appendChild(input);
-// document.body.appendChild(output);
-// input.onchange = function () {
-//   output.textContent = input.value;
+// var input1 = document.createElement("input");
+// input1.type = "text";
+// document.body.appendChild(input1);
+// var input2 = document.createElement("input");
+// input2.type = "text";
+// document.body.appendChild(input2);
+// function identity (x) { return x }
+// input1.onchange = update;
+// input2.onchange = update;
+// function update () {
+//   var x = input1.value;
+//   var y = input2.value;
+//   var z = x+y;
+//   if (identity(z))
+//     console.log("path1");
+//   else
+//     console.log("path2");
 // }
 
 var Linvail = require("..");
 
-var valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
-var textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").set;
+var inputGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
 
-// Callstack //
-var calls = [];
-var taintedObjects = new WeakSet();
-function lastCall () { return calls[calls.length-1] }
-var callstack = {
-  push: function (call) {
-    var src1 = call.function === valueGetter
-            && call.this instanceof HTMLInputElement
-            && call.this.type === "password"
-    var src2 = call.function === Reflect.enumerate
-            && taintedObjects.has(call[0]);
-    call.tainted = src1 || src2;
-    call.leak = call.function === textContentSetter
-             && call.this instanceof HTMLElement
-    calls.push(call);
+var store, path
+(function () {
+  var storeIdx = 0;
+  var pathIdx = 0;
+  function symbolToString () { r}
+  store = {
+    push: function (right) {
+      console.log("STORE: sym"+storeIdx+" = "+right);
+      return "sym"+storeIdx++;
+    }
+  }
+  path = { push: function (test) { console.log("PATH: "+test) } }
+} ());
+
+function unwrap (ctx) {
+  var call = lastCall();
+  if (/^(If|Conditional|For|ForIn|While|DoWhile)/.test(ctx.type))
+    path.push(this.symbol)
+  if (call && call.function === Reflect.binary)
+    call[(ctx==="arguments[1]")?"left":"right"] = this.symbol;
+  this.inner;
+}
+
+var intercept = {
+  primitive: function (val, ctx) {
+    var call = lastCall();
+    if (call && call.function === inputGetter)
+      return {symbol:store.push(null), inner:val, unwrap:unwrap};
+    if (call && (call.left || call.right)) {
+      var left = call.left || Number(call[1]);
+      var right = call.right || Number(call[2]);
+      var symbol = store.push(left+" "+call[0]+" "+right);
+      return {symbol:symbol, inner:val, unwrap:unwrap}
+    }
+    return val;
   },
+  object: function (obj, ctx) { return obj }
+};
+
+function lastCall () { return calls[calls.length-1] }
+var calls = [];
+var callstack = {
+  push: function (call) { calls.push(call) },
   pop: function (res) { calls.pop() }
 };
 
-// Intercept //
-function unwrap (ctx) {
-  if (/^(Conditional|If|While|Do|For)/.test(ctx.type))
-    return Boolean(this.inner);
-  if (lastCall().leak) {
-    var msg = "Tainted value from "+this.context;
-    msg += " leaks in the DOM at "+lastCall().context;
-    throw new Error(msg);
-  }
-  if (ctx === 1 && lastCall().function === Reflect.set)
-    taintedObjects.add(lastCall()[0])
-  lastCall().tainted = true;
-  return this.inner;
-}
-var intercept = {
-  primitive: function (val, ctx) {
-    if (lastCall() && lastCall().tainted)
-      return {inner:val, unwrap:unwrap, context:ctx};
-    return val;
-  },
-  object: function (val, ctx) { return val }
-};
-
 module.exports = Linvail(intercept, callstack);
+
 },{"..":7}]},{},[]);

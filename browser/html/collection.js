@@ -284,6 +284,13 @@ module.exports = function (stack) {
   var object = null;
   var xs = [];
 
+  // function toString () {
+  //   var msg = this.constructor ? "new "+this.constructor.name : this.function.name;
+  //   if (this.context.type)
+  //     return msg+" @ "+this.context.loc.start.line+":"+this.context.loc.start.column;
+  //   return msg+" "+this.context;
+  // }
+  
   return {
     initialize: function (o) { object = o },
     apply: function (fct, ctx, args, info) {
@@ -294,6 +301,7 @@ module.exports = function (stack) {
       x.context = info;
       for (var i=0; i<args.length; i++)
         x[i] = args[i];
+      // x.toString = toString;
       xs.push(x);
       stack.push(x);
     },
@@ -304,6 +312,7 @@ module.exports = function (stack) {
       xcontext = info;
       for (var i=0; i<args.length; i++)
         x[i] = args[i];
+      // x.toString = toString;
       xs.push(x);
       stack.push(x);
     },
@@ -13674,6 +13683,7 @@ function left (n) {
 
 var types = {
   Identifier:           function (n) { return "Identifier" },
+  Debugger:             function (n) { return "Debugger" },
   LabeledStatement:     function (n) { return "Label" },
   Literal:              function (n) { return "Literal" },
   FunctionDeclaration:  function (n) { return "Definition" },
@@ -13780,6 +13790,7 @@ module.exports = function () {
   var stmts = {
     Empty: nil,
     Strict: nil,
+    Debugger: nil,
     Block: function (n) { nodes(n.body) },
     Expression: function (n) { childs.push(n.expression) },
     If: function (n) {
@@ -14510,7 +14521,7 @@ module.exports = function (visit, mark, traps, save) {
 
   onexpressions.Call = function (node) { if (traps.apply) { return trap("apply", [node.callee, Shadow("global"), Ptah.Array(node.arguments)], node) } }
 
-  onexpressions.New = function (node) { if (traps.new) { return trap("new", [node.callee, Ptah.Array(node.arguments)], node) } }
+  onexpressions.New = function (node) { if (traps.construct) { return trap("construct", [node.callee, Ptah.Array(node.arguments)], node) } }
 
   onexpressions.Member = function (node) { if (traps.get) { return trap("get", [node.object, property(node)], node) } }
 
@@ -15601,8 +15612,8 @@ module.exports = function (onobject, callstack, membrane) {
   function bypass (val) { return proxies.get(val) }
 
   function register (val, info) {
-    val = onobject(val, info);
     var pxy = new Proxy(val, handlers);
+    pxy = onobject(pxy, info);
     proxies.set(pxy, val);
     return pxy;
   }
@@ -15768,15 +15779,33 @@ exports.primitive = function (x) {
       || t === "symbol";
 }
 
-},{}],"identity":[function(require,module,exports){
-var Linvail = require("..");
+},{}],"collection":[function(require,module,exports){
+var arrays = [];
 var intercept = {
-  primitive: function (val, ctx) { return val },
-  object: function (obj, ctx) { return obj }
+  primitive: function (val, ast) { return val },
+  object: function (val, ast) {
+    if (Array.isArray(val))
+      arrays.push({key:val, value:[]})
+    return val;
+  }
+}
+
+var calls = {
+  push: function (call) {
+    if (Array.isArray(call.this))
+      for (var i=0; i<arrays.length; i++)
+        if (arrays[i].key === call.this)
+          arrays[i].value.push(call);
+  },
+  pop: function () {}
 };
-var callstack = {
-  push: function (call) {},
-  pop: function (res) {}
-};
-module.exports = Linvail(intercept, callstack);
+
+var Linvail = require("..");
+module.exports = Linvail(intercept, calls);
+
+var button = document.createElement("button");
+button.textContent = "Shadow";
+button.onclick = function () { console.dir(arrays) }
+document.body.appendChild(button);
+
 },{"..":7}]},{},[]);

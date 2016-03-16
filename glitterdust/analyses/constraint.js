@@ -17,8 +17,6 @@
 //     console.log("path2");
 // }
 
-var Linvail = require("..");
-
 var inputGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
 
 var store, path

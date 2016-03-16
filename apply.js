@@ -1,7 +1,7 @@
 
 var IFunction = require("./apply/irregular/function.js");
 var IConstructor = require("./apply/irregular/constructor.js");
-var Polyfill = require("./apply/polyfill.js");
+// var Polyfill = require("./apply/polyfill.js");
 var Util = require("./util.js");
 
 module.exports = function (callstack, membrane, object) {
@@ -11,7 +11,7 @@ module.exports = function (callstack, membrane, object) {
   function apply (fct, ctx, args, info) {
     callstack.apply(fct, ctx, args, info);
     fct = membrane.leave(fct, "function");
-    fct = polyfill(fct) || fct;
+    //fct = polyfill(fct) || fct;
     var res, raw = object.bypass(fct) || ifunction(fct);
     if (raw)
       res = Reflect.apply(raw, ctx, args);
@@ -34,7 +34,7 @@ module.exports = function (callstack, membrane, object) {
     var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "constructor.prototype");
     var ctx = object.register(Object.create(proto), "this");
     cst = membrane.leave(cst, "constructor");
-    cst = polyfill(cst) || cst;
+    //cst = polyfill(cst) || cst;
     var raw = object.bypass(cst) || ifunction(cst);
     if (raw)
       res = Reflect.apply(raw, ctx, args);
@@ -45,13 +45,13 @@ module.exports = function (callstack, membrane, object) {
     return callstack.return(res);
   }
 
-  apply.initialize = function (aran) { polyfill = Polyfill(aran) }
+  //apply.initialize = function (aran) { polyfill = Polyfill(aran) }
 
   var iconstructor = IConstructor(membrane, object, apply);
 
   var ifunction = IFunction(membrane, object, apply);
 
-  var polyfill = function () {};
+  //var polyfill = function () {};
 
   return apply;
 

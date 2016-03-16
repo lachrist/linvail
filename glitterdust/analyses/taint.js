@@ -7,8 +7,6 @@
 //   output.textContent = input.value;
 // }
 
-var Linvail = require("..");
-
 var valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").get;
 var textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").set;
 

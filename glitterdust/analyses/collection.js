@@ -18,7 +18,6 @@ var calls = {
   pop: function () {}
 };
 
-var Linvail = require("..");
 module.exports = Linvail(intercept, calls);
 
 var button = document.createElement("button");

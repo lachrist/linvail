@@ -1,13 +1,8 @@
 
-var Linvail = require("..");
-
 var depth = 0;
-var trace = [];
 function log (msg) {
-  trace.push(msg);
-  // var indent = Array(depth+1).join("    ");
-  // msg = indent+msg.split("\n").join("\n"+indent);
-  // (typeof out === "undefined") ? console.log(msg) : out(msg+"\n");
+  var indent = Array(depth+1).join("    ");
+  console.log(indent+msg.split("\n").join("\n"+indent));
 }
 
 var print = {

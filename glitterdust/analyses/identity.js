@@ -1,4 +1,3 @@
-var Linvail = require("..");
 var intercept = {
   primitive: function (val, ctx) { return val },
   object: function (obj, ctx) { return obj }

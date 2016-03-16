@@ -1,474 +1,88 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
-var IFunction = require("./apply/irregular/function.js");
-var IConstructor = require("./apply/irregular/constructor.js");
-var Polyfill = require("./apply/polyfill.js");
-var Util = require("./util.js");
-
-module.exports = function (callstack, membrane, object) {
-
-  function leave (arg, idx) { return membrane.leave(arg, "arguments["+idx+"]") }
-
-  function apply (fct, ctx, args, info) {
-    callstack.apply(fct, ctx, args, info);
-    fct = membrane.leave(fct, "function");
-    fct = polyfill(fct) || fct;
-    var res, raw = object.bypass(fct) || ifunction(fct);
-    if (raw)
-      res = Reflect.apply(raw, ctx, args);
-    else
-      res = membrane.enter(Reflect.apply(fct, membrane.leave(ctx, "this"), args.map(leave)), "result");
-    return callstack.return(res);
-  }
-
-  apply.irregular = function (fct, ctx, args, info) {
-    callstack.apply(fct, ctx, args, info);
-    return callstack.return(Reflect.apply(ifunction(fct), ctx, args));
-  }
-
-  apply.construct = function (cst, args, info) {
-    callstack.construct(cst, args, info);
-    var icst = iconstructor(cst);
-    if (icst)
-      return callstack.return(Reflect.construct(icst, args));
-    var res;
-    var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "constructor.prototype");
-    var ctx = object.register(Object.create(proto), "this");
-    cst = membrane.leave(cst, "constructor");
-    cst = polyfill(cst) || cst;
-    var raw = object.bypass(cst) || ifunction(cst);
-    if (raw)
-      res = Reflect.apply(raw, ctx, args);
-    else
-      res = membrane.enter(Reflect.apply(raw, ctx, args.map(leave)), "result");
-    if (Util.primitive(membrane.leave(res, "result")))
-      res = ctx;
-    return callstack.return(res);
-  }
-
-  apply.initialize = function (aran) { polyfill = Polyfill(aran) }
-
-  var iconstructor = IConstructor(membrane, object, apply);
-
-  var ifunction = IFunction(membrane, object, apply);
-
-  var polyfill = function () {};
-
-  return apply;
-
-};
-
-},{"./apply/irregular/constructor.js":2,"./apply/irregular/function.js":3,"./apply/polyfill.js":5,"./util.js":56}],2:[function(require,module,exports){
-
-// Irregular built-in functions that behave specially when used as constructor
-
-module.exports = function (membrane, composite, apply) {
-
-  var constr = new Map();
-
-  function Box (cst) {
-    return function (val) {
-      return composite.register(composite.register(new cst(val), "arguments[0]"), "result");
-    }
-  }
-
-  constr.set(Error, Box(Error));
-
-  constr.set(Boolean, Box(Boolean));
-
-  constr.set(Number, Box(Number));
-
-  constr.set(String, Box(String));
-
-  constr.set(Object, Box(Object));
-
-  return function (cst) { return constr.get(cst) };
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Glitterdust-Demo</title>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+    <style>#main-div {
+  font-family: Helvetica, 'Open Sans', Arial, sans-serif;
+  font-weight: lighter;
+  width: 1000px;
+  margin: auto;
 }
-
-},{}],3:[function(require,module,exports){
-
-var Reflect = require("./function/reflect.js")
-
-module.exports = function (membrane, composite, apply) {
-  var map = new Map();
-  Reflect(membrane, composite, apply, map);
-  return function (fct) { return map.get(fct) };
+.code {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 12px;
 }
-
-},{"./function/reflect.js":4}],4:[function(require,module,exports){
-
-// Irregular implementation of Reflect's functions.
-// N.B. We added the non standard functions: Reflect.unary and Reflect.binary.
-// The idea is to support language-level operations and the MOP from the start before polyfilling.
-// This file is (very) tricky, here is some pitfalls:
-//   - composite values should always by bypassed before accessing them through the MOP
-//     because the proxy handlers in composite.js are made for external calls.
-//   - the above point have to be applied when walking the prototype hiearchy as well!
-
-module.exports = function (membrane, object, apply, map) {
-
-  map.set(Reflect.apply, function (fct, ctx, args) {
-    fct = membrane.leave(fct, "arguments[0]");
-    var clean = [];
-    var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[2].length");
-    for (var i=0; i<length; i++)
-      clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[2]["+i+"]");
-    return apply(fct, ctx, clean, "apply");
-  });
-
-  map.set(Reflect.binary, function (op, left, right) {
-    op = membrane.leave(op, "arguments[0]");
-    left = membrane.leave(left, "arguments[1]");
-    right = membrane.leave(right, "arguments[2]");
-    return membrane.enter(Reflect.binary(op, left, right), "result");
-  });
-
-  map.set(Reflect.construct, function (cst, args) {
-    cst = membrane.leave(cst, "arguments[0]");
-    var clean = [];
-    var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[1].length");
-    for (var i=0; i<length; i++)
-      clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[1]["+i+"]");
-    return apply.construct(cst, clean, "construct");
-  });
-
-  // If obj is internal and des contains "value" then we have to create a mixed descriptor
-  // that returns raw values for ["configurable", etc] and let des.value intact.
-  map.set(Reflect.defineProperty, function (obj, key, des) {
-    obj = membrane.leave(obj, "arguments[0]");
-    key = membrane.leave(key, "arguments[1]");
-    des = membrane.leave(des, "arguments[2]");
-    var robj = object.bypass(obj);
-    if (robj && ("value" in des)) {
-      var copy = {};
-      ["configurable", "enumerable", "writable", "get", "set"].forEach(function (k) {
-        if (k in des)
-          copy[k] = des[k];
-      });
-      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
-    }
-    Reflect.defineProperty(robj||obj, key, des);
-    return obj;
-  });
-
-  map.set(Reflect.deleteProperty, function (obj, key) {
-    obj = membrane.leave(obj, "arguments[0]");
-    key = membrane.leave(key, "arguments[1]");
-    obj = object.bypass(obj) || obj;
-    return membrane.leave(Reflect.deleteProperty(obj, key), "result");
-  });
-
-  map.set(Reflect.enumerate, function (obj) {
-    obj = membrane.leave(obj, "arguments[0]");
-    return object.register(Reflect.enumerate(object.bypass(obj)||obj).map(function (k, i) {
-      return membrane.enter(k, "result["+i+"]");
-    }));
-  });
-
-  map.set(Reflect.get, function (obj, key, rec) {
-    obj = membrane.leave(obj, "arguments[0]");
-    key = membrane.leave(key, "arguments[1]");
-    do {
-      var robj = object.bypass(obj);
-      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
-      if (des) {
-        if ("value" in des)
-          return robj ? des.value : membrane.enter(des.value, "result");
-        if (des.get)
-          return apply(des.get, rec, [], "getter");
-        return membrane.enter(undefined, "result");
-      }
-      obj = Reflect.getPrototypeOf(robj||obj);
-    } while (obj)
-    return membrane.enter(undefined, "result");
-  });
-
-  map.set(Reflect.getOwnPropertyDescriptor, function (obj, key) {
-    obj = membrane.leave(obj, "arguments[0]");
-    key = membrane.leave(key, "arguments[1]");
-    var robj = object.bypass(obj);
-    var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
-    var copy = object.register({}, "result");
-    for (var k in des)
-      copy[k] = (k === "value" && robj) ? des.value : membrane.enter(des[k], "result."+k)
-    return copy;
-  });
-
-  map.set(Reflect.getPrototypeOf, function (obj) {
-    obj = membrane.leave(obj, "arguments[0]");
-    obj = object.bypass(obj) || obj;
-    return membrane.leave(Reflect.getPrototypeOf(obj), "result");
-  });
-
-  map.has(Reflect.has, function (obj, key) {
-    obj = membrane.leave(obj, "arguments[0]");
-    key = membrane.leave(key, "arguments[1]");
-    do {
-      obj = object.bypass(obj) || obj;
-      if (Reflect.getOwnPropertyDescriptor(obj, key))
-        return membrane.leave(true, "result");
-      obj = Reflect.getPrototypeOf(obj);
-    } while (obj)
-    return membrane.leave(false, "result");
-  });
-
-  map.set(Reflect.isExtensible, function (obj) {
-    obj = membrane.leave(obj, "arguments[0]");
-    return membrane.enter(Reflect.isExtensible(object.bypass(obj)||obj), "result");
-  });
-
-  map.set(Reflect.ownKeys, function (obj) {
-    obj = membrane.leave(obj, "arguments[0]");
-    return object.register(Reflect.ownKeys(object.bypass(obj)||obj).map(function (k, i) {
-      return membrane.enter(k, "result["+i+"]");
-    }));
-  });
-
-  map.set(Reflect.preventExtensions, function (obj) {
-    obj = membrane.leave(obj, "arguments[0]");
-    Reflect.preventExtensions(object.bypass(obj)||obj);
-    return obj;
-  });
-
-  function write (rec, key, val) {
-    rec = membrane.leave(rec, "arguments[3]");
-    var rrec = object.bypass(rec);
-    Reflect.write(rrec||rec, key, rrec ? val : membrane.leave(val, "arguments[2]"))
-    return val;
-  }
-
-  map.set(Reflect.set, function (obj, key, val, rec) {
-    obj = membrane.leave(obj, "arguments[0]");
-    key = membrane.leave(key, "arguments[1]");
-    do {
-      var robj = object.bypass(obj);
-      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
-      if (des) {
-        if (des.writable)
-          return write(rec, key, val);
-        if (des.set)
-          apply(des.set, rec, [val], "setter");
-        return val;
-      }
-      obj = Reflect.getPrototypeOf(robj||obj);
-    } while (obj)
-    return write(rec, key, val);
-  });
-
-  map.set(Reflect.setPrototypeOf, function (obj, proto) {
-    obj = membrane.leave(obj, "arguments[0]");
-    proto = membrane.leave(proto, "arguments[1]");
-    Reflect.setPrototypeOf(object.bypass(obj)||obj, proto);
-    return obj;
-  });
- 
-  map.set(Reflect.unary, function (op, arg) {
-    op = membrane.leave(op, "arguments[0]");
-    arg = membrane.leave(arg, "arguments[1]");
-    return membrane.enter(Reflect.unary(op, arg), "result");
-  });
-
+h1 {
+  text-align: center;
 }
-
-},{}],5:[function(require,module,exports){
-
-module.exports = function (aran) {
-  var poly = new Map();
-  return function (fct) { poly.get(fct) }
+p {
+  text-align: justify;
 }
-
-},{}],6:[function(require,module,exports){
-
-module.exports = function (stack) {
-
-  var object = null;
-  var xs = [];
-
-  // function toString () {
-  //   var msg = this.constructor ? "new "+this.constructor.name : this.function.name;
-  //   if (this.context.type)
-  //     return msg+" @ "+this.context.loc.start.line+":"+this.context.loc.start.column;
-  //   return msg+" "+this.context;
-  // }
-  
-  return {
-    initialize: function (o) { object = o },
-    apply: function (fct, ctx, args, info) {
-      var x = Object.create(null);
-      x.function = fct;
-      x.this = ctx;
-      x.length = args.length;
-      x.context = info;
-      for (var i=0; i<args.length; i++)
-        x[i] = args[i];
-      // x.toString = toString;
-      xs.push(x);
-      stack.push(x);
-    },
-    construct: function (cst, args, info) {
-      var x = Object.create(null);
-      x.constructor = cst;
-      x.length = args.length;
-      xcontext = info;
-      for (var i=0; i<args.length; i++)
-        x[i] = args[i];
-      // x.toString = toString;
-      xs.push(x);
-      stack.push(x);
-    },
-    return: function (res) {
-      stack.pop(res);
-      return res;
-    },
-    try: function (ast) { xs.push(null) },
-    catch: function (ast) {
-      while (xs.pop())
-        stack.pop();
-    }
-  }
-
+label {
+  display: block;
+  height: 20px;
 }
-
-},{}],7:[function(require,module,exports){
-
-require("./reflect.js");
-var Membrane = require("./membrane.js");
-var Object = require("./object.js");
-var CallStack = require("./callstack.js");
-var Apply = require("./apply.js");
-var Aran = require("aran");
-
-module.exports = function (intercept, stack) {
-
-  var membrane = Membrane(intercept, stack);
-
-  var callstack = CallStack(stack);
-
-  var object = Object(intercept.object, callstack, membrane);
-
-  var thrown = {};
- 
-  callstack.initialize(object);
-
-  var aran = Aran(null, {
-    primitive: membrane.enter,
-    test: membrane.leave,
-    eval: membrane.leave,
-    array: object.register,
-    arguments: object.register,
-    function: object.register,
-    regexp: function (pattern, flags, ast) { return object.register(new RegExp(pattern, flags), ast) },
-    object: function (props, ast) {
-      var o = {};
-      props.forEach(function (p) {
-        p.configurable = true
-        p.enumerable = true
-        if (p.value)
-          p.writable = true
-        Reflect.defineProperty(o, p.key, p);
-      });
-      return object.register(o, ast);
-    },
-    throw: function (err, ast) { return thrown = err },
-    try: function (ast) { callstack.try(ast) },
-    catch: function (err, ast) {
-      err = (err === thrown) ? err : object.register(err, ast);
-      thrown = {};
-      callstack.catch(err);
-      return err;
-    },
-    apply: function (fct, ctx, args, ast) { return apply(fct, ctx, args, ast) },
-    construct: function (fct, args, ast) { return apply.construct(fct, args, ast) },
-    unary: function (op, arg, ast) { return apply.irregular(Reflect.unary, null, [op,arg], ast) },
-    binary: function (op, left, right, ast) { return apply.irregular(Reflect.binary, null, [op,left,right], ast) },
-    get: function (obj, key, ast) { return apply.irregular(Reflect.get, null, [obj,key,obj], ast) },
-    set: function (obj, key, val, ast) { return apply.irregular(Reflect.set, null, [obj,key,val,obj], ast) },
-    delete: function (obj, key, ast) { return apply.irregular(Reflect.deleteProperty, null, [obj,key], ast) },
-    enumerate: function (obj, ast) { return apply.irregular(Reflect.enumerate, null, [obj], ast) }
-  }, {ast:true, loc:true});
-  
-  var apply = Apply(callstack, membrane, object);
-
-  apply.initialize(aran);
-
-  return aran;
-
+#output-div label {
+  margin: 10px;
 }
-
-},{"./apply.js":1,"./callstack.js":6,"./membrane.js":8,"./object.js":54,"./reflect.js":55,"aran":9}],8:[function(require,module,exports){
-
-var Util = require("./util.js");
-
-module.exports = function (intercept, stack) {
-
-  // Turn the membrane off when analysis code is executing //
-  var on = true;
-  var toogle = function (fct) {
-    return function () {
-      var save = on;
-      on = false;
-      var res = fct.apply(this, arguments);
-      on = save;
-      return res;
-    }
-  };
-  intercept.primitive = toogle(intercept.primitive);
-  intercept.object = toogle(intercept.object);
-  stack.push = toogle(stack.push);
-  stack.pop = toogle(stack.pop);
-
-  var wrappers = new WeakSet();
-
-  function enter (val, info) {
-    if (on&&Util.primitive(val)) {
-      var wrapper = intercept.primitive(val, info);
-      if (!Util.primitive(wrapper))
-        wrappers.add(wrapper);
-      return wrapper;
-    }
-    return val;
-  }
-
-  function leave (val, info) { return (on&&wrappers.has(val)) ? toogle(val.unwrap).call(val, info) : val }
-
-  return {enter:enter, leave:leave};
-
+textarea {
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
-
-},{"./util.js":56}],9:[function(require,module,exports){
+button {
+  padding: 8px;
+  margin-bottom: 30px;
+  font-size: 14px
+}
+button::-moz-focus-inner {
+  padding: 8px;
+}
+.editor {
+  resize: both;
+  overflow: auto;
+  width: 480px;
+  height: 200px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  border: 1px #C0C0C0 solid;
+}
+#master-div, #target-div, #instrumented-div, #output-div {
+  display: inline-block;
+  vertical-align: top;
+}
+#output-div {
+  vertical-align: bottom;
+}</style>
+    <script>require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
 var Stack = require("./runtime/stack.js")
 var Scope = require("./runtime/scope.js")
 var Compile = require("./runtime/compile.js")
 var Store = require("./runtime/store.js")
 
-module.exports = function (sandbox, traps, options) {
-
-  var aran = {
-    sandbox: sandbox,
-    traps: traps,
-    options: options,
-    global: (function () { return this } ())
-  }
-
+module.exports = function (options) {
+  var aran = {}
+  for (var key in options)
+    aran[key] = options[key];
+  aran.global = (function () { return this } ());
+  aran.global.aran = aran;
   Stack(aran)
   Scope(aran)
-  var save = Store(aran)
-  var globalcompile = Compile(aran, save)
-
-  return function (x) {
-    aran.flush()
-    var code = x.code || x
-    var parent = x.parent || null
-    aran.global.aran = aran
-    var compiled = globalcompile(parent, code)
-    x.compiled = compiled
-    return aran.global.eval(compiled)
-  }
-
+  Compile(aran, Store(aran))
+  return function (code) { return aran.compile(code) };
 }
 
-},{"./runtime/compile.js":40,"./runtime/scope.js":41,"./runtime/stack.js":42,"./runtime/store.js":43}],10:[function(require,module,exports){
+// eval: function (code) {
+//   aran.flush();
+//   var compiled = globalcompile(code);
+//   aran.compiled = compiled;
+//   return aran.global.eval(compiled);
+// }
+
+},{"./runtime/compile.js":27,"./runtime/scope.js":28,"./runtime/stack.js":29,"./runtime/store.js":30}],2:[function(require,module,exports){
 (function (global){
 /*
   Copyright (C) 2012-2014 Yusuke Suzuki <utatane.tea@gmail.com>
@@ -3030,7 +2644,7 @@ module.exports = function (sandbox, traps, options) {
 /* vim: set sw=4 ts=4 et tw=80 : */
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./package.json":27,"estraverse":11,"esutils":15,"source-map":16}],11:[function(require,module,exports){
+},{"./package.json":19,"estraverse":3,"esutils":7,"source-map":8}],3:[function(require,module,exports){
 /*
   Copyright (C) 2012-2013 Yusuke Suzuki <utatane.tea@gmail.com>
   Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
@@ -3877,7 +3491,7 @@ module.exports = function (sandbox, traps, options) {
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],12:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -4023,7 +3637,7 @@ module.exports = function (sandbox, traps, options) {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],13:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /*
   Copyright (C) 2013-2014 Yusuke Suzuki <utatane.tea@gmail.com>
   Copyright (C) 2014 Ivan Nikulin <ifaaan@gmail.com>
@@ -4126,7 +3740,7 @@ module.exports = function (sandbox, traps, options) {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],14:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -4265,7 +3879,7 @@ module.exports = function (sandbox, traps, options) {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{"./code":13}],15:[function(require,module,exports){
+},{"./code":5}],7:[function(require,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -4300,7 +3914,7 @@ module.exports = function (sandbox, traps, options) {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{"./ast":12,"./code":13,"./keyword":14}],16:[function(require,module,exports){
+},{"./ast":4,"./code":5,"./keyword":6}],8:[function(require,module,exports){
 /*
  * Copyright 2009-2011 Mozilla Foundation and contributors
  * Licensed under the New BSD license. See LICENSE.txt or:
@@ -4310,7 +3924,7 @@ exports.SourceMapGenerator = require('./source-map/source-map-generator').Source
 exports.SourceMapConsumer = require('./source-map/source-map-consumer').SourceMapConsumer;
 exports.SourceNode = require('./source-map/source-node').SourceNode;
 
-},{"./source-map/source-map-consumer":22,"./source-map/source-map-generator":23,"./source-map/source-node":24}],17:[function(require,module,exports){
+},{"./source-map/source-map-consumer":14,"./source-map/source-map-generator":15,"./source-map/source-node":16}],9:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -4409,7 +4023,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"./util":25,"amdefine":26}],18:[function(require,module,exports){
+},{"./util":17,"amdefine":18}],10:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -4553,7 +4167,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"./base64":19,"amdefine":26}],19:[function(require,module,exports){
+},{"./base64":11,"amdefine":18}],11:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -4597,7 +4211,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"amdefine":26}],20:[function(require,module,exports){
+},{"amdefine":18}],12:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -4679,7 +4293,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"amdefine":26}],21:[function(require,module,exports){
+},{"amdefine":18}],13:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2014 Mozilla Foundation and contributors
@@ -4767,7 +4381,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"./util":25,"amdefine":26}],22:[function(require,module,exports){
+},{"./util":17,"amdefine":18}],14:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -5344,7 +4958,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"./array-set":17,"./base64-vlq":18,"./binary-search":20,"./util":25,"amdefine":26}],23:[function(require,module,exports){
+},{"./array-set":9,"./base64-vlq":10,"./binary-search":12,"./util":17,"amdefine":18}],15:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -5746,7 +5360,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"./array-set":17,"./base64-vlq":18,"./mapping-list":21,"./util":25,"amdefine":26}],24:[function(require,module,exports){
+},{"./array-set":9,"./base64-vlq":10,"./mapping-list":13,"./util":17,"amdefine":18}],16:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -6162,7 +5776,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"./source-map-generator":23,"./util":25,"amdefine":26}],25:[function(require,module,exports){
+},{"./source-map-generator":15,"./util":17,"amdefine":18}],17:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -6483,7 +6097,7 @@ define(function (require, exports, module) {
 
 });
 
-},{"amdefine":26}],26:[function(require,module,exports){
+},{"amdefine":18}],18:[function(require,module,exports){
 (function (process,__filename){
 /** vim: et:ts=4:sw=4:sts=4
  * @license amdefine 0.1.0 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.
@@ -6785,8 +6399,8 @@ function amdefine(module, requireFn) {
 
 module.exports = amdefine;
 
-}).call(this,require('_process'),"/../node_modules/aran/node_modules/escodegen/node_modules/source-map/node_modules/amdefine/amdefine.js")
-},{"_process":53,"path":52}],27:[function(require,module,exports){
+}).call(this,require('_process'),"/aran/node_modules/escodegen/node_modules/source-map/node_modules/amdefine/amdefine.js")
+},{"_process":45,"path":44}],19:[function(require,module,exports){
 module.exports={
   "name": "escodegen",
   "description": "ECMAScript code generator",
@@ -6874,7 +6488,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/escodegen/-/escodegen-1.6.1.tgz"
 }
 
-},{}],28:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*
   Copyright (C) 2013 Ariya Hidayat <ariya.hidayat@gmail.com>
   Copyright (C) 2013 Thaddee Tyl <thaddee.tyl@gmail.com>
@@ -12197,7 +11811,7 @@ module.exports={
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],29:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 var esutils = require("esutils");
 var merge = Object.assign || require("object-assign");
@@ -13005,15 +12619,15 @@ module.exports = {
 
 };
 
-},{"esutils":33,"object-assign":34}],30:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],31:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],32:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"./code":31,"dup":14}],33:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"./ast":30,"./code":31,"./keyword":32,"dup":15}],34:[function(require,module,exports){
+},{"esutils":25,"object-assign":26}],22:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"dup":4}],23:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"dup":5}],24:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"./code":23,"dup":6}],25:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"./ast":22,"./code":23,"./keyword":24,"dup":7}],26:[function(require,module,exports){
 /*!
 	object-assign
 	ES6 Object.assign() ponyfill
@@ -13067,7 +12681,1301 @@ arguments[4][15][0].apply(exports,arguments)
 	}
 })();
 
-},{}],35:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
+
+// Assemble compilations stages, defines: aran.compile.
+
+var Esprima = require("esprima")
+var Esvisit = require("esvisit")
+var Esvalid = require("esvalid")
+var Escodegen = require("escodegen")
+
+var Util = require("../util.js")
+
+var Shadow = require("../syntax/shadow.js")
+var Ptah = require("../syntax/ptah.js")
+
+var Hoist = require("../stage/hoist.js")
+var Sanitize = require("../stage/sanitize.js")
+var Sandbox = require("../stage/sandbox.js")
+var Intercept = require("../stage/intercept.js")
+
+function summarize (error) {
+  var sum = error.message+" for node:";
+  for (var key in error.node) { sum += " "+key+":"+error.node[key] }
+  return sum
+}
+
+function locate (program, parent) {
+  var workers = []
+  program.$locus = {parent:parent}
+  workers.push(program)
+  function setparent (k) { if (k[0] !== "$") { parent.$locus[k] = copy(parent[k]) } }
+  function copy (x) {
+    if (Array.isArray(x)) { return x.map(copy) }
+    if (x === null) { return null }
+    if (typeof x === "object") {
+      if (x.type) {
+        workers.push(x)
+        x.$locus = {parent:parent}
+        return x.$locus
+      }
+      var o = {}
+      var ks = Object.keys(x)
+      for (var i=0; i<ks.length; i++) { o[ks[i]] = copy(x[ks[i]]) }
+      return o
+    }
+    return x
+  }
+  while (parent = workers.pop()) { Object.keys(parent).forEach(setparent) }
+}
+
+module.exports = function (aran, save) {
+
+  var esv = Esvisit.Prepare()
+  var hoist     =                Hoist(esv.visit, esv.mark)
+  var sanitize  =                Sanitize(esv.visit, esv.mark)
+  var sandbox   = aran.sandbox ? Sandbox(esv.visit, esv.mark, aran.sandbox)       : Util.nil
+  var intercept = aran.traps   ? Intercept(esv.visit, esv.mark, aran.traps, aran.ast?save:null) : Util.nil
+
+  aran.compile = function (code, parent) {
+    aran.flush()
+    var program = Esprima.parse(code, {loc:aran.loc, range:aran.range})
+    if (aran.ast) { locate(program, parent) }
+    sanitize(program)
+    var topvars = hoist(program)
+    sandbox(program)
+    intercept(!Boolean(parent), program, topvars)
+    if (aran.sandbox && !parent) {
+      program.body = [
+        Ptah.Expression(Shadow("sandboxdeclare", [Ptah.Array(topvars.map(Ptah.Literal))])),
+        Ptah.With(Shadow("membrane"), Ptah.Block(program.body))
+      ]
+    } else if (topvars.length) {
+      program.body.unshift(Ptah.Declaration(topvars.map(function (v) { return Ptah.Declarator(v, null) })))
+    }
+    // console.log(Esvisit.View(program))
+    // var errors = Esvalid.errors(program)
+    // if (errors.length > 0) { Util.log("Compilation warning", errors.map(summarize), errors) }
+    return Escodegen.generate(program)
+  }
+
+}
+
+},{"../stage/hoist.js":31,"../stage/intercept.js":32,"../stage/sandbox.js":33,"../stage/sanitize.js":34,"../syntax/ptah.js":36,"../syntax/shadow.js":37,"../util.js":38,"escodegen":2,"esprima":20,"esvalid":21,"esvisit":40}],28:[function(require,module,exports){
+
+// Intercept scoping lookup on objects (with && global), defines:
+//  - aran.membrane
+//  - aran.globaldeclare
+//  - aran.with
+//  - aran.isobjectdelete
+//  - aran.deleteresult
+
+
+module.exports = function (aran) {
+
+  var unescape = function (str) { return str }
+  if (aran.sandbox) { unescape = function (str) { if (/^\$*aran$/.test(str)) { return str.substring(1) } return str } }
+
+  var has = function (o, k) { return (k==="aran") || (unescape(k) in o) }
+  if (aran.traps&&aran.traps.has) { has = function (o, k) { return (k==="aran") || aran.traps.has(o, unescape(k)) } }
+
+  var get = function (o, k) { return (k==="aran") ? aran : o[unescape(k)] }
+  if (aran.traps&&aran.traps.get) { get = function (o, k) { return (k==="aran") ? aran : aran.traps.get(o, unescape(k)) } }
+
+  var set = function (o, k, v) { return o[unescape(k)]=v }
+  if (aran.traps&&aran.traps.set) { set = function (o, k, v) { return aran.traps.set(o, unescape(k), v) } }
+
+  var del = function (o, k) { return delete o[unescape(k)] }
+  if (aran.traps&&aran.traps.delete) {
+    del = function (o, k) {
+      isobjectdelete = true
+      deleteresult = aran.traps.delete(o, unescape(k))
+    }
+  }
+
+  aran.with = function (o) {
+    if (!aran.sandbox && !aran.traps.exist && !aran.traps.get && !aran.traps.set && !aran.traps.delete) { return o }
+    if (!aran.global.Proxy) { throw new Error("Harmony Proxies are needed to support trapped with statements and") }
+    return new aran.global.Proxy(o, {
+      has: has,
+      get: get,
+      set: set,
+      deleteProperty: del
+    })
+  }
+
+  var isobjectdelete = false
+  var deleteresult = null
+  aran.isobjectdelete = function () {
+    var save = isobjectdelete
+    isobjectdelete = false
+    return save
+  }
+  aran.deleteresult = function () {
+    var save = deleteresult
+    deleteresult = null
+    return save
+  }
+
+  //////////////////
+  // Sandbox only //
+  //////////////////
+
+  if (!aran.sandbox) { return }
+
+  if (!aran.global.Proxy) { throw new Error("Harmony Proxies are needed to support sandboxing") }
+
+  aran.sandboxdeclare = function (vs, node) {
+    for (var i=0; i<vs.length; i++) {
+      if (!has(aran.sandbox, vs[i])) {
+        set(aran.sandbox, vs[i], aran.undefined)
+      }
+    }
+  }
+
+  aran.membrane = new aran.global.Proxy(aran.sandbox, {
+    has: function () { return true },
+    get: function (o, k) {
+      if (has(o, k)) { return get(o, k) }
+      throw new ReferenceError("Sandbox reference Error: "+unescape(k)+" is not defined")
+    },
+    set: set,
+    deleteProperty: del
+  })
+
+}
+
+},{}],29:[function(require,module,exports){
+
+// Setup runtime stack to provide temporary memory, defines:
+//   - aran.push{1,2,3}
+//   - aran.get{1,2,3}
+//   - aran.pop{1,2,3}
+//   - aran.mark
+//   - aran.unmark
+//   - aran.flush
+
+module.exports = function (aran) {
+
+  var marks = []
+  var stack = []
+  var stack1 = []
+  var stack2 = []
+  var stack3 = []
+
+  aran.push  = function (x) { return (stack .push(x), x) }
+  aran.push1 = function (x) { return (stack1.push(x), x) }
+  aran.push2 = function (x) { return (stack2.push(x), x) }
+  aran.push3 = function (x) { return (stack3.push(x), x) }
+
+  aran.pop  = function () { return stack .pop() }
+  aran.pop1 = function () { return stack1.pop() }
+  aran.pop2 = function () { return stack2.pop() }
+  aran.pop3 = function () { return stack3.pop() }
+
+  aran.get  = function () { return stack [stack .length-1] }
+  aran.get1 = function () { return stack1[stack1.length-1] }
+  aran.get2 = function () { return stack2[stack2.length-1] }
+  aran.get3 = function () { return stack3[stack3.length-1] }
+
+  aran.mark = function () {
+    var mark = {}
+    marks.push(mark)
+    stack.push(mark)
+    stack1.push(mark)
+    stack2.push(mark)
+    stack3.push(mark)
+  }
+
+  aran.unmark = function () {
+    var mark = marks.pop()
+    while (stack.pop() !== mark);
+    while (stack1.pop() !== mark);
+    while (stack2.pop() !== mark);
+    while (stack3.pop() !== mark);
+  }
+
+  aran.flush = function () {
+    while (marks.pop());
+    while (stack.pop());
+    while (stack1.pop());
+    while (stack2.pop());
+    while (stack3.pop());
+  }
+
+}
+
+},{}],30:[function(require,module,exports){
+
+// Save compile time information for runtime, defines: aran.fetch.
+
+module.exports = function (aran) {
+  var store = []
+  aran.fetch = function (i) { return store[i] }
+  return function (x) {
+    store.push(x)
+    return store.length-1
+  }
+}
+
+},{}],31:[function(require,module,exports){
+
+/*
+ * Hoist variable declaration and function definition.
+ * This can be considered as part of JS sanitization,
+ * but this code has bad interaction with code on 
+ * sanitization file. So I prefered to simply perform
+ * another compilation pass. 
+ */
+
+var Ptah = require("../syntax/ptah.js")
+var Util = require("../util.js")
+
+module.exports = function (visit, mark) {
+
+  var local
+  var variabless = []
+  var definitionss = []
+  var onstatements = {}
+  var onexpressions = {}
+
+  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
+  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
+
+  function hoistdeclarator (declarator, ancestor) {
+    Util.last(variabless).push(declarator.id.name)
+    if (declarator.init) { return Ptah.IdentifierAssignment(declarator.id.name, declarator.init, ancestor) }
+    return null
+  }
+
+  function popdefinitions (stmts) {
+    var definitions = definitionss.pop()
+    var assignments = Object.keys(definitions).map(function (name) { return Ptah.IdentifierAssignment(name, definitions[name], definitions[name]) })
+    if (assignments.length === 1) { stmts.unshift(Ptah.Expression(assignments[0])) }
+    else if (assignments.length) { stmts.unshift(Ptah.Expression(Ptah.Sequence(assignments))) }
+  }
+
+  function enterfunction (fct) {
+    variabless.push([])
+    definitionss.push({})
+    mark(function () {
+      popdefinitions(fct.body.body)
+      Util.inject(Ptah.HoistedFunction(
+        fct.id ? fct.id.name : null,
+        fct.params.map(function (id) { return id.name }),
+        variabless.pop(),
+        fct.body.body,
+        fct
+      ), fct)
+    })
+  }
+
+  // Definition ::= Hoisted(IdentifierAssignment)
+  onstatements.Definition = function (stmt) {
+    stmt = Util.copy(stmt)
+    Util.last(definitionss)[stmt.id.name] = stmt
+    Util.last(variabless).push(stmt.id.name)
+    enterfunction(stmt)
+    return Ptah.Empty()
+  }
+
+  // Declaration ::= Many(IdentifierAssignment)
+  onstatements.Declaration = function (stmt) {
+    var assignments = stmt.declarations.map(hoistdeclarator, stmt).filter(Util.identity)
+    if (assignments.length === 0) { return Ptah.Empty() }
+    if (assignments.length === 1) { return Ptah.Expression(assignments[0]) }
+    return Ptah.Expression(Ptah.Sequence(assignments))
+  }
+
+  // DeclarationFor ::= For + Many(Assignment)
+  onstatements.DeclarationFor = function (stmt) {
+    var assignments = stmt.init.declarations.map(hoistdeclarator, stmt).filter(Util.identity)
+    return Ptah.For(
+      assignments.length ? ((assignments.length===1) ? assignments[0] : Ptah.Sequence(assignments)) : null,
+      stmt.test,
+      stmt.update,
+      stmt.body,
+      stmt
+    )
+  }
+
+  // DeclarationForIn ::= IdentifierForIn + Maybe(Assignment)
+  onstatements.DeclarationForIn = function (stmt) {
+    var assignment = hoistdeclarator(stmt.left.declarations[0], stmt)
+    return Ptah.IdentifierForIn(
+      stmt.left.declarations[0].id.name,
+      assignment ? Ptah.Sequence([assignment, stmt.right]) : stmt.right,
+      stmt.body,
+      stmt
+    )
+  }
+
+  onexpressions.Function = enterfunction
+
+  return function (ast) {
+    variabless.push([])
+    definitionss.push({})
+    visit(ast, onstatement, onexpression)
+    popdefinitions(ast.body)
+    return variabless.pop()
+  }
+
+}
+
+},{"../syntax/ptah.js":36,"../util.js":38}],32:[function(require,module,exports){
+
+/*
+ * Intercept the evaluation of some expressions/statements.
+ */
+
+var Esvisit = require("esvisit")
+var Util = require("../util.js")
+var Ptah = require("../syntax/ptah.js")
+var Nasus = require("../syntax/nasus.js")
+var Shadow = require("../syntax/shadow.js")
+
+/////////////
+// Exports //
+/////////////
+
+module.exports = function (visit, mark, traps, save) {
+
+  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
+  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
+
+  var depth = 0
+  function out () { depth-- }
+
+  /////////////
+  // Helpers //
+  /////////////
+
+  function trap (name, args, ancestor) {
+    if (save) { args.push(Shadow("fetch", [Ptah.Literal(save(ancestor.$locus))])) }
+    return Shadow("traps", name, args)
+  }
+
+  function test (test, ancestor) {
+    if (!traps.test) { return test }
+    return trap("test", [test], ancestor)
+  }
+
+  function undef(name, ancestor) {
+    if (!traps.undefined) { return Shadow("global", "undefined") }
+    return trap("undefined", [Ptah.Literal(name)], ancestor)
+  }
+
+  function property (member) { return member.computed ? member.property : Ptah.Literal(member.property.name) }
+
+  function forin (type, node) {
+    if (!traps.enumerate) { return }
+    var pushes = [Nasus.push(Ptah.Literal(0))]
+    var pops = [Nasus.pop()]
+    if (type === "MemberForIn") {
+      pushes.push(Nasus.push1(node.left.object))
+      pushes.push(Nasus.push2(property(node.left)))
+      pops.push(Nasus.pop1())
+      pops.push(Nasus.pop2())
+    }
+    pushes.push(Nasus.push3(trap("enumerate", [node.right], node)))
+    pops.push(Nasus.pop3())
+    var right = Ptah.Member(Nasus.get3(), Nasus.get())
+    var ass
+    if (type === "IdentifierForIn") { ass = Ptah.IdentifierAssignment(node.left.name, right) }
+    if (type === "MemberForIn") {
+      if (traps.set) { ass = trap("set", [Nasus.get1(), Nasus.get2(), right], node) }
+      else { ass = Ptah.MemberAssignment(Nasus.get1(), Nasus.get2(), right) }
+    }
+    var trystmts = [Ptah.For(
+      null,
+      Ptah.Binary("<", Nasus.get(), Ptah.Member(Nasus.get3(), "length")),
+      Nasus.push(Ptah.Binary("+", Nasus.pop(), Ptah.Literal(1))),
+      Ptah.Block([Ptah.Expression(ass), node.body])
+    )]
+    var stmts = pushes.map(Ptah.Expression)
+    stmts.push(Ptah.Try(trystmts, null, null, pops.map(Ptah.Expression)))
+    return Ptah.Block(stmts)
+  }
+
+  ///////////////
+  // Statement //
+  ///////////////
+
+  var onstatements = {}
+
+  onstatements.If = function (node) { node.test = test(node.test, node) }
+
+  onstatements.Return = function (node) { if (!node.argument) { node.argument = undef(null, node) } }
+ 
+  onstatements.Throw = function (node) { if (traps.throw) { node.argument = trap("throw", [node.argument], node) } }
+
+  onstatements.Try = function (node) {
+    if (traps.try)
+      node.block.body.unshift(Ptah.Expression(trap("try", [], node)));
+    if (node.handlers[0] && traps.catch) {
+      node.handlers[0].body.body.unshift(Ptah.Expression(Ptah.IdentifierAssignment(
+        node.handlers[0].param.name,
+        trap("catch", [Ptah.Identifier(node.handlers[0].param.name)], node)
+      )))
+    }
+  }
+
+  onstatements.While = function (node) { node.test = test(node.test, node) }
+
+  onstatements.DoWhile = function (node) { node.test = test(node.test, node) }
+
+  onstatements.For = function (node) { if (node.test) { node.test = test(node.test, node) } }
+
+  // for (ID in EXPR2) STMT >>> { 
+  //   try {
+  //     aran.push3(aran.traps.enumerate(EXPR2));
+  //     for (aran.push(0); aran.get()<aran.get3().length; aran.push(aran.pop()+1)) {
+  //       #ID = aran.get3()[aran.get()];
+  //       STMT
+  //     }
+  //   } finally {
+  //     aran.pop();
+  //     aran.pop3();
+  //   }
+  // }
+  onstatements.IdentifierForIn = function (node) { return forin("IdentifierForIn", node) }
+
+  // for (EXPR1[EXPR2] in EXPR3) STMT >>> {
+  //   try {
+  //     aran.push1(EXPR1);
+  //     aran.push2(EXPR2);
+  //     aran.push3(aran.traps.enumerate(EXPR3));
+  //     for (aran.push(0); aran.get()<aran.get3().length; aran.push(aran.pop()+1)) {
+  //       aran.set(aran.get1(), aran.get2(), aran.get3()[aran.get()]);
+  //       STMT
+  //     }
+  //   } finally {
+  //     aran.pop();
+  //     aran.pop1();
+  //     aran.pop2();
+  //     aran.pop3();
+  //   }
+  // }
+  onstatements.MemberForIn = function (node) { return forin("MemberForIn", node) }
+
+  ////////////////
+  // Expression //
+  ////////////////
+
+  var onexpressions = {}
+
+  onexpressions.Array = function (node) { if (traps.array) { return trap("array", [Ptah.Array(node.elements)], node) } }
+
+  onexpressions.Object = function (node) {
+    if (traps.object) {
+      var os = [];
+      var dico = Object.create(null); // to avoid access Object.prototype
+      node.properties.forEach(function (p) {
+        var k = (p.key.type === "Identifier") ? p.key.name : p.key.value
+        var o = dico[k]
+        if (!o) {
+          o = Ptah.Object([Ptah.InitProperty("key", Ptah.Literal(k))])
+          dico[k] = o
+          os.push(o)
+        }
+        var kind = (p.kind === "init") ? "value" : p.kind
+        o.properties.push(Ptah.InitProperty(kind, p.value))
+      })
+      return trap("object", [Ptah.Array(os)], node)
+    }
+  }
+
+  // onexpressions.DataObject = function (node) { if (traps.object) { return trap("object", [Ptah.DataObject(node.properties)], node) } }
+
+  onexpressions.HoistedFunction = function (node) {
+    (depth++, mark(out))
+    if (traps.arguments) {
+      var check = true
+      node.params.forEach(function (id) { if (id.name === "arguments") { check = false } })
+      if (check) {
+        node.body.body.splice(1, 0, Ptah.Expression(Ptah.IdentifierAssignment(
+          "arguments",
+          trap("arguments", [Ptah.Identifier("arguments")], node))))
+      }
+    }
+    if (traps.undefined) {
+      if (node.params.length) {
+        node.body.body.splice(1, 0, Ptah.Block(node.params.map(function (id) {
+          return Ptah.If(
+            Ptah.Binary(
+              "===",
+              Ptah.Identifier(id.name),
+              Shadow("global", "undefined")),
+            Ptah.Expression(Ptah.IdentifierAssignment(id.name, undef(id.name, node))))
+        })))
+      }
+      if (node.body.body[0].declarations) {
+        var assignments = node.body.body[0].declarations.map(function (dec) { return Ptah.IdentifierAssignment(dec.id.name, undef(dec.id.name, node)) })
+        if (assignments.length === 1) { node.body.body.splice(1, 0, Ptah.Expression(assignments[0])) }
+        else if (assignments.length) { node.body.body.splice(1, 0, Ptah.Expression(Ptah.Sequence(assignments))) }
+      }
+      node.body.body.push(Ptah.Return(undef(null, node)))
+    }
+    if (traps.function) { return trap("function", [Util.copy(node)], node) }
+  }
+
+  onexpressions.MemberAssignment = function (node) { if (traps.set) { return trap("set", [node.left.object, property(node.left), node.right], node) } }
+
+  // delete ID >>> (aran.push(delete ID), aran.isobjectdelete() ? (aran.pop(), aran.deleteresult()) : primitive(aran.pop()))
+  onexpressions.IdentifierDelete = function (node) {
+    if (traps.delete) {
+      return Ptah.Sequence([
+        Nasus.push(Util.copy(node)),
+        Ptah.Conditional(
+          Shadow("isobjectdelete", []),
+          Ptah.Sequence([Nasus.pop(), Shadow("deleteresult", [])]),
+          traps.erase ? Shadow("traps", "primitive", [Nasus.pop(), node]) : Nasus.pop())])
+    }
+  }
+
+  onexpressions.Unary = function (node) { if (traps.unary) { return trap("unary", [Ptah.Literal(node.operator), node.argument], node) } }
+
+  onexpressions.MemberDelete = function (node) { if (traps.delete) { return trap("delete", [node.argument.object, property(node.argument)], node) } }
+
+  onexpressions.Binary = function (node) { if (traps.binary) { return trap("binary", [Ptah.Literal(node.operator), node.left, node.right], node) } }
+
+  onexpressions.Conditional = function (node) { node.test = test(node.test, node) }
+
+  // eval(ARGS) >>> (aran.push(eval)===aran.eval) ? (aran.pop(), eval(aran.compiled(LOCAL, ARGS)) : aran.pop()(ARGS)
+  // sandbox contains the original eval function <=> possibly local eval
+  // the alternative eval call is known to be standard eval call
+  onexpressions.EvalCall = function (node) {
+    var args = node.arguments.slice()
+    if (traps.eval) { args[0] = trap("eval", [args[0]], node) }
+    args[0] = Shadow("compile", [
+      args[0]],
+      save
+        ? Shadow("fetch", [Ptah.Literal(save(node.$locus))])
+        : Ptah.Literal(null))
+    return Ptah.Conditional(
+      Ptah.Binary("===", Nasus.push(Ptah.Identifier("eval")), Shadow("global", "eval")),
+      Ptah.Sequence([Nasus.pop(), Ptah.EvalCall(args)]),
+      traps.apply
+        ? trap("apply", [Nasus.pop(), Shadow("global"), Ptah.Array(node.arguments)], node)
+        : Ptah.Call(Nasus.pop(), node.arguments))
+  }
+
+  // EXPR1.EXPR2(ARGS)
+  //   traps.apply && traps.get >>> aran.traps.apply(aran.traps.get(aran.push(EXPR1), EXPR2), Nasus.pop(), [ARGS])
+  //                  traps.get >>> aran.apply(aran.traps.get(aran.push(EXPR1), EXPR2), Nasus.pop(), [ARGS])
+  //   traps.apply              >>> aran.global.Funtion.prototype.apply.bind(Nasus.push(EXPR1).EXPR2)(Nasus.pop(), [ARGS])
+  //                            >>> EXPR1.EXPR2(ARGS)
+  onexpressions.MemberCall = function (node) {
+    if (!traps.get && !traps.apply) { return }
+    var fct = traps.get
+      ? Shadow("traps", "get", [Nasus.push(node.callee.object), property(node.callee)], node)
+      : Ptah.Member(Nasus.push(node.callee.object), property(node.callee))
+    var obj = Nasus.pop()
+    var args = Ptah.Array(node.arguments)
+    if (traps.apply) { return trap("apply", [fct, obj, args], node) }
+    return Ptah.Call(Shadow("global", "Function", "prototype", "apply", "bind", [fct]), [obj, args])
+  }
+
+  onexpressions.Call = function (node) { if (traps.apply) { return trap("apply", [node.callee, Shadow("global"), Ptah.Array(node.arguments)], node) } }
+
+  onexpressions.New = function (node) { if (traps.construct) { return trap("construct", [node.callee, Ptah.Array(node.arguments)], node) } }
+
+  onexpressions.Member = function (node) { if (traps.get) { return trap("get", [node.object, property(node)], node) } }
+
+  onexpressions.Literal = function (node) {
+    if (node.regex) { if (traps.regexp) { return trap("regexp", [Ptah.Literal(node.regex.pattern), Ptah.Literal(node.regex.flags)], node) } }
+    else if (traps.primitive) { return trap("primitive", [Ptah.Literal(node.value, node)], node) }
+  }
+
+  // undefined >>> (undefined === aran.undefined) ? aran.traps.undefined(null, aran.nodes[NID]) : undefined
+  onexpressions.Identifier = function (node) {
+    if (traps.undefined && (node.name === "undefined")) {
+      return Ptah.Conditional(
+        Ptah.Binary("===", Nasus.push(Ptah.Identifier("undefined")), Shadow("global", "undefined")),
+        Ptah.Sequence([Nasus.pop(), undef(null, node)]),
+        Nasus.pop())
+    }
+    if (traps.primitive && (node.name === "NaN")) {
+      return Ptah.Conditional(
+        Ptah.Binary("!==", Ptah.Identifier("NaN"), Ptah.Identifier("NaN")),
+        trap("primitive", [Ptah.Identifier("NaN")], node),
+        Ptah.Identifier("NaN"))
+    }
+  }
+
+  ////////////
+  // Return //
+  ////////////
+
+  // if (x === aran.undefined) x = aran.traps.undefined("x")
+  return function (isglobal, ast, topvars) {
+    depth = isglobal ? 0 : 1
+    visit(ast, onstatement, onexpression)
+    if (traps && traps.undefined) {
+      topvars.forEach(function (name) {
+        ast.body.unshift(Ptah.If(
+          Ptah.Binary("===", Ptah.Identifier(name), Shadow("global", "undefined")),
+          Ptah.Expression(Ptah.IdentifierAssignment(name, undef(name, ast)))))
+      })
+    }
+  }
+
+}
+
+},{"../syntax/nasus.js":35,"../syntax/ptah.js":36,"../syntax/shadow.js":37,"../util.js":38,"esvisit":40}],33:[function(require,module,exports){
+
+/*
+ * Make sure no identifier from the target code shadows aran.
+ */
+
+var Ptah = require("../syntax/ptah.js")
+var Util = require("../util.js")
+var Nasus = require("../syntax/nasus.js")
+var Shadow = require("../syntax/shadow.js")
+
+function escape (id) { if (/^\$*aran$/.test(id.name)) { id.name = "$"+id.name } }
+function descape (decl) { escape(decl.id) }
+
+module.exports = function (visit, mark, sandbox) {
+
+  var onstatements = {}
+  var onexpressions = {}
+  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
+  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
+
+  ////////////////
+  // Statements //
+  ////////////////
+
+  // IdentifierForIn := IdentifierForIn
+  onstatements.IdentifierForIn = function (stmt) { escape(stmt.left) }
+
+  // With ::= With
+  onstatements.With = function (stmt) { stmt.object = Shadow("with", [stmt.object]) }
+
+  // Try ::= Try
+  onstatements.Try = function (stmt) { if (stmt.handlers[0]) { escape(stmt.handlers[0].param) } }
+
+  /////////////////
+  // Expressions //
+  /////////////////
+
+  // Function ::= HoistedFunction
+  onexpressions.HoistedFunction = function (expr) {
+    expr.params.forEach(escape)
+    if (expr.body.body[0].declarations) { expr.body.body[0].declarations.forEach(descape) }
+  }
+
+  // This ::= This
+  // this >>> (aran.push(this) === aran.global) ? (nasus.pop(), aran.sandbox) : nasus.pop()
+  onexpressions.This = function (expr) {
+    return Ptah.Conditional(
+      Ptah.Binary("===", Nasus.push(Ptah.This(expr)), Shadow("global")),
+      Ptah.Sequence([Nasus.pop(), Shadow("sandbox")]),
+      Nasus.pop())
+  }
+
+  // IdentifierAssignment ::= IdentifierAssignment
+  onexpressions.IdentifierAssignment = function (expr) { escape(expr.left) }
+
+  // Identifier ::= Identifier
+  onexpressions.Identifier = escape
+
+  ////////////
+  // Return //
+  ////////////
+
+  return function (ast) { visit(ast, onstatement, onexpression) }
+
+}
+
+},{"../syntax/nasus.js":35,"../syntax/ptah.js":36,"../syntax/shadow.js":37,"../util.js":38}],34:[function(require,module,exports){
+
+/*
+ * Sanitize JavaScript to simplify trap insertion:
+ *   + Preserve aran stack
+ *   + Get rid of simple syntactic sugar:
+ *     - logical expression
+ *     - assignment operation
+ *     - update expression
+ *   + Ignore use strict statement
+ *   + Get rid of inline object accessor (getter - setter)
+ *   + Get rid of switches
+ */
+
+// N.B. I made explicit module patterns, since 
+// anonymous module pattern (i.e. '(function () {} ())')
+// calls statements.Try (and throws a: stmt not defined).
+// I have really no idea why it does that...
+
+var Ptah = require("../syntax/ptah.js")
+var Nasus = require("../syntax/nasus.js")
+var Util = require("../util.js")
+
+module.exports = function (visit, mark) {
+
+  var onexpressions = {}
+  var onstatements = {}
+  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
+  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
+
+  ////////////////////////
+  // Stack Preservation //
+  ////////////////////////
+
+  // Try ::= Try
+  onstatements.Try = function (stmt) {
+    var unmark = Ptah.Expression(Nasus.unmark())
+    return Ptah.Try(
+      (stmt.block.body.unshift(Ptah.Expression(Nasus.mark())), stmt.block.body),
+      stmt.handlers.length ? stmt.handlers[0].param.name : null,
+      stmt.handlers.length ? stmt.handlers[0].body.body : null,
+      stmt.finalizer ? (stmt.finalizer.body.unshift(unmark), stmt.finalizer.body) : [unmark],
+      stmt
+    )
+  }
+
+  /////////////
+  // Logical //
+  ///////////// 
+
+  // Logical ::= Conditional
+  onexpressions.Logical = function (expr) {
+    var cond = Ptah.Conditional(
+      Nasus.push(expr.left),
+      Nasus.pop(),
+      Ptah.Sequence([Nasus.pop(), expr.right]),
+      expr)
+    if (expr.operator === "&&") {
+      cond.consequent = cond.alternate
+      cond.alternate = Nasus.pop()
+    }
+    return cond
+  }
+
+  ////////////
+  // Typeof //
+  ////////////
+
+  // typeof ID >>> (typeof function () { try {return ID} catch (_) {} } ())
+  // IdentifierTypeof ::= Unary + Identifier
+  onexpressions.IdentifierTypeof = function (expr) {
+    return Ptah.Unary(
+      "typeof",
+      Ptah.Call(
+        Ptah.Function(
+          null,
+          [],
+          [Ptah.Try(
+            [Ptah.Return(Ptah.Identifier(expr.argument.name, expr))],
+            "_",
+            [],
+            null)]),
+        []),
+      expr)
+  }
+
+  //////////////////
+  // Assignments //
+  /////////////////
+
+  var assignmentmodule = function () {
+
+    function pushobject (member) { return Nasus.push1(member.object) }
+    function pushproperty (member) { return member.computed ? Nasus.push2(member.property) : member.property.name }
+    function popmember (member, ancestor) { return Ptah.Member(Nasus.pop1(), member.computed ? Nasus.pop2() : member.property.name, ancestor) }
+
+    // IdentifierBinaryAssignment ::= IdentifierAssignment + Binary + Identifier
+    onexpressions.IdentifierBinaryAssignment = function (expr) {
+      return Ptah.IdentifierAssignment(
+        expr.left.name,
+        Ptah.Binary(
+          expr.operator.replace("=", ""),
+          Ptah.Identifier(expr.left.name, expr),
+          expr.right,
+          expr),
+        expr)
+    }
+
+    // MemberBinaryAssignment ::= MemberAssignment + Binary + Member
+    onexpressions.MemberBinaryAssignment = function (expr) {
+      return Ptah.MemberAssignment(
+        pushobject(expr.left),
+        pushproperty(expr.left),
+        Ptah.Binary(
+          expr.operator.replace("=", ""),
+          popmember(expr.left, expr),
+          expr.right,
+          expr),
+        expr)
+    }
+
+    // IdentifierUpdate ::= IdentifierAssignment + Binary + Identifier + Literal
+    onexpressions.IdentifierUpdate = function (expr) {
+      var ass = Ptah.IdentifierAssignment(
+        expr.argument.name,
+        Ptah.Binary(
+          expr.operator[0],
+          (expr.prefix?Util.identity:Nasus.push)(Ptah.Identifier(expr.argument.name, expr)),
+          Ptah.Literal(1, expr),
+        expr))
+      if (expr.prefix) { return ass }
+      return Ptah.Sequence([ass, Nasus.pop()])
+    }
+
+    // MemberUpdate ::= MemberAssignment + Binary + Member + Literal
+    onexpressions.MemberUpdate = function (expr) {
+      var ass = Ptah.MemberAssignment(
+        pushobject(expr.argument),
+        pushproperty(expr.argument),
+        Ptah.Binary(
+          expr.operator[0],
+          (expr.prefix?Util.identity:Nasus.push3)(popmember(expr.argument, expr)),
+          Ptah.Literal(1, expr),
+          expr),
+        expr)
+      if (expr.prefix) { return ass }
+      return Ptah.Sequence([ass, Nasus.pop3()])
+    }
+
+  }
+
+  assignmentmodule()
+
+  ////////////
+  // Strict //
+  ////////////
+
+  // Strict ::=
+  onstatements.Strict = function (stmt) { return Ptah.Empty() }
+
+  //////////////////////
+  // Inline Accessors //
+  //////////////////////
+
+  // AccessorObject ::= MemberCall + DataObject + DataObject + N*DataObject + 2*N*Literal + Max(2*N*Function)
+  // Semantic not preserved:
+  // var Object = null
+  // var o = { a:1, get b () {} } // OK
+  // // NOT OK //
+  // var o = Object.defineProperties({a:1}, {
+  //   b: {
+  //     configurable: true,
+  //     enumerable: true,
+  //     get: function () {}
+  //   }
+  // })
+  // onexpressions.AccessorObject = function (expr) {
+  //   var accessors = {}
+  //   var properties = expr.properties.filter(function (p) {
+  //     if (p.kind === "init") { return true }
+  //     var k = p.key.name || p.key.value
+  //     if (!accessors[k]) {
+  //       accessors[k] = {
+  //         configurable: Ptah.Literal(true, p),
+  //         enumerable: Ptah.Literal(true, p)
+  //       }
+  //     }
+  //     accessors[k][p.kind] = Ptah.Function(
+  //       null,
+  //       p.value.params.map(function (id) { return id.name }),
+  //       p.value.body.body,
+  //       p
+  //     )
+  //     return false
+  //   })
+  //   Object.keys(accessors).map(function (k) { accessors[k] = Ptah.Set(accessors[k], expr) })
+  //   return Ptah.MemberCall(Ptah.Identifier("Object"), "defineProperties", [Ptah.DataObject(properties, expr), Ptah.Set(accessors, expr)])
+  // }
+
+  ////////////
+  // Switch //
+  ////////////
+
+  var switchmodule = function () {
+
+    function escape (id) { if (/^\$*switch/.test(id.name)) { id.name="$"+id.name } }
+
+    var counter = 0
+    var stack = [null]
+    function mask (stmt) { (stack.push(null), mark(pop)) }
+    function pop () { stack.pop() }
+    function get () { return Util.last(stack) ? ("switch"+Util.last(stack)) : null }
+
+    // Switch ::= Max(N*(If + Binary))
+    onstatements.Switch = function (stmt) {
+      stack.push(++counter)
+      mark(pop)
+      var stmts = [Ptah.Expression(Nasus.push(stmt.discriminant))]
+      stmt.cases.forEach(function (c) {
+        if (!c.test) { for (var i=0; i<c.consequent.length; i++) { stmts.push(c.consequent[i]) } }
+        else {
+          stmts.push(Ptah.If(
+            Ptah.Binary("===", Nasus.get(), c.test, c),
+            Ptah.Block(c.consequent),
+            null,
+            c))
+        }
+      })
+      return Ptah.Label(
+        get(),
+        Ptah.Try(stmts, null, null, [Ptah.Expression(Nasus.pop())]))
+    }
+
+    // Label ::= Label
+    onstatements.Label = function (stmt) { escape(stmt.label) }
+
+    // Continue ::= Continue
+    onstatements.Continue = function (stmt) { if (stmt.label) { escape(stmt.label) } }
+
+    // Break ::= Break
+    onstatements.Break = function (stmt) {
+      if (stmt.label) { escape(stmt.label) }
+      else if (get()) { return Ptah.Break(get(), stmt) }
+    }
+
+    // While ::= While
+    onstatements.While = mask
+
+    // DoWhile ::= DoWhile
+    onstatements.DoWhile = mask
+
+    // DeclarationFor ::= DeclarationFor
+    onstatements.DeclarationFor = mask
+
+    // For ::= For
+    onstatements.For = mask
+
+    // DeclarationForIn ::= DeclarationForIn
+    onstatements.DeclarationForIn = mask
+
+    // IdentifierForIn ::= IdentifierForIn
+    onstatements.IdentifierForIn = mask
+
+    // MemberForIn ::= MemberForIn
+    onstatements.MemberForIn = mask
+
+  }
+
+  switchmodule()
+
+  ////////////
+  // Return //
+  ////////////
+
+  return function (ast) { visit(ast, onstatement, onexpression) }
+
+}
+
+},{"../syntax/nasus.js":35,"../syntax/ptah.js":36,"../util.js":38}],35:[function(require,module,exports){
+
+/*
+ * Nasus and his siphoning strike will construct syntactic calls to aran stacks.
+ */  
+
+var Shadow = require("./shadow.js")
+var Esvisit = require("esvisit")
+
+exports.mark = function () { return Esvisit.Halt(Shadow("mark", [])) }
+exports.unmark = function () { return Esvisit.Halt(Shadow("unmark", [])) }
+
+exports.push = function (x) { return Shadow("push", [x]) }
+exports.push1 = function (x) { return Shadow("push1", [x]) }
+exports.push2 = function (x) { return Shadow("push2", [x]) }
+exports.push3 = function (x) { return Shadow("push3", [x]) }
+
+exports.pop = function () { return Esvisit.Halt(Shadow("pop", [])) }
+exports.pop1 = function () { return Esvisit.Halt(Shadow("pop1", [])) }
+exports.pop2 = function () { return Esvisit.Halt(Shadow("pop2", [])) }
+exports.pop3 = function () { return Esvisit.Halt(Shadow("pop3", [])) }
+
+exports.get = function () { return Esvisit.Halt(Shadow("get", [])) }
+exports.get1 = function () { return Esvisit.Halt(Shadow("get1", [])) }
+exports.get2 = function () { return Esvisit.Halt(Shadow("get2", [])) }
+exports.get3 = function () { return Esvisit.Halt(Shadow("get3", [])) }
+
+},{"./shadow.js":37,"esvisit":40}],36:[function(require,module,exports){
+
+var Esvisit = require("esvisit")
+var BE = Esvisit.BuildExpression
+var BS = Esvisit.BuildStatement
+
+function finalize (node, ancestor) {
+  if (!ancestor) { return Esvisit.Ignore(node) }
+  if (ancestor.$locus) { node.$locus = ancestor.$locus }
+  return node
+}
+
+////////////////
+// Statements //
+////////////////
+
+exports.Return = function (argument, ancestor) {
+  return finalize(BS.Return(argument), ancestor)
+}
+
+exports.Try = function (trybody, catchparam, catchbody, finallybody, ancestor) {
+  return finalize(BS.Try(trybody, catchparam, catchbody, finallybody), ancestor)
+}
+
+exports.Block = function (body, ancestor) {
+  return finalize(BS.Block(body), ancestor)
+}
+
+exports.If = function (test, consequent, alternate, ancestor) {
+  return finalize(BS.If(test, consequent, alternate), ancestor)
+}
+
+exports.IdentifierForIn = function (leftname, right, body, ancestor) {
+  return finalize(BS.IdentifierForIn(leftname, right, body), ancestor)
+}
+
+exports.Label = function (labelname, statement, ancestor) {
+  return finalize(BS.Label(labelname, statement), ancestor)
+}
+
+exports.Break = function (labelname, ancestor) {
+   return finalize(BS.Break(labelname), ancestor)
+}
+
+exports.Empty = function (ancestor) {
+  return finalize(BS.Empty(), ancestor)
+}
+
+exports.With = function (object, body, ancestor) {
+  return finalize(BS.With(object, body), ancestor)
+}
+
+exports.Expression = function (expression, ancestor) {
+  return finalize(BS.Expression(expression), ancestor)
+}
+
+exports.For = function (init, test, update, body, ancestor) {
+  return finalize(BS.For(init, test, update, body), ancestor)
+}
+
+exports.Declaration = function (declarators, ancestor) {
+  return finalize(BS.Declaration(declarators), ancestor)
+}
+
+/////////////////
+// Expressions //
+/////////////////
+
+exports.This = function (ancestor) {
+  return finalize(BE.This(), ancestor)
+}
+
+exports.Sequence = function (expressions, ancestor) {
+  return finalize(BE.Sequence(expressions), ancestor)
+}
+
+exports.Conditional = function (test, consequent, alternate, ancestor) {
+  return finalize(BE.Conditional(test, consequent, alternate), ancestor)
+}
+
+exports.IdentifierAssignment = function (leftname, right, ancestor) {
+  return finalize(BE.IdentifierAssignment(leftname, right), ancestor)
+}
+
+exports.Array = function (elements, ancestor) {
+  return finalize(BE.Array(elements), ancestor)
+}
+
+// exports.Set = function (hash, ancestor) {
+//   return finalize(BE.DataObject(Object.keys(hash).map(function (k) { return Esvisit.BuildInitProperty(k, hash[k]) })), ancestor)
+// }
+
+exports.Object = function (properties, ancestor) {
+  return finalize(BE.Object(properties), ancestor)
+}
+
+exports.MemberAssignment = function (leftobject, leftproperty, right, ancestor) {
+  return finalize(BE.MemberAssignment(leftobject, leftproperty, right), ancestor)
+}
+
+exports.Unary = function (operator, argument, ancestor) {
+  return finalize(BE.Unary(operator, argument), ancestor)
+}
+
+exports.Binary = function (operator, left, right, ancestor) {
+  return finalize(BE.Binary(operator, left, right), ancestor)
+}
+
+exports.EvalCall = function (arguments, ancestor) {
+  return finalize(BE.EvalCall(arguments), ancestor)
+}
+
+exports.MemberCall = function (calleeobject, calleeproperty, arguments, ancestor) {
+  return finalize(BE.MemberCall(calleeobject, calleeproperty, arguments), ancestor)
+}
+
+exports.Call = function (callee, arguments, ancestor) {
+  return finalize(BE.Call(callee, arguments), ancestor)
+}
+
+exports.Function = function (idname, paramnames, body, ancestor) {
+  return finalize(BE.Function(idname, paramnames, body), ancestor)
+}
+
+exports.HoistedFunction = function (idname, paramnames, variables, body, ancestor) {
+  return finalize(BE.HoistedFunction(idname, paramnames, variables, body), ancestor)
+}
+
+exports.Member = function (object, property, ancestor) {
+  return finalize(BE.Member(object, property), ancestor)
+}
+
+exports.Identifier = function (name, ancestor) {
+  return finalize(BE.Identifier(name), ancestor)
+}
+
+exports.IdentifierDelete = function (idname, ancestor) {
+  return finalize(BE.IdentifierDelete(idname), ancestor)
+}
+
+exports.Literal = function (value, ancestor) {
+  return finalize(BE.Literal(value), ancestor)
+}
+
+///////////
+// Other //
+///////////
+
+exports.Declarator = function (name, init, ancestor) {
+  return finalize(Esvisit.BuildDeclarator(name, init), ancestor)
+}
+
+exports.InitProperty = function (name, value, ancestor) {
+  return finalize(Esvisit.BuildInitProperty(name, value), ancestor)
+}
+
+},{"esvisit":40}],37:[function(require,module,exports){
+
+/*
+ * Call Aran Linvail, the shadow master.
+ */
+
+var Esvisit = require("esvisit")
+
+// aran
+// aran(x)
+// aran.x
+// aran.x(y)
+// aran.x.y
+// etc...
+module.exports = function () {
+  var base = Esvisit.Halt(Esvisit.BuildExpression.Identifier("aran"))
+  for (var i=0; i<arguments.length; i++) {
+    if (Array.isArray(arguments[i])) { return Esvisit.Ignore(Esvisit.BuildExpression.Call(base, arguments[i])) }
+    if (typeof arguments[i] !== "string") { return base }
+    base = Esvisit.Halt(Esvisit.BuildExpression.Member(base, arguments[i]))
+  }
+  return base
+}
+
+},{"esvisit":40}],38:[function(require,module,exports){
+
+//////////////
+// Function //
+//////////////
+
+exports.nil = function () {}
+
+exports.constant = function (c) { return function () { return c} }
+
+exports.identity = function (x) { return x }
+
+exports.second = function (x, y) { return y }
+
+////////////
+// Object //
+////////////
+
+exports.copy = function (o1) {
+  var keys = Object.keys(o1)
+  var length = keys.length
+  var o2 = {}
+  for (var i=0; i<length; i++) { o2[keys[i]] = o1[keys[i]]}
+  return o2
+}
+
+exports.inject = function (o1, o2) { Object.keys(o1).forEach(function (k) { o2[k] = o1[k] }) }
+
+exports.copy = function (o1) {
+  var o2 = {}
+  Object.keys(o1).forEach(function (k) { o2[k] = o1[k] })
+  return o2
+}
+
+///////////
+// Array //
+///////////
+
+exports.last = function (xs) {
+  return xs[xs.length-1]
+}
+
+exports.append = function (xs, ys) {
+  for (var i=0; i<ys.length; i++) { xs.push(ys[i])}
+}
+
+exports.prepend = function (xs, ys) {
+  for (var i=ys.length-1; i>=0; i--) { xs.unshift(ys[i]) }
+}
+
+exports.flaten = function (xss) {
+  return xss.reduce(function (xs, ys) { return xs.concat(ys) }, [])
+}
+
+/////////
+// Log //
+/////////
+
+exports.log = function (mess) {
+  for (var i=1; i<arguments.length; i++) {
+    try { mess = mess+"\n    "+JSON.stringify(arguments[i]) }
+    catch (e) { mess = mess+"\n    "+arguments[i] }
+  }
+  console.log(mess+"\n\n")
+}
+
+exports.error = function () {
+  var msg = ""
+  for (var i=0; i<arguments.length; i++) {
+    try {
+      msg = msg + JSON.stringify(arguments[i]) + "\n"
+    } catch (e) {
+      msg = msg + arguments[i]
+    }
+  }
+  throw new Error(msg)
+}
+
+function error (blame, message, arguments) {
+  var args = []
+  for (var i=1; i<arguments.length; i++) { args.push(arguments[i]) }
+  var error = new Error(message)
+  error.blame = blame
+  error.data = args
+  throw error
+}
+
+exports.esprima = function (message) { error("esprima", message, arguments) }
+
+exports.internal = function (message) { error("internal", message, arguments) }
+
+exports.external = function (message) { error("external", message, arguments) }
+
+////////////////////////
+// Simply linked list //
+////////////////////////
+
+exports.link = function (data, next) { return {data:data, next:next} }
+
+
+},{}],39:[function(require,module,exports){
 
 /////////////
 // Helpers //
@@ -13643,7 +14551,7 @@ exports.SwitchCase = function (test, consequent) {
   }
 }
 
-},{}],36:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 
 var Visit = require("./visit.js")
 var Build = require("./build.js")
@@ -13669,7 +14577,7 @@ exports.Ignore = function (node) { return (node.$ignore=true, node) }
 // View //
 exports.View = View
 
-},{"./build.js":35,"./view.js":38,"./visit.js":39}],37:[function(require,module,exports){
+},{"./build.js":39,"./view.js":42,"./visit.js":43}],41:[function(require,module,exports){
 
 module.exports = function (node) { return (types[node.type] || clean)(node) }
 
@@ -13702,7 +14610,7 @@ var types = {
   }
 }
 
-},{}],38:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 
 module.exports = function (node) { return view(0, null, node) }
 
@@ -13723,7 +14631,7 @@ function view (depth, property, x) {
   return indent+String(x)+"\n"
 }
 
-},{}],39:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 
 var Type = require("./type.js")
 
@@ -13920,1304 +14828,7 @@ module.exports = function () {
 
 }
 
-},{"./type.js":37}],40:[function(require,module,exports){
-
-// Assemble compilations stages, defines: aran.compile.
-
-var Esprima = require("esprima")
-var Esvisit = require("esvisit")
-var Esvalid = require("esvalid")
-var Escodegen = require("escodegen")
-
-var Util = require("../util.js")
-
-var Shadow = require("../syntax/shadow.js")
-var Ptah = require("../syntax/ptah.js")
-
-var Hoist = require("../stage/hoist.js")
-var Sanitize = require("../stage/sanitize.js")
-var Sandbox = require("../stage/sandbox.js")
-var Intercept = require("../stage/intercept.js")
-
-function summarize (error) {
-  var sum = error.message+" for node:";
-  for (var key in error.node) { sum += " "+key+":"+error.node[key] }
-  return sum
-}
-
-function locate (program, parent) {
-  var workers = []
-  program.$locus = {parent:parent}
-  workers.push(program)
-  function setparent (k) { if (k[0] !== "$") { parent.$locus[k] = copy(parent[k]) } }
-  function copy (x) {
-    if (Array.isArray(x)) { return x.map(copy) }
-    if (x === null) { return null }
-    if (typeof x === "object") {
-      if (x.type) {
-        workers.push(x)
-        x.$locus = {parent:parent}
-        return x.$locus
-      }
-      var o = {}
-      var ks = Object.keys(x)
-      for (var i=0; i<ks.length; i++) { o[ks[i]] = copy(x[ks[i]]) }
-      return o
-    }
-    return x
-  }
-  while (parent = workers.pop()) { Object.keys(parent).forEach(setparent) }
-}
-
-module.exports = function (aran, save) {
-
-  var options = aran.options || {}
-  var esv = Esvisit.Prepare()
-  var hoist     =                Hoist(esv.visit, esv.mark)
-  var sanitize  =                Sanitize(esv.visit, esv.mark)
-  var sandbox   = aran.sandbox ? Sandbox(esv.visit, esv.mark, aran.sandbox)       : Util.nil
-  var intercept = aran.traps   ? Intercept(esv.visit, esv.mark, aran.traps, options.ast?save:null) : Util.nil
-
-  aran.compile = function (isglobal, parent, code) {
-    var program = Esprima.parse(code, {loc:options.loc, range:options.range})
-    if (options.ast) { locate(program, parent) }
-    sanitize(program)
-    var topvars = hoist(program)
-    sandbox(program)
-    intercept(isglobal, program, topvars)
-    if (aran.sandbox && isglobal) {
-      program.body = [
-        Ptah.Expression(Shadow("sandboxdeclare", [Ptah.Array(topvars.map(Ptah.Literal))])),
-        Ptah.With(Shadow("membrane"), Ptah.Block(program.body))
-      ]
-    } else if (topvars.length) {
-      program.body.unshift(Ptah.Declaration(topvars.map(function (v) { return Ptah.Declarator(v, null) })))
-    }
-    // console.log(Esvisit.View(program))
-    // var errors = Esvalid.errors(program)
-    // if (errors.length > 0) { Util.log("Compilation warning", errors.map(summarize), errors) }
-    return Escodegen.generate(program)
-  }
-
-  return function (parent, code) { return aran.compile(true, parent, code) }
-
-}
-
-},{"../stage/hoist.js":44,"../stage/intercept.js":45,"../stage/sandbox.js":46,"../stage/sanitize.js":47,"../syntax/ptah.js":49,"../syntax/shadow.js":50,"../util.js":51,"escodegen":10,"esprima":28,"esvalid":29,"esvisit":36}],41:[function(require,module,exports){
-
-// Intercept scoping lookup on objects (with && global), defines:
-//  - aran.membrane
-//  - aran.globaldeclare
-//  - aran.with
-//  - aran.isobjectdelete
-//  - aran.deleteresult
-
-
-module.exports = function (aran) {
-
-  var unescape = function (str) { return str }
-  if (aran.sandbox) { unescape = function (str) { if (/^\$*aran$/.test(str)) { return str.substring(1) } return str } }
-
-  var has = function (o, k) { return (k==="aran") || (unescape(k) in o) }
-  if (aran.traps&&aran.traps.has) { has = function (o, k) { return (k==="aran") || aran.traps.has(o, unescape(k)) } }
-
-  var get = function (o, k) { return (k==="aran") ? aran : o[unescape(k)] }
-  if (aran.traps&&aran.traps.get) { get = function (o, k) { return (k==="aran") ? aran : aran.traps.get(o, unescape(k)) } }
-
-  var set = function (o, k, v) { return o[unescape(k)]=v }
-  if (aran.traps&&aran.traps.set) { set = function (o, k, v) { return aran.traps.set(o, unescape(k), v) } }
-
-  var del = function (o, k) { return delete o[unescape(k)] }
-  if (aran.traps&&aran.traps.delete) {
-    del = function (o, k) {
-      isobjectdelete = true
-      deleteresult = aran.traps.delete(o, unescape(k))
-    }
-  }
-
-  aran.with = function (o) {
-    if (!aran.sandbox && !aran.traps.exist && !aran.traps.get && !aran.traps.set && !aran.traps.delete) { return o }
-    if (!aran.global.Proxy) { throw new Error("Harmony Proxies are needed to support trapped with statements and") }
-    return new aran.global.Proxy(o, {
-      has: has,
-      get: get,
-      set: set,
-      deleteProperty: del
-    })
-  }
-
-  var isobjectdelete = false
-  var deleteresult = null
-  aran.isobjectdelete = function () {
-    var save = isobjectdelete
-    isobjectdelete = false
-    return save
-  }
-  aran.deleteresult = function () {
-    var save = deleteresult
-    deleteresult = null
-    return save
-  }
-
-  //////////////////
-  // Sandbox only //
-  //////////////////
-
-  if (!aran.sandbox) { return }
-
-  if (!aran.global.Proxy) { throw new Error("Harmony Proxies are needed to support sandboxing") }
-
-  aran.sandboxdeclare = function (vs, node) {
-    for (var i=0; i<vs.length; i++) {
-      if (!has(aran.sandbox, vs[i])) {
-        set(aran.sandbox, vs[i], aran.undefined)
-      }
-    }
-  }
-
-  aran.membrane = new aran.global.Proxy(aran.sandbox, {
-    has: function () { return true },
-    get: function (o, k) {
-      if (has(o, k)) { return get(o, k) }
-      throw new ReferenceError("Sandbox reference Error: "+unescape(k)+" is not defined")
-    },
-    set: set,
-    deleteProperty: del
-  })
-
-}
-
-},{}],42:[function(require,module,exports){
-
-// Setup runtime stack to provide temporary memory, defines:
-//   - aran.push{1,2,3}
-//   - aran.get{1,2,3}
-//   - aran.pop{1,2,3}
-//   - aran.mark
-//   - aran.unmark
-//   - aran.flush
-
-module.exports = function (aran) {
-
-  var marks = []
-  var stack = []
-  var stack1 = []
-  var stack2 = []
-  var stack3 = []
-
-  aran.push  = function (x) { return (stack .push(x), x) }
-  aran.push1 = function (x) { return (stack1.push(x), x) }
-  aran.push2 = function (x) { return (stack2.push(x), x) }
-  aran.push3 = function (x) { return (stack3.push(x), x) }
-
-  aran.pop  = function () { return stack .pop() }
-  aran.pop1 = function () { return stack1.pop() }
-  aran.pop2 = function () { return stack2.pop() }
-  aran.pop3 = function () { return stack3.pop() }
-
-  aran.get  = function () { return stack [stack .length-1] }
-  aran.get1 = function () { return stack1[stack1.length-1] }
-  aran.get2 = function () { return stack2[stack2.length-1] }
-  aran.get3 = function () { return stack3[stack3.length-1] }
-
-  aran.mark = function () {
-    var mark = {}
-    marks.push(mark)
-    stack.push(mark)
-    stack1.push(mark)
-    stack2.push(mark)
-    stack3.push(mark)
-  }
-
-  aran.unmark = function () {
-    var mark = marks.pop()
-    while (stack.pop() !== mark);
-    while (stack1.pop() !== mark);
-    while (stack2.pop() !== mark);
-    while (stack3.pop() !== mark);
-  }
-
-  aran.flush = function () {
-    while (marks.pop());
-    while (stack.pop());
-    while (stack1.pop());
-    while (stack2.pop());
-    while (stack3.pop());
-  }
-
-}
-
-},{}],43:[function(require,module,exports){
-
-// Save compile time information for runtime, defines: aran.fetch.
-
-module.exports = function (aran) {
-  var store = []
-  aran.fetch = function (i) { return store[i] }
-  return function (x) {
-    store.push(x)
-    return store.length-1
-  }
-}
-
-},{}],44:[function(require,module,exports){
-
-/*
- * Hoist variable declaration and function definition.
- * This can be considered as part of JS sanitization,
- * but this code has bad interaction with code on 
- * sanitization file. So I prefered to simply perform
- * another compilation pass. 
- */
-
-var Ptah = require("../syntax/ptah.js")
-var Util = require("../util.js")
-
-module.exports = function (visit, mark) {
-
-  var local
-  var variabless = []
-  var definitionss = []
-  var onstatements = {}
-  var onexpressions = {}
-
-  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
-  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
-
-  function hoistdeclarator (declarator, ancestor) {
-    Util.last(variabless).push(declarator.id.name)
-    if (declarator.init) { return Ptah.IdentifierAssignment(declarator.id.name, declarator.init, ancestor) }
-    return null
-  }
-
-  function popdefinitions (stmts) {
-    var definitions = definitionss.pop()
-    var assignments = Object.keys(definitions).map(function (name) { return Ptah.IdentifierAssignment(name, definitions[name], definitions[name]) })
-    if (assignments.length === 1) { stmts.unshift(Ptah.Expression(assignments[0])) }
-    else if (assignments.length) { stmts.unshift(Ptah.Expression(Ptah.Sequence(assignments))) }
-  }
-
-  function enterfunction (fct) {
-    variabless.push([])
-    definitionss.push({})
-    mark(function () {
-      popdefinitions(fct.body.body)
-      Util.inject(Ptah.HoistedFunction(
-        fct.id ? fct.id.name : null,
-        fct.params.map(function (id) { return id.name }),
-        variabless.pop(),
-        fct.body.body,
-        fct
-      ), fct)
-    })
-  }
-
-  // Definition ::= Hoisted(IdentifierAssignment)
-  onstatements.Definition = function (stmt) {
-    stmt = Util.copy(stmt)
-    Util.last(definitionss)[stmt.id.name] = stmt
-    Util.last(variabless).push(stmt.id.name)
-    enterfunction(stmt)
-    return Ptah.Empty()
-  }
-
-  // Declaration ::= Many(IdentifierAssignment)
-  onstatements.Declaration = function (stmt) {
-    var assignments = stmt.declarations.map(hoistdeclarator, stmt).filter(Util.identity)
-    if (assignments.length === 0) { return Ptah.Empty() }
-    if (assignments.length === 1) { return Ptah.Expression(assignments[0]) }
-    return Ptah.Expression(Ptah.Sequence(assignments))
-  }
-
-  // DeclarationFor ::= For + Many(Assignment)
-  onstatements.DeclarationFor = function (stmt) {
-    var assignments = stmt.init.declarations.map(hoistdeclarator, stmt).filter(Util.identity)
-    return Ptah.For(
-      assignments.length ? ((assignments.length===1) ? assignments[0] : Ptah.Sequence(assignments)) : null,
-      stmt.test,
-      stmt.update,
-      stmt.body,
-      stmt
-    )
-  }
-
-  // DeclarationForIn ::= IdentifierForIn + Maybe(Assignment)
-  onstatements.DeclarationForIn = function (stmt) {
-    var assignment = hoistdeclarator(stmt.left.declarations[0], stmt)
-    return Ptah.IdentifierForIn(
-      stmt.left.declarations[0].id.name,
-      assignment ? Ptah.Sequence([assignment, stmt.right]) : stmt.right,
-      stmt.body,
-      stmt
-    )
-  }
-
-  onexpressions.Function = enterfunction
-
-  return function (ast) {
-    variabless.push([])
-    definitionss.push({})
-    visit(ast, onstatement, onexpression)
-    popdefinitions(ast.body)
-    return variabless.pop()
-  }
-
-}
-
-},{"../syntax/ptah.js":49,"../util.js":51}],45:[function(require,module,exports){
-
-/*
- * Intercept the evaluation of some expressions/statements.
- */
-
-var Esvisit = require("esvisit")
-var Util = require("../util.js")
-var Ptah = require("../syntax/ptah.js")
-var Nasus = require("../syntax/nasus.js")
-var Shadow = require("../syntax/shadow.js")
-
-/////////////
-// Exports //
-/////////////
-
-module.exports = function (visit, mark, traps, save) {
-
-  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
-  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
-
-  var depth = 0
-  function out () { depth-- }
-
-  /////////////
-  // Helpers //
-  /////////////
-
-  function trap (name, args, ancestor) {
-    if (save) { args.push(Shadow("fetch", [Ptah.Literal(save(ancestor.$locus))])) }
-    return Shadow("traps", name, args)
-  }
-
-  function test (test, ancestor) {
-    if (!traps.test) { return test }
-    return trap("test", [test], ancestor)
-  }
-
-  function undef(name, ancestor) {
-    if (!traps.undefined) { return Shadow("global", "undefined") }
-    return trap("undefined", [Ptah.Literal(name)], ancestor)
-  }
-
-  function property (member) { return member.computed ? member.property : Ptah.Literal(member.property.name) }
-
-  function forin (type, node) {
-    if (!traps.enumerate) { return }
-    var pushes = [Nasus.push(Ptah.Literal(0))]
-    var pops = [Nasus.pop()]
-    if (type === "MemberForIn") {
-      pushes.push(Nasus.push1(node.left.object))
-      pushes.push(Nasus.push2(property(node.left)))
-      pops.push(Nasus.pop1())
-      pops.push(Nasus.pop2())
-    }
-    pushes.push(Nasus.push3(trap("enumerate", [node.right], node)))
-    pops.push(Nasus.pop3())
-    var right = Ptah.Member(Nasus.get3(), Nasus.get())
-    var ass
-    if (type === "IdentifierForIn") { ass = Ptah.IdentifierAssignment(node.left.name, right) }
-    if (type === "MemberForIn") {
-      if (traps.set) { ass = trap("set", [Nasus.get1(), Nasus.get2(), right], node) }
-      else { ass = Ptah.MemberAssignment(Nasus.get1(), Nasus.get2(), right) }
-    }
-    var trystmts = [Ptah.For(
-      null,
-      Ptah.Binary("<", Nasus.get(), Ptah.Member(Nasus.get3(), "length")),
-      Nasus.push(Ptah.Binary("+", Nasus.pop(), Ptah.Literal(1))),
-      Ptah.Block([Ptah.Expression(ass), node.body])
-    )]
-    var stmts = pushes.map(Ptah.Expression)
-    stmts.push(Ptah.Try(trystmts, null, null, pops.map(Ptah.Expression)))
-    return Ptah.Block(stmts)
-  }
-
-  ///////////////
-  // Statement //
-  ///////////////
-
-  var onstatements = {}
-
-  onstatements.If = function (node) { node.test = test(node.test, node) }
-
-  onstatements.Return = function (node) { if (!node.argument) { node.argument = undef(null, node) } }
- 
-  onstatements.Throw = function (node) { if (traps.throw) { node.argument = trap("throw", [node.argument], node) } }
-
-  onstatements.Try = function (node) {
-    if (traps.try)
-      node.block.body.unshift(Ptah.Expression(trap("try", [], node)));
-    if (node.handlers[0] && traps.catch) {
-      node.handlers[0].body.body.unshift(Ptah.Expression(Ptah.IdentifierAssignment(
-        node.handlers[0].param.name,
-        trap("catch", [Ptah.Identifier(node.handlers[0].param.name)], node)
-      )))
-    }
-  }
-
-  onstatements.While = function (node) { node.test = test(node.test, node) }
-
-  onstatements.DoWhile = function (node) { node.test = test(node.test, node) }
-
-  onstatements.For = function (node) { if (node.test) { node.test = test(node.test, node) } }
-
-  // for (ID in EXPR2) STMT >>> { 
-  //   try {
-  //     aran.push3(aran.traps.enumerate(EXPR2));
-  //     for (aran.push(0); aran.get()<aran.get3().length; aran.push(aran.pop()+1)) {
-  //       #ID = aran.get3()[aran.get()];
-  //       STMT
-  //     }
-  //   } finally {
-  //     aran.pop();
-  //     aran.pop3();
-  //   }
-  // }
-  onstatements.IdentifierForIn = function (node) { return forin("IdentifierForIn", node) }
-
-  // for (EXPR1[EXPR2] in EXPR3) STMT >>> {
-  //   try {
-  //     aran.push1(EXPR1);
-  //     aran.push2(EXPR2);
-  //     aran.push3(aran.traps.enumerate(EXPR3));
-  //     for (aran.push(0); aran.get()<aran.get3().length; aran.push(aran.pop()+1)) {
-  //       aran.set(aran.get1(), aran.get2(), aran.get3()[aran.get()]);
-  //       STMT
-  //     }
-  //   } finally {
-  //     aran.pop();
-  //     aran.pop1();
-  //     aran.pop2();
-  //     aran.pop3();
-  //   }
-  // }
-  onstatements.MemberForIn = function (node) { return forin("MemberForIn", node) }
-
-  ////////////////
-  // Expression //
-  ////////////////
-
-  var onexpressions = {}
-
-  onexpressions.Array = function (node) { if (traps.array) { return trap("array", [Ptah.Array(node.elements)], node) } }
-
-  onexpressions.Object = function (node) {
-    if (traps.object) {
-      var os = [];
-      var dico = Object.create(null); // to avoid access Object.prototype
-      node.properties.forEach(function (p) {
-        var k = (p.key.type === "Identifier") ? p.key.name : p.key.value
-        var o = dico[k]
-        if (!o) {
-          o = Ptah.Object([Ptah.InitProperty("key", Ptah.Literal(k))])
-          dico[k] = o
-          os.push(o)
-        }
-        var kind = (p.kind === "init") ? "value" : p.kind
-        o.properties.push(Ptah.InitProperty(kind, p.value))
-      })
-      return trap("object", [Ptah.Array(os)], node)
-    }
-  }
-
-  // onexpressions.DataObject = function (node) { if (traps.object) { return trap("object", [Ptah.DataObject(node.properties)], node) } }
-
-  onexpressions.HoistedFunction = function (node) {
-    (depth++, mark(out))
-    if (traps.arguments) {
-      var check = true
-      node.params.forEach(function (id) { if (id.name === "arguments") { check = false } })
-      if (check) {
-        node.body.body.splice(1, 0, Ptah.Expression(Ptah.IdentifierAssignment(
-          "arguments",
-          trap("arguments", [Ptah.Identifier("arguments")], node))))
-      }
-    }
-    if (traps.undefined) {
-      if (node.params.length) {
-        node.body.body.splice(1, 0, Ptah.Block(node.params.map(function (id) {
-          return Ptah.If(
-            Ptah.Binary(
-              "===",
-              Ptah.Identifier(id.name),
-              Shadow("global", "undefined")),
-            Ptah.Expression(Ptah.IdentifierAssignment(id.name, undef(id.name, node))))
-        })))
-      }
-      if (node.body.body[0].declarations) {
-        var assignments = node.body.body[0].declarations.map(function (dec) { return Ptah.IdentifierAssignment(dec.id.name, undef(dec.id.name, node)) })
-        if (assignments.length === 1) { node.body.body.splice(1, 0, Ptah.Expression(assignments[0])) }
-        else if (assignments.length) { node.body.body.splice(1, 0, Ptah.Expression(Ptah.Sequence(assignments))) }
-      }
-      node.body.body.push(Ptah.Return(undef(null, node)))
-    }
-    if (traps.function) { return trap("function", [Util.copy(node)], node) }
-  }
-
-  onexpressions.MemberAssignment = function (node) { if (traps.set) { return trap("set", [node.left.object, property(node.left), node.right], node) } }
-
-  // delete ID >>> (aran.push(delete ID), aran.isobjectdelete() ? (aran.pop(), aran.deleteresult()) : primitive(aran.pop()))
-  onexpressions.IdentifierDelete = function (node) {
-    if (traps.delete) {
-      return Ptah.Sequence([
-        Nasus.push(Util.copy(node)),
-        Ptah.Conditional(
-          Shadow("isobjectdelete", []),
-          Ptah.Sequence([Nasus.pop(), Shadow("deleteresult", [])]),
-          traps.erase ? Shadow("traps", "primitive", [Nasus.pop(), node]) : Nasus.pop())])
-    }
-  }
-
-  onexpressions.Unary = function (node) { if (traps.unary) { return trap("unary", [Ptah.Literal(node.operator), node.argument], node) } }
-
-  onexpressions.MemberDelete = function (node) { if (traps.delete) { return trap("delete", [node.argument.object, property(node.argument)], node) } }
-
-  onexpressions.Binary = function (node) { if (traps.binary) { return trap("binary", [Ptah.Literal(node.operator), node.left, node.right], node) } }
-
-  onexpressions.Conditional = function (node) { node.test = test(node.test, node) }
-
-  // eval(ARGS) >>> (aran.push(eval)===aran.eval) ? (aran.pop(), eval(aran.compiled(LOCAL, ARGS)) : aran.pop()(ARGS)
-  // sandbox contains the original eval function <=> possibly local eval
-  // the alternative eval call is known to be standard eval call
-  onexpressions.EvalCall = function (node) {
-    var args = node.arguments.slice()
-    if (traps.eval) { args[0] = trap("eval", [args[0]], node) }
-    args[0] = Shadow("compile", [
-      Ptah.Literal(depth===0),
-      save
-        ? Shadow("fetch", [Ptah.Literal(save(node.$locus))])
-        : Ptah.Literal(null),
-      args[0]])
-    return Ptah.Conditional(
-      Ptah.Binary("===", Nasus.push(Ptah.Identifier("eval")), Shadow("global", "eval")),
-      Ptah.Sequence([Nasus.pop(), Ptah.EvalCall(args)]),
-      traps.apply
-        ? trap("apply", [Nasus.pop(), Shadow("global"), Ptah.Array(node.arguments)], node)
-        : Ptah.Call(Nasus.pop(), node.arguments))
-  }
-
-  // EXPR1.EXPR2(ARGS)
-  //   traps.apply && traps.get >>> aran.traps.apply(aran.traps.get(aran.push(EXPR1), EXPR2), Nasus.pop(), [ARGS])
-  //                  traps.get >>> aran.apply(aran.traps.get(aran.push(EXPR1), EXPR2), Nasus.pop(), [ARGS])
-  //   traps.apply              >>> aran.global.Funtion.prototype.apply.bind(Nasus.push(EXPR1).EXPR2)(Nasus.pop(), [ARGS])
-  //                            >>> EXPR1.EXPR2(ARGS)
-  onexpressions.MemberCall = function (node) {
-    if (!traps.get && !traps.apply) { return }
-    var fct = traps.get
-      ? Shadow("traps", "get", [Nasus.push(node.callee.object), property(node.callee)], node)
-      : Ptah.Member(Nasus.push(node.callee.object), property(node.callee))
-    var obj = Nasus.pop()
-    var args = Ptah.Array(node.arguments)
-    if (traps.apply) { return trap("apply", [fct, obj, args], node) }
-    return Ptah.call(Shadow("global", "Function", "prototype", "apply", "bind", [fct]), [obj, args])
-  }
-
-  onexpressions.Call = function (node) { if (traps.apply) { return trap("apply", [node.callee, Shadow("global"), Ptah.Array(node.arguments)], node) } }
-
-  onexpressions.New = function (node) { if (traps.construct) { return trap("construct", [node.callee, Ptah.Array(node.arguments)], node) } }
-
-  onexpressions.Member = function (node) { if (traps.get) { return trap("get", [node.object, property(node)], node) } }
-
-  onexpressions.Literal = function (node) {
-    if (node.regex) { if (traps.regexp) { return trap("regexp", [Ptah.Literal(node.regex.pattern), Ptah.Literal(node.regex.flags)], node) } }
-    else if (traps.primitive) { return trap("primitive", [Ptah.Literal(node.value, node)], node) }
-  }
-
-  // undefined >>> (undefined === aran.undefined) ? aran.traps.undefined(null, aran.nodes[NID]) : undefined
-  onexpressions.Identifier = function (node) {
-    if (traps.undefined && (node.name === "undefined")) {
-      return Ptah.Conditional(
-        Ptah.Binary("===", Nasus.push(Ptah.Identifier("undefined")), Shadow("global", "undefined")),
-        Ptah.Sequence([Nasus.pop(), undef(null, node)]),
-        Nasus.pop())
-    }
-    if (traps.primitive && (node.name === "NaN")) {
-      return Ptah.Conditional(
-        Ptah.Binary("!==", Ptah.Identifier("NaN"), Ptah.Identifier("NaN")),
-        trap("primitive", [Ptah.Identifier("NaN")], node),
-        Ptah.Identifier("NaN"))
-    }
-  }
-
-  ////////////
-  // Return //
-  ////////////
-
-  // if (x === aran.undefined) x = aran.traps.undefined("x")
-  return function (isglobal, ast, topvars) {
-    depth = isglobal ? 0 : 1
-    visit(ast, onstatement, onexpression)
-    if (traps && traps.undefined) {
-      topvars.forEach(function (name) {
-        ast.body.unshift(Ptah.If(
-          Ptah.Binary("===", Ptah.Identifier(name), Shadow("global", "undefined")),
-          Ptah.Expression(Ptah.IdentifierAssignment(name, undef(name, ast)))))
-      })
-    }
-  }
-
-}
-
-},{"../syntax/nasus.js":48,"../syntax/ptah.js":49,"../syntax/shadow.js":50,"../util.js":51,"esvisit":36}],46:[function(require,module,exports){
-
-/*
- * Make sure no identifier from the target code shadows aran.
- */
-
-var Ptah = require("../syntax/ptah.js")
-var Util = require("../util.js")
-var Nasus = require("../syntax/nasus.js")
-var Shadow = require("../syntax/shadow.js")
-
-function escape (id) { if (/^\$*aran$/.test(id.name)) { id.name = "$"+id.name } }
-function descape (decl) { escape(decl.id) }
-
-module.exports = function (visit, mark, sandbox) {
-  
-  var onstatements = {}
-  var onexpressions = {}
-  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
-  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
-
-  ////////////////
-  // Statements //
-  ////////////////
-
-  // IdentifierForIn := IdentifierForIn
-  onstatements.IdentifierForIn = function (stmt) { escape(stmt.left) }
-
-  // With ::= With
-  onstatements.With = function (stmt) { stmt.object = Shadow("with", [stmt.object]) }
-
-  // Try ::= Try
-  onstatements.Try = function (stmt) { if (stmt.handlers[0]) { escape(stmt.handlers[0].param) } }
-
-  /////////////////
-  // Expressions //
-  /////////////////
-
-  // Function ::= HoistedFunction
-  onexpressions.HoistedFunction = function (expr) {
-    expr.params.forEach(escape)
-    if (expr.body.body[0].declarations) { expr.body.body[0].declarations.forEach(descape) }
-  }
-
-  // This ::= This
-  // this >>> (aran.push(this) === aran.global) ? (nasus.pop(), aran.sandbox) : nasus.pop()
-  onexpressions.This = function (expr) {
-    return Ptah.Conditional(
-      Ptah.Binary("===", Nasus.push(Ptah.This(expr)), Shadow("global")),
-      Ptah.Sequence([Nasus.pop(), Shadow("sandbox")]),
-      Nasus.pop())
-  }
-
-  // IdentifierAssignment ::= IdentifierAssignment
-  onexpressions.IdentifierAssignment = function (expr) { escape(expr.left) }
-
-  // Identifier ::= Identifier
-  onexpressions.Identifier = escape
-
-  ////////////
-  // Return //
-  ////////////
-
-  return function (ast) { visit(ast, onstatement, onexpression) }
-
-}
-
-},{"../syntax/nasus.js":48,"../syntax/ptah.js":49,"../syntax/shadow.js":50,"../util.js":51}],47:[function(require,module,exports){
-
-/*
- * Sanitize JavaScript to simplify trap insertion:
- *   + Preserve aran stack
- *   + Get rid of simple syntactic sugar:
- *     - logical expression
- *     - assignment operation
- *     - update expression
- *   + Ignore use strict statement
- *   + Get rid of inline object accessor (getter - setter)
- *   + Get rid of switches
- */
-
-// N.B. I made explicit module patterns, since 
-// anonymous module pattern (i.e. '(function () {} ())')
-// calls statements.Try (and throws a: stmt not defined).
-// I have really no idea why it does that...
-
-var Ptah = require("../syntax/ptah.js")
-var Nasus = require("../syntax/nasus.js")
-var Util = require("../util.js")
-
-module.exports = function (visit, mark) {
-
-  var onexpressions = {}
-  var onstatements = {}
-  function onstatement (type, stmt) { if (onstatements[type]) { return onstatements[type](stmt) } }
-  function onexpression (type, expr) { if (onexpressions[type]) { return onexpressions[type](expr) } }
-
-  ////////////////////////
-  // Stack Preservation //
-  ////////////////////////
-
-  // Try ::= Try
-  onstatements.Try = function (stmt) {
-    var unmark = Ptah.Expression(Nasus.unmark())
-    return Ptah.Try(
-      (stmt.block.body.unshift(Ptah.Expression(Nasus.mark())), stmt.block.body),
-      stmt.handlers.length ? stmt.handlers[0].param.name : null,
-      stmt.handlers.length ? stmt.handlers[0].body.body : null,
-      stmt.finalizer ? (stmt.finalizer.body.unshift(unmark), stmt.finalizer.body) : [unmark],
-      stmt
-    )
-  }
-
-  /////////////
-  // Logical //
-  ///////////// 
-
-  // Logical ::= Conditional
-  onexpressions.Logical = function (expr) {
-    var cond = Ptah.Conditional(
-      Nasus.push(expr.left),
-      Nasus.pop(),
-      Ptah.Sequence([Nasus.pop(), expr.right]),
-      expr)
-    if (expr.operator === "&&") {
-      cond.consequent = cond.alternate
-      cond.alternate = Nasus.pop()
-    }
-    return cond
-  }
-
-  ////////////
-  // Typeof //
-  ////////////
-
-  // typeof ID >>> (typeof function () { try {return ID} catch (_) {} } ())
-  // IdentifierTypeof ::= Unary + Identifier
-  onexpressions.IdentifierTypeof = function (expr) {
-    return Ptah.Unary(
-      "typeof",
-      Ptah.Call(
-        Ptah.Function(
-          null,
-          [],
-          [Ptah.Try(
-            [Ptah.Return(Ptah.Identifier(expr.argument.name, expr))],
-            "_",
-            [],
-            null)]),
-        []),
-      expr)
-  }
-
-  //////////////////
-  // Assignments //
-  /////////////////
-
-  var assignmentmodule = function () {
-
-    function pushobject (member) { return Nasus.push1(member.object) }
-    function pushproperty (member) { return member.computed ? Nasus.push2(member.property) : member.property.name }
-    function popmember (member, ancestor) { return Ptah.Member(Nasus.pop1(), member.computed ? Nasus.pop2() : member.property.name, ancestor) }
-
-    // IdentifierBinaryAssignment ::= IdentifierAssignment + Binary + Identifier
-    onexpressions.IdentifierBinaryAssignment = function (expr) {
-      return Ptah.IdentifierAssignment(
-        expr.left.name,
-        Ptah.Binary(
-          expr.operator.replace("=", ""),
-          Ptah.Identifier(expr.left.name, expr),
-          expr.right,
-          expr),
-        expr)
-    }
-
-    // MemberBinaryAssignment ::= MemberAssignment + Binary + Member
-    onexpressions.MemberBinaryAssignment = function (expr) {
-      return Ptah.MemberAssignment(
-        pushobject(expr.left),
-        pushproperty(expr.left),
-        Ptah.Binary(
-          expr.operator.replace("=", ""),
-          popmember(expr.left, expr),
-          expr.right,
-          expr),
-        expr)
-    }
-
-    // IdentifierUpdate ::= IdentifierAssignment + Binary + Identifier + Literal
-    onexpressions.IdentifierUpdate = function (expr) {
-      var ass = Ptah.IdentifierAssignment(
-        expr.argument.name,
-        Ptah.Binary(
-          expr.operator[0],
-          (expr.prefix?Util.identity:Nasus.push)(Ptah.Identifier(expr.argument.name, expr)),
-          Ptah.Literal(1, expr),
-        expr))
-      if (expr.prefix) { return ass }
-      return Ptah.Sequence([ass, Nasus.pop()])
-    }
-
-    // MemberUpdate ::= MemberAssignment + Binary + Member + Literal
-    onexpressions.MemberUpdate = function (expr) {
-      var ass = Ptah.MemberAssignment(
-        pushobject(expr.argument),
-        pushproperty(expr.argument),
-        Ptah.Binary(
-          expr.operator[0],
-          (expr.prefix?Util.identity:Nasus.push3)(popmember(expr.argument, expr)),
-          Ptah.Literal(1, expr),
-          expr),
-        expr)
-      if (expr.prefix) { return ass }
-      return Ptah.Sequence([ass, Nasus.pop3()])
-    }
-
-  }
-
-  assignmentmodule()
-
-  ////////////
-  // Strict //
-  ////////////
-
-  // Strict ::=
-  onstatements.Strict = function (stmt) { return Ptah.Empty() }
-
-  //////////////////////
-  // Inline Accessors //
-  //////////////////////
-
-  // AccessorObject ::= MemberCall + DataObject + DataObject + N*DataObject + 2*N*Literal + Max(2*N*Function)
-  // Semantic not preserved:
-  // var Object = null
-  // var o = { a:1, get b () {} } // OK
-  // // NOT OK //
-  // var o = Object.defineProperties({a:1}, {
-  //   b: {
-  //     configurable: true,
-  //     enumerable: true,
-  //     get: function () {}
-  //   }
-  // })
-  // onexpressions.AccessorObject = function (expr) {
-  //   var accessors = {}
-  //   var properties = expr.properties.filter(function (p) {
-  //     if (p.kind === "init") { return true }
-  //     var k = p.key.name || p.key.value
-  //     if (!accessors[k]) {
-  //       accessors[k] = {
-  //         configurable: Ptah.Literal(true, p),
-  //         enumerable: Ptah.Literal(true, p)
-  //       }
-  //     }
-  //     accessors[k][p.kind] = Ptah.Function(
-  //       null,
-  //       p.value.params.map(function (id) { return id.name }),
-  //       p.value.body.body,
-  //       p
-  //     )
-  //     return false
-  //   })
-  //   Object.keys(accessors).map(function (k) { accessors[k] = Ptah.Set(accessors[k], expr) })
-  //   return Ptah.MemberCall(Ptah.Identifier("Object"), "defineProperties", [Ptah.DataObject(properties, expr), Ptah.Set(accessors, expr)])
-  // }
-
-  ////////////
-  // Switch //
-  ////////////
-
-  var switchmodule = function () {
-
-    function escape (id) { if (/^\$*switch/.test(id.name)) { id.name="$"+id.name } }
-
-    var counter = 0
-    var stack = [null]
-    function mask (stmt) { (stack.push(null), mark(pop)) }
-    function pop () { stack.pop() }
-    function get () { return Util.last(stack) ? ("switch"+Util.last(stack)) : null }
-
-    // Switch ::= Max(N*(If + Binary))
-    onstatements.Switch = function (stmt) {
-      stack.push(++counter)
-      mark(pop)
-      var stmts = [Ptah.Expression(Nasus.push(stmt.discriminant))]
-      stmt.cases.forEach(function (c) {
-        if (!c.test) { for (var i=0; i<c.consequent.length; i++) { stmts.push(c.consequent[i]) } }
-        else {
-          stmts.push(Ptah.If(
-            Ptah.Binary("===", Nasus.get(), c.test, c),
-            Ptah.Block(c.consequent),
-            null,
-            c))
-        }
-      })
-      return Ptah.Label(
-        get(),
-        Ptah.Try(stmts, null, null, [Ptah.Expression(Nasus.pop())]))
-    }
-
-    // Label ::= Label
-    onstatements.Label = function (stmt) { escape(stmt.label) }
-
-    // Continue ::= Continue
-    onstatements.Continue = function (stmt) { if (stmt.label) { escape(stmt.label) } }
-
-    // Break ::= Break
-    onstatements.Break = function (stmt) {
-      if (stmt.label) { escape(stmt.label) }
-      else if (get()) { return Ptah.Break(get(), stmt) }
-    }
-
-    // While ::= While
-    onstatements.While = mask
-
-    // DoWhile ::= DoWhile
-    onstatements.DoWhile = mask
-
-    // DeclarationFor ::= DeclarationFor
-    onstatements.DeclarationFor = mask
-
-    // For ::= For
-    onstatements.For = mask
-
-    // DeclarationForIn ::= DeclarationForIn
-    onstatements.DeclarationForIn = mask
-
-    // IdentifierForIn ::= IdentifierForIn
-    onstatements.IdentifierForIn = mask
-
-    // MemberForIn ::= MemberForIn
-    onstatements.MemberForIn = mask
-
-  }
-
-  switchmodule()
-
-  ////////////
-  // Return //
-  ////////////
-
-  return function (ast) { visit(ast, onstatement, onexpression) }
-
-}
-
-},{"../syntax/nasus.js":48,"../syntax/ptah.js":49,"../util.js":51}],48:[function(require,module,exports){
-
-/*
- * Nasus and his siphoning strike will construct syntactic calls to aran stacks.
- */  
-
-var Shadow = require("./shadow.js")
-var Esvisit = require("esvisit")
-
-exports.mark = function () { return Esvisit.Halt(Shadow("mark", [])) }
-exports.unmark = function () { return Esvisit.Halt(Shadow("unmark", [])) }
-
-exports.push = function (x) { return Shadow("push", [x]) }
-exports.push1 = function (x) { return Shadow("push1", [x]) }
-exports.push2 = function (x) { return Shadow("push2", [x]) }
-exports.push3 = function (x) { return Shadow("push3", [x]) }
-
-exports.pop = function () { return Esvisit.Halt(Shadow("pop", [])) }
-exports.pop1 = function () { return Esvisit.Halt(Shadow("pop1", [])) }
-exports.pop2 = function () { return Esvisit.Halt(Shadow("pop2", [])) }
-exports.pop3 = function () { return Esvisit.Halt(Shadow("pop3", [])) }
-
-exports.get = function () { return Esvisit.Halt(Shadow("get", [])) }
-exports.get1 = function () { return Esvisit.Halt(Shadow("get1", [])) }
-exports.get2 = function () { return Esvisit.Halt(Shadow("get2", [])) }
-exports.get3 = function () { return Esvisit.Halt(Shadow("get3", [])) }
-
-},{"./shadow.js":50,"esvisit":36}],49:[function(require,module,exports){
-
-var Esvisit = require("esvisit")
-var BE = Esvisit.BuildExpression
-var BS = Esvisit.BuildStatement
-
-function finalize (node, ancestor) {
-  if (!ancestor) { return Esvisit.Ignore(node) }
-  if (ancestor.$locus) { node.$locus = ancestor.$locus }
-  return node
-}
-
-////////////////
-// Statements //
-////////////////
-
-exports.Return = function (argument, ancestor) {
-  return finalize(BS.Return(argument), ancestor)
-}
-
-exports.Try = function (trybody, catchparam, catchbody, finallybody, ancestor) {
-  return finalize(BS.Try(trybody, catchparam, catchbody, finallybody), ancestor)
-}
-
-exports.Block = function (body, ancestor) {
-  return finalize(BS.Block(body), ancestor)
-}
-
-exports.If = function (test, consequent, alternate, ancestor) {
-  return finalize(BS.If(test, consequent, alternate), ancestor)
-}
-
-exports.IdentifierForIn = function (leftname, right, body, ancestor) {
-  return finalize(BS.IdentifierForIn(leftname, right, body), ancestor)
-}
-
-exports.Label = function (labelname, statement, ancestor) {
-  return finalize(BS.Label(labelname, statement), ancestor)
-}
-
-exports.Break = function (labelname, ancestor) {
-   return finalize(BS.Break(labelname), ancestor)
-}
-
-exports.Empty = function (ancestor) {
-  return finalize(BS.Empty(), ancestor)
-}
-
-exports.With = function (object, body, ancestor) {
-  return finalize(BS.With(object, body), ancestor)
-}
-
-exports.Expression = function (expression, ancestor) {
-  return finalize(BS.Expression(expression), ancestor)
-}
-
-exports.For = function (init, test, update, body, ancestor) {
-  return finalize(BS.For(init, test, update, body), ancestor)
-}
-
-exports.Declaration = function (declarators, ancestor) {
-  return finalize(BS.Declaration(declarators), ancestor)
-}
-
-/////////////////
-// Expressions //
-/////////////////
-
-exports.This = function (ancestor) {
-  return finalize(BE.This(), ancestor)
-}
-
-exports.Sequence = function (expressions, ancestor) {
-  return finalize(BE.Sequence(expressions), ancestor)
-}
-
-exports.Conditional = function (test, consequent, alternate, ancestor) {
-  return finalize(BE.Conditional(test, consequent, alternate), ancestor)
-}
-
-exports.IdentifierAssignment = function (leftname, right, ancestor) {
-  return finalize(BE.IdentifierAssignment(leftname, right), ancestor)
-}
-
-exports.Array = function (elements, ancestor) {
-  return finalize(BE.Array(elements), ancestor)
-}
-
-// exports.Set = function (hash, ancestor) {
-//   return finalize(BE.DataObject(Object.keys(hash).map(function (k) { return Esvisit.BuildInitProperty(k, hash[k]) })), ancestor)
-// }
-
-exports.Object = function (properties, ancestor) {
-  return finalize(BE.Object(properties), ancestor)
-}
-
-exports.MemberAssignment = function (leftobject, leftproperty, right, ancestor) {
-  return finalize(BE.MemberAssignment(leftobject, leftproperty, right), ancestor)
-}
-
-exports.Unary = function (operator, argument, ancestor) {
-  return finalize(BE.Unary(operator, argument), ancestor)
-}
-
-exports.Binary = function (operator, left, right, ancestor) {
-  return finalize(BE.Binary(operator, left, right), ancestor)
-}
-
-exports.EvalCall = function (arguments, ancestor) {
-  return finalize(BE.EvalCall(arguments), ancestor)
-}
-
-exports.MemberCall = function (calleeobject, calleeproperty, arguments, ancestor) {
-  return finalize(BE.MemberCall(calleeobject, calleeproperty, arguments), ancestor)
-}
-
-exports.Call = function (callee, arguments, ancestor) {
-  return finalize(BE.Call(callee, arguments), ancestor)
-}
-
-exports.Function = function (idname, paramnames, body, ancestor) {
-  return finalize(BE.Function(idname, paramnames, body), ancestor)
-}
-
-exports.HoistedFunction = function (idname, paramnames, variables, body, ancestor) {
-  return finalize(BE.HoistedFunction(idname, paramnames, variables, body), ancestor)
-}
-
-exports.Member = function (object, property, ancestor) {
-  return finalize(BE.Member(object, property), ancestor)
-}
-
-exports.Identifier = function (name, ancestor) {
-  return finalize(BE.Identifier(name), ancestor)
-}
-
-exports.IdentifierDelete = function (idname, ancestor) {
-  return finalize(BE.IdentifierDelete(idname), ancestor)
-}
-
-exports.Literal = function (value, ancestor) {
-  return finalize(BE.Literal(value), ancestor)
-}
-
-///////////
-// Other //
-///////////
-
-exports.Declarator = function (name, init, ancestor) {
-  return finalize(Esvisit.BuildDeclarator(name, init), ancestor)
-}
-
-exports.InitProperty = function (name, value, ancestor) {
-  return finalize(Esvisit.BuildInitProperty(name, value), ancestor)
-}
-
-},{"esvisit":36}],50:[function(require,module,exports){
-
-/*
- * Call Aran Linvail, the shadow master.
- */
-
-var Esvisit = require("esvisit")
-
-// aran
-// aran(x)
-// aran.x
-// aran.x(y)
-// aran.x.y
-// etc...
-module.exports = function () {
-  var base = Esvisit.Halt(Esvisit.BuildExpression.Identifier("aran"))
-  for (var i=0; i<arguments.length; i++) {
-    if (Array.isArray(arguments[i])) { return Esvisit.Ignore(Esvisit.BuildExpression.Call(base, arguments[i])) }
-    if (typeof arguments[i] !== "string") { return base }
-    base = Esvisit.Halt(Esvisit.BuildExpression.Member(base, arguments[i]))
-  }
-  return base
-}
-
-},{"esvisit":36}],51:[function(require,module,exports){
-
-//////////////
-// Function //
-//////////////
-
-exports.nil = function () {}
-
-exports.constant = function (c) { return function () { return c} }
-
-exports.identity = function (x) { return x }
-
-exports.second = function (x, y) { return y }
-
-////////////
-// Object //
-////////////
-
-exports.copy = function (o1) {
-  var keys = Object.keys(o1)
-  var length = keys.length
-  var o2 = {}
-  for (var i=0; i<length; i++) { o2[keys[i]] = o1[keys[i]]}
-  return o2
-}
-
-exports.inject = function (o1, o2) { Object.keys(o1).forEach(function (k) { o2[k] = o1[k] }) }
-
-exports.copy = function (o1) {
-  var o2 = {}
-  Object.keys(o1).forEach(function (k) { o2[k] = o1[k] })
-  return o2
-}
-
-///////////
-// Array //
-///////////
-
-exports.last = function (xs) {
-  return xs[xs.length-1]
-}
-
-exports.append = function (xs, ys) {
-  for (var i=0; i<ys.length; i++) { xs.push(ys[i])}
-}
-
-exports.prepend = function (xs, ys) {
-  for (var i=ys.length-1; i>=0; i--) { xs.unshift(ys[i]) }
-}
-
-exports.flaten = function (xss) {
-  return xss.reduce(function (xs, ys) { return xs.concat(ys) }, [])
-}
-
-/////////
-// Log //
-/////////
-
-exports.log = function (mess) {
-  for (var i=1; i<arguments.length; i++) {
-    try { mess = mess+"\n    "+JSON.stringify(arguments[i]) }
-    catch (e) { mess = mess+"\n    "+arguments[i] }
-  }
-  console.log(mess+"\n\n")
-}
-
-exports.error = function () {
-  var msg = ""
-  for (var i=0; i<arguments.length; i++) {
-    try {
-      msg = msg + JSON.stringify(arguments[i]) + "\n"
-    } catch (e) {
-      msg = msg + arguments[i]
-    }
-  }
-  throw new Error(msg)
-}
-
-function error (blame, message, arguments) {
-  var args = []
-  for (var i=1; i<arguments.length; i++) { args.push(arguments[i]) }
-  var error = new Error(message)
-  error.blame = blame
-  error.data = args
-  throw error
-}
-
-exports.esprima = function (message) { error("esprima", message, arguments) }
-
-exports.internal = function (message) { error("internal", message, arguments) }
-
-exports.external = function (message) { error("external", message, arguments) }
-
-////////////////////////
-// Simply linked list //
-////////////////////////
-
-exports.link = function (data, next) { return {data:data, next:next} }
-
-
-},{}],52:[function(require,module,exports){
+},{"./type.js":41}],44:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -15445,7 +15056,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":53}],53:[function(require,module,exports){
+},{"_process":45}],45:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -15478,7 +15089,9 @@ function drainQueue() {
         currentQueue = queue;
         queue = [];
         while (++queueIndex < len) {
-            currentQueue[queueIndex].run();
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
         }
         queueIndex = -1;
         len = queue.length;
@@ -15530,14 +15143,472 @@ process.binding = function (name) {
     throw new Error('process.binding is not supported');
 };
 
-// TODO(shtylman)
 process.cwd = function () { return '/' };
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 process.umask = function() { return 0; };
 
-},{}],54:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
+
+exports.round = function (x) { return Math.round(1000*x)/1000 }
+
+exports.print = function (x) { return (typeof x === "string") ? JSON.stringify(x) : String(x) }
+
+exports.benchmark = function (code) {
+  var out = {};
+  out.loc = code.split("\n").length;
+  out.time = performance.now();
+  try { out.result = window.eval(code) }
+  catch (e) { out.error = e }
+  out.time = performance.now()-out.time;
+  return out;
+}
+
+},{}],47:[function(require,module,exports){
+
+var IFunction = require("./apply/irregular/function.js");
+var IConstructor = require("./apply/irregular/constructor.js");
+// var Polyfill = require("./apply/polyfill.js");
+var Util = require("./util.js");
+
+module.exports = function (callstack, membrane, object) {
+
+  function leave (arg, idx) { return membrane.leave(arg, "arguments["+idx+"]") }
+
+  function apply (fct, ctx, args, info) {
+    callstack.apply(fct, ctx, args, info);
+    fct = membrane.leave(fct, "function");
+    //fct = polyfill(fct) || fct;
+    var res, raw = object.bypass(fct) || ifunction(fct);
+    if (raw)
+      res = Reflect.apply(raw, ctx, args);
+    else
+      res = membrane.enter(Reflect.apply(fct, membrane.leave(ctx, "this"), args.map(leave)), "result");
+    return callstack.return(res);
+  }
+
+  apply.irregular = function (fct, ctx, args, info) {
+    callstack.apply(fct, ctx, args, info);
+    return callstack.return(Reflect.apply(ifunction(fct), ctx, args));
+  }
+
+  apply.construct = function (cst, args, info) {
+    callstack.construct(cst, args, info);
+    var icst = iconstructor(cst);
+    if (icst)
+      return callstack.return(Reflect.construct(icst, args));
+    var res;
+    var proto = apply.irregular(Reflect.get, null, [cst, "prototype", cst], "constructor.prototype");
+    var ctx = object.register(Object.create(proto), "this");
+    cst = membrane.leave(cst, "constructor");
+    //cst = polyfill(cst) || cst;
+    var raw = object.bypass(cst) || ifunction(cst);
+    if (raw)
+      res = Reflect.apply(raw, ctx, args);
+    else
+      res = membrane.enter(Reflect.apply(raw, ctx, args.map(leave)), "result");
+    if (Util.primitive(membrane.leave(res, "result")))
+      res = ctx;
+    return callstack.return(res);
+  }
+
+  //apply.initialize = function (aran) { polyfill = Polyfill(aran) }
+
+  var iconstructor = IConstructor(membrane, object, apply);
+
+  var ifunction = IFunction(membrane, object, apply);
+
+  //var polyfill = function () {};
+
+  return apply;
+
+};
+
+},{"./apply/irregular/constructor.js":48,"./apply/irregular/function.js":49,"./util.js":57}],48:[function(require,module,exports){
+
+// Irregular built-in functions that behave specially when used as constructor
+
+module.exports = function (membrane, composite, apply) {
+
+  var constr = new Map();
+
+  function Box (cst) {
+    return function (val) {
+      return composite.register(composite.register(new cst(val), "arguments[0]"), "result");
+    }
+  }
+
+  constr.set(Error, Box(Error));
+
+  constr.set(Boolean, Box(Boolean));
+
+  constr.set(Number, Box(Number));
+
+  constr.set(String, Box(String));
+
+  constr.set(Object, Box(Object));
+
+  return function (cst) { return constr.get(cst) };
+}
+
+},{}],49:[function(require,module,exports){
+
+var Reflect = require("./function/reflect.js")
+
+module.exports = function (membrane, composite, apply) {
+  var map = new Map();
+  Reflect(membrane, composite, apply, map);
+  return function (fct) { return map.get(fct) };
+}
+
+},{"./function/reflect.js":50}],50:[function(require,module,exports){
+
+// Irregular implementation of Reflect's functions.
+// N.B. We added the non standard functions: Reflect.unary and Reflect.binary.
+// The idea is to support language-level operations and the MOP from the start before polyfilling.
+// This file is (very) tricky, here is some pitfalls:
+//   - composite values should always by bypassed before accessing them through the MOP
+//     because the proxy handlers in composite.js are made for external calls.
+//   - the above point have to be applied when walking the prototype hiearchy as well!
+
+module.exports = function (membrane, object, apply, map) {
+
+  map.set(Reflect.apply, function (fct, ctx, args) {
+    fct = membrane.leave(fct, "arguments[0]");
+    var clean = [];
+    var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[2].length");
+    for (var i=0; i<length; i++)
+      clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[2]["+i+"]");
+    return apply(fct, ctx, clean, "apply");
+  });
+
+  map.set(Reflect.binary, function (op, left, right) {
+    op = membrane.leave(op, "arguments[0]");
+    left = membrane.leave(left, "arguments[1]");
+    right = membrane.leave(right, "arguments[2]");
+    return membrane.enter(Reflect.binary(op, left, right), "result");
+  });
+
+  map.set(Reflect.construct, function (cst, args) {
+    cst = membrane.leave(cst, "arguments[0]");
+    var clean = [];
+    var length = apply.irregular(Reflect.get, null, [args, "length", args], "arguments[1].length");
+    for (var i=0; i<length; i++)
+      clean[i] = apply.irregular(Reflect.get, null, [args, i, args], "arguments[1]["+i+"]");
+    return apply.construct(cst, clean, "construct");
+  });
+
+  // If obj is internal and des contains "value" then we have to create a mixed descriptor
+  // that returns raw values for ["configurable", etc] and let des.value intact.
+  map.set(Reflect.defineProperty, function (obj, key, des) {
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    des = membrane.leave(des, "arguments[2]");
+    var robj = object.bypass(obj);
+    if (robj && ("value" in des)) {
+      var copy = {};
+      ["configurable", "enumerable", "writable", "get", "set"].forEach(function (k) {
+        if (k in des)
+          copy[k] = des[k];
+      });
+      copy.value = apply.irregular(Reflect.get, null, [des, "value", des], "arguments[2].value")
+    }
+    Reflect.defineProperty(robj||obj, key, des);
+    return obj;
+  });
+
+  map.set(Reflect.deleteProperty, function (obj, key) {
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    obj = object.bypass(obj) || obj;
+    return membrane.leave(Reflect.deleteProperty(obj, key), "result");
+  });
+
+  map.set(Reflect.enumerate, function (obj) {
+    obj = membrane.leave(obj, "arguments[0]");
+    return object.register(Reflect.enumerate(object.bypass(obj)||obj).map(function (k, i) {
+      return membrane.enter(k, "result["+i+"]");
+    }));
+  });
+
+  map.set(Reflect.get, function (obj, key, rec) {
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    do {
+      var robj = object.bypass(obj);
+      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+      if (des) {
+        if ("value" in des)
+          return robj ? des.value : membrane.enter(des.value, "result");
+        if (des.get)
+          return apply(des.get, rec, [], "getter");
+        return membrane.enter(undefined, "result");
+      }
+      obj = Reflect.getPrototypeOf(robj||obj);
+    } while (obj)
+    return membrane.enter(undefined, "result");
+  });
+
+  map.set(Reflect.getOwnPropertyDescriptor, function (obj, key) {
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    var robj = object.bypass(obj);
+    var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+    var copy = object.register({}, "result");
+    for (var k in des)
+      copy[k] = (k === "value" && robj) ? des.value : membrane.enter(des[k], "result."+k)
+    return copy;
+  });
+
+  map.set(Reflect.getPrototypeOf, function (obj) {
+    obj = membrane.leave(obj, "arguments[0]");
+    obj = object.bypass(obj) || obj;
+    return membrane.leave(Reflect.getPrototypeOf(obj), "result");
+  });
+
+  map.has(Reflect.has, function (obj, key) {
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    do {
+      obj = object.bypass(obj) || obj;
+      if (Reflect.getOwnPropertyDescriptor(obj, key))
+        return membrane.leave(true, "result");
+      obj = Reflect.getPrototypeOf(obj);
+    } while (obj)
+    return membrane.leave(false, "result");
+  });
+
+  map.set(Reflect.isExtensible, function (obj) {
+    obj = membrane.leave(obj, "arguments[0]");
+    return membrane.enter(Reflect.isExtensible(object.bypass(obj)||obj), "result");
+  });
+
+  map.set(Reflect.ownKeys, function (obj) {
+    obj = membrane.leave(obj, "arguments[0]");
+    return object.register(Reflect.ownKeys(object.bypass(obj)||obj).map(function (k, i) {
+      return membrane.enter(k, "result["+i+"]");
+    }));
+  });
+
+  map.set(Reflect.preventExtensions, function (obj) {
+    obj = membrane.leave(obj, "arguments[0]");
+    Reflect.preventExtensions(object.bypass(obj)||obj);
+    return obj;
+  });
+
+  function write (rec, key, val) {
+    rec = membrane.leave(rec, "arguments[3]");
+    var rrec = object.bypass(rec);
+    Reflect.write(rrec||rec, key, rrec ? val : membrane.leave(val, "arguments[2]"))
+    return val;
+  }
+
+  map.set(Reflect.set, function (obj, key, val, rec) {
+    obj = membrane.leave(obj, "arguments[0]");
+    key = membrane.leave(key, "arguments[1]");
+    do {
+      var robj = object.bypass(obj);
+      var des = Reflect.getOwnPropertyDescriptor(robj||obj, key);
+      if (des) {
+        if (des.writable)
+          return write(rec, key, val);
+        if (des.set)
+          apply(des.set, rec, [val], "setter");
+        return val;
+      }
+      obj = Reflect.getPrototypeOf(robj||obj);
+    } while (obj)
+    return write(rec, key, val);
+  });
+
+  map.set(Reflect.setPrototypeOf, function (obj, proto) {
+    obj = membrane.leave(obj, "arguments[0]");
+    proto = membrane.leave(proto, "arguments[1]");
+    Reflect.setPrototypeOf(object.bypass(obj)||obj, proto);
+    return obj;
+  });
+ 
+  map.set(Reflect.unary, function (op, arg) {
+    op = membrane.leave(op, "arguments[0]");
+    arg = membrane.leave(arg, "arguments[1]");
+    return membrane.enter(Reflect.unary(op, arg), "result");
+  });
+
+}
+
+},{}],51:[function(require,module,exports){
+
+module.exports = function (stack) {
+
+  var object = null;
+  var xs = [];
+
+  // function toString () {
+  //   var msg = this.constructor ? "new "+this.constructor.name : this.function.name;
+  //   if (this.context.type)
+  //     return msg+" @ "+this.context.loc.start.line+":"+this.context.loc.start.column;
+  //   return msg+" "+this.context;
+  // }
+  
+  return {
+    initialize: function (o) { object = o },
+    apply: function (fct, ctx, args, info) {
+      var x = Object.create(null);
+      x.function = fct;
+      x.this = ctx;
+      x.length = args.length;
+      x.context = info;
+      for (var i=0; i<args.length; i++)
+        x[i] = args[i];
+      // x.toString = toString;
+      xs.push(x);
+      stack.push(x);
+    },
+    construct: function (cst, args, info) {
+      var x = Object.create(null);
+      x.constructor = cst;
+      x.length = args.length;
+      xcontext = info;
+      for (var i=0; i<args.length; i++)
+        x[i] = args[i];
+      // x.toString = toString;
+      xs.push(x);
+      stack.push(x);
+    },
+    return: function (res) {
+      stack.pop(res);
+      return res;
+    },
+    try: function (ast) { xs.push(null) },
+    catch: function (ast) {
+      while (xs.pop())
+        stack.pop();
+    }
+  }
+
+}
+
+},{}],52:[function(require,module,exports){
+
+var Linvail = require("../main.js");
+module.exports = function (master, target) {
+  var module = {};
+  eval(master);
+  return module.exports(target);
+}
+
+},{"../main.js":53}],53:[function(require,module,exports){
+
+require("./reflect.js");
+var Membrane = require("./membrane.js");
+var Object = require("./object.js");
+var CallStack = require("./callstack.js");
+var Apply = require("./apply.js");
+var Aran = require("aran");
+
+module.exports = function (intercept, stack) {
+
+  var membrane = Membrane(intercept, stack);
+
+  var callstack = CallStack(stack);
+
+  var object = Object(intercept.object, callstack, membrane);
+
+  var thrown = {};
+ 
+  callstack.initialize(object);
+
+  var aran = Aran({
+    ast:true,
+    loc:true,
+    traps: {
+      primitive: membrane.enter,
+      test: membrane.leave,
+      eval: membrane.leave,
+      array: object.register,
+      arguments: object.register,
+      function: object.register,
+      regexp: function (pattern, flags, ast) { return object.register(new RegExp(pattern, flags), ast) },
+      object: function (props, ast) {
+        var o = {};
+        props.forEach(function (p) {
+          p.configurable = true
+          p.enumerable = true
+          if (p.value)
+            p.writable = true
+          Reflect.defineProperty(o, p.key, p);
+        });
+        return object.register(o, ast);
+      },
+      throw: function (err, ast) { return thrown = err },
+      try: function (ast) { callstack.try(ast) },
+      catch: function (err, ast) {
+        err = (err === thrown) ? err : object.register(err, ast);
+        thrown = {};
+        callstack.catch(err);
+        return err;
+      },
+      apply: function (fct, ctx, args, ast) { return apply(fct, ctx, args, ast) },
+      construct: function (fct, args, ast) { return apply.construct(fct, args, ast) },
+      unary: function (op, arg, ast) { return apply.irregular(Reflect.unary, null, [op,arg], ast) },
+      binary: function (op, left, right, ast) { return apply.irregular(Reflect.binary, null, [op,left,right], ast) },
+      get: function (obj, key, ast) { return apply.irregular(Reflect.get, null, [obj,key,obj], ast) },
+      set: function (obj, key, val, ast) { return apply.irregular(Reflect.set, null, [obj,key,val,obj], ast) },
+      delete: function (obj, key, ast) { return apply.irregular(Reflect.deleteProperty, null, [obj,key], ast) },
+      enumerate: function (obj, ast) { return apply.irregular(Reflect.enumerate, null, [obj], ast) }
+    }
+  });
+  
+  var apply = Apply(callstack, membrane, object);
+
+  // apply.initialize(aran);
+
+  return aran;
+
+}
+
+},{"./apply.js":47,"./callstack.js":51,"./membrane.js":54,"./object.js":55,"./reflect.js":56,"aran":1}],54:[function(require,module,exports){
+
+var Util = require("./util.js");
+
+module.exports = function (intercept, stack) {
+
+  // Turn the membrane off when analysis code is executing //
+  var on = true;
+  var toogle = function (fct) {
+    return function () {
+      var save = on;
+      on = false;
+      var res = fct.apply(this, arguments);
+      on = save;
+      return res;
+    }
+  };
+  intercept.primitive = toogle(intercept.primitive);
+  intercept.object = toogle(intercept.object);
+  stack.push = toogle(stack.push);
+  stack.pop = toogle(stack.pop);
+
+  var wrappers = new WeakSet();
+
+  function enter (val, info) {
+    if (on&&Util.primitive(val)) {
+      var wrapper = intercept.primitive(val, info);
+      if (!Util.primitive(wrapper))
+        wrappers.add(wrapper);
+      return wrapper;
+    }
+    return val;
+  }
+
+  function leave (val, info) { return (on&&wrappers.has(val)) ? toogle(val.unwrap).call(val, info) : val }
+
+  return {enter:enter, leave:leave};
+
+}
+
+},{"./util.js":57}],55:[function(require,module,exports){
 
 var Util = require("./util.js");
 
@@ -15622,7 +15693,7 @@ module.exports = function (onobject, callstack, membrane) {
 
 }
 
-},{"./util.js":56}],55:[function(require,module,exports){
+},{"./util.js":57}],56:[function(require,module,exports){
 (function (global){
 
 // Reflect polyfill waiting for JS engines to support ES6 Reflect.
@@ -15767,7 +15838,7 @@ g.RegExp.prototype.test = function () { return regexpTest.apply(proxies.has(this
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 
 exports.primitive = function (x) {
   var t = typeof x;
@@ -15779,33 +15850,94 @@ exports.primitive = function (x) {
       || t === "symbol";
 }
 
-},{}],"collection":[function(require,module,exports){
-var arrays = [];
-var intercept = {
-  primitive: function (val, ast) { return val },
-  object: function (val, ast) {
-    if (Array.isArray(val))
-      arrays.push({key:val, value:[]})
-    return val;
-  }
+},{}],"glitterdust":[function(require,module,exports){
+
+var Instrument = require("/Users/soft/Desktop/workspace/linvail/glitterdust/main.js");
+var Util = require("../util.js");
+
+var editors = {};
+function editor (name) {
+  var editor = ace.edit(name+"-editor");
+  editor.setTheme("ace/theme/chrome");
+  editor.getSession().setMode("ace/mode/javascript");
+  editor.$blockScrolling = Infinity;
+  editor.setOption("showPrintMargin", false);
+  editor.getSession().setTabSize(2);
+  editor.getSession().setUseSoftTabs(true);
+  editors[name] = editor;
 }
 
-var calls = {
-  push: function (call) {
-    if (Array.isArray(call.this))
-      for (var i=0; i<arrays.length; i++)
-        if (arrays[i].key === call.this)
-          arrays[i].value.push(call);
-  },
-  pop: function () {}
+function select (select, object, editor) {
+  var first = null;
+  for (var name in object) {
+    first = first || name;
+    var option = document.createElement("option");
+    option.textContent = name;
+    option.value = name;
+    select.appendChild(option);
+  }
+  if (!first)
+    return select.visibility = "hidden";
+  select.onchange = function () { editor.setValue(object[select.value], -1) };
+  select.value = ("Default" in object) ? "Default" : first;
+  select.onchange();
+}
+
+module.exports = function () {
+  ["master", "target", "instrumented"].forEach(editor);
+  editors.instrumented.setReadOnly(true);
+  select(document.getElementById("master-select"), {"collection.js":"var arrays = [];\nvar intercept = {\n  primitive: function (val, ast) { return val },\n  object: function (val, ast) {\n    if (Array.isArray(val))\n      arrays.push({key:val, value:[]})\n    return val;\n  }\n}\n\nvar calls = {\n  push: function (call) {\n    if (Array.isArray(call.this))\n      for (var i=0; i<arrays.length; i++)\n        if (arrays[i].key === call.this)\n          arrays[i].value.push(call);\n  },\n  pop: function () {}\n};\n\nmodule.exports = Linvail(intercept, calls);\n\nvar button = document.createElement(\"button\");\nbutton.textContent = \"Shadow\";\nbutton.onclick = function () { console.dir(arrays) }\ndocument.body.appendChild(button);\n","constraint.js":"// var input1 = document.createElement(\"input\");\n// input1.type = \"text\";\n// document.body.appendChild(input1);\n// var input2 = document.createElement(\"input\");\n// input2.type = \"text\";\n// document.body.appendChild(input2);\n// function identity (x) { return x }\n// input1.onchange = update;\n// input2.onchange = update;\n// function update () {\n//   var x = input1.value;\n//   var y = input2.value;\n//   var z = x+y;\n//   if (identity(z))\n//     console.log(\"path1\");\n//   else\n//     console.log(\"path2\");\n// }\n\nvar inputGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, \"value\").get;\n\nvar store, path\n(function () {\n  var storeIdx = 0;\n  var pathIdx = 0;\n  function symbolToString () { r}\n  store = {\n    push: function (right) {\n      console.log(\"STORE: sym\"+storeIdx+\" = \"+right);\n      return \"sym\"+storeIdx++;\n    }\n  }\n  path = { push: function (test) { console.log(\"PATH: \"+test) } }\n} ());\n\nfunction unwrap (ctx) {\n  var call = lastCall();\n  if (/^(If|Conditional|For|ForIn|While|DoWhile)/.test(ctx.type))\n    path.push(this.symbol)\n  if (call && call.function === Reflect.binary)\n    call[(ctx===\"arguments[1]\")?\"left\":\"right\"] = this.symbol;\n  this.inner;\n}\n\nvar intercept = {\n  primitive: function (val, ctx) {\n    var call = lastCall();\n    if (call && call.function === inputGetter)\n      return {symbol:store.push(null), inner:val, unwrap:unwrap};\n    if (call && (call.left || call.right)) {\n      var left = call.left || Number(call[1]);\n      var right = call.right || Number(call[2]);\n      var symbol = store.push(left+\" \"+call[0]+\" \"+right);\n      return {symbol:symbol, inner:val, unwrap:unwrap}\n    }\n    return val;\n  },\n  object: function (obj, ctx) { return obj }\n};\n\nfunction lastCall () { return calls[calls.length-1] }\nvar calls = [];\nvar callstack = {\n  push: function (call) { calls.push(call) },\n  pop: function (res) { calls.pop() }\n};\n\nmodule.exports = Linvail(intercept, callstack);\n","identity.js":"var intercept = {\n  primitive: function (val, ctx) { return val },\n  object: function (obj, ctx) { return obj }\n};\nvar callstack = {\n  push: function (call) {},\n  pop: function (res) {}\n};\nmodule.exports = Linvail(intercept, callstack);","taint.js":"// var input = document.createElement(\"input\");\n// var output = document.createElement(\"p\");\n// input.type = \"password\";\n// document.body.appendChild(input);\n// document.body.appendChild(output);\n// input.onchange = function () {\n//   output.textContent = input.value;\n// }\n\nvar valueGetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, \"value\").get;\nvar textContentSetter = Object.getOwnPropertyDescriptor(Node.prototype, \"textContent\").set;\n\n// Callstack //\nvar calls = [];\nvar taintedObjects = new WeakSet();\nfunction lastCall () { return calls[calls.length-1] }\nvar callstack = {\n  push: function (call) {\n    var src1 = call.function === valueGetter\n            && call.this instanceof HTMLInputElement\n            && call.this.type === \"password\"\n    var src2 = call.function === Reflect.enumerate\n            && taintedObjects.has(call[0]);\n    call.tainted = src1 || src2;\n    call.leak = call.function === textContentSetter\n             && call.this instanceof HTMLElement\n    calls.push(call);\n  },\n  pop: function (res) { calls.pop() }\n};\n\n// Intercept //\nfunction unwrap (ctx) {\n  if (/^(Conditional|If|While|Do|For)/.test(ctx.type))\n    return Boolean(this.inner);\n  if (lastCall().leak) {\n    var msg = \"Tainted value from \"+this.context;\n    msg += \" leaks in the DOM at \"+lastCall().context;\n    throw new Error(msg);\n  }\n  if (ctx === 1 && lastCall().function === Reflect.set)\n    taintedObjects.add(lastCall()[0])\n  lastCall().tainted = true;\n  return this.inner;\n}\nvar intercept = {\n  primitive: function (val, ctx) {\n    if (lastCall() && lastCall().tainted)\n      return {inner:val, unwrap:unwrap, context:ctx};\n    return val;\n  },\n  object: function (val, ctx) { return val }\n};\n\nmodule.exports = Linvail(intercept, callstack);","tracer.js":"\nvar depth = 0;\nfunction log (msg) {\n  var indent = Array(depth+1).join(\"    \");\n  console.log(indent+msg.split(\"\\n\").join(\"\\n\"+indent));\n}\n\nvar print = {\n  context: function (ctx) { return \"@\" + ((ctx&&ctx.type) ? (ctx.type+\"(\"+ctx.loc.start.line+\":\"+ctx.loc.start.column+\")\") : ctx) },\n  wrapper: function (wrp) { return \"wrapper-\"+wrp.id+\"-[\"+JSON.stringify(wrp.inner)+\"]\" },\n  value: function (val) {\n    if (wrappers.has(val))\n      return print.wrapper(val);\n    if (store.has(val))\n      return \"object-\"+store.get(val);\n    if (typeof val === \"function\")\n      return String(val).split(\"\\n\")[0].replace(/(function| |{.*)/g, \"\");\n    return val;\n  },\n  call: function (call) {\n    var str;\n    if (\"constructor\" in call)\n      str = \"construct \"+print.value(call.constructor)+\" \"+print.context(call.context);\n    else {\n      str = \"apply \"+print.value(call.function)+\" \"+print.context(call.context);\n      str += \"\\n  this >> \"+print.value(call.this);\n    }\n    for (var i=0; i<call.length; i++)\n      str += \"\\n  \"+i+\" >> \"+print.value(call[i]);\n    return str;\n  }\n};\n\nfunction unwrap (ctx) {\n  log(\"unwrap: \"+print.wrapper(this)+\" \"+print.context(ctx));\n  return this.inner;\n}\n\nvar id = 0;\nvar wrappers = new WeakSet();\nvar store = new WeakMap();\nvar intercept = {\n  primitive: function (val, ctx) {\n    var wrp = {id:++id, inner:val, unwrap:unwrap};\n    wrappers.add(wrp);\n    log(\"create: \"+print.wrapper(wrp)+\" \"+print.context(ctx));\n    return wrp;\n  },\n  object: function (obj, ctx) {\n    store.set(obj, ++id);\n    log(\"register: \"+print.value(obj)+\" \"+print.context(ctx));\n    return obj;\n  }\n};\n\nvar stack = {\n  push: function (call) {\n    log(\"push \"+print.call(call));\n    depth++;\n  },\n  pop: function (res) {\n    depth--;\n    log(\"pop \"+print.value(res))\n  }\n};\n\nmodule.exports = Linvail(intercept, stack);\n","track-nan.js":"var calls = [];\nfunction unwrap (ctx) { return NaN }\nvar intercept = {\n  primitive: function (val, ctx) {\n    if (isNaN(val)) {\n      var call = calls[calls.length-1];\n      var info = call.function.name+\"@\"+call.context.loc.start.line;\n      return {call:call, unwrap:unwrap};\n    }\n    return val;\n  },\n  object: function (obj, ctx) { return obj }\n};\nmodule.exports = Linvail(intercept, calls);","wrap-all.js":"var calls = [];\n\nfunction unwrap (ctx) { return NaN }\nvar intercept = {\n  primitive: function (val, ctx) {\n    if (isNaN(val))\n      return {call:calls[calls.length-1], unwrap:unwrap};\n    return val;\n  },\n  object: function (obj, ctx) { return obj }\n};\n\nmodule.exports = Linvail(intercept, calls);"}, editors.master);
+  select(document.getElementById("target-select"), {"factorial.js":"\nfunction fac (n) {\n  if (n < 1)\n    return 1;\n  return n * fac(n-1);\n}\nfac(6);\n","fibonacci.js":"\nfunction fibo (n) {\n  if (n<2)\n    return n;\n  return fibo(n-1)+fibo(n-2);\n}\n\nfibo(10);\n"}, editors.target);
+  document.getElementById("run-button").onclick = function () {
+    try {
+      var instrumented = Instrument(editors.master.getValue(), editors.target.getValue());
+    } catch (e) {
+      alert("Error during instrumentation: "+e);
+      throw e;
+    }
+    editors.instrumented.setValue(instrumented, -1);
+    var out1 = Util.benchmark(editors.target.getValue());
+    var out2 = Util.benchmark(instrumented);
+    document.getElementById("result-span").textContent = Util.print(out1.result);
+    document.getElementById("error-span").textContent = Util.print(out1.error);
+    document.getElementById("time-span").textContent = Util.round(out1.time)+"ms";
+    document.getElementById("instrumented-result-span").textContent = Util.print(out2.result);
+    document.getElementById("instrumented-error-span").textContent = Util.print(out2.error);
+    document.getElementById("instrumented-time-span").textContent = Util.round(out2.time)+"ms";
+    if (out1.error)
+      console.dir(out1.error);
+    if (out2.error)
+      console.dir(out2.error);
+  };
 };
 
-var Linvail = require("..");
-module.exports = Linvail(intercept, calls);
+},{"../util.js":46,"/Users/soft/Desktop/workspace/linvail/glitterdust/main.js":52}]},{},[]);
 
-var button = document.createElement("button");
-button.textContent = "Shadow";
-button.onclick = function () { console.dir(arrays) }
-document.body.appendChild(button);
-
-},{"..":7}]},{},[]);
+window.onload = require('glitterdust');</script>
+  </head>
+  <body>
+    <div id="main-div">
+      <div id="target-div">
+        <label>Target: <select id="target-select"></select></label></label>
+        <div class="editor" id="target-editor"></div>
+        <button id="run-button">Run</button>
+      </div>
+      <div id="master-div">
+        <label>Master: <select id="master-select"></select></label>
+        <div class="editor" id="master-editor"></div>
+      </div>
+      <div id="instrumented-div">
+        <label>Instrumented:</label>
+        <div class="editor" id="instrumented-editor"></div>
+      </div>
+      <div id="output-div">
+        <label>Original result: <span id="result-span" class="code"></span></label>
+        <label>Original error: <span id="error-span" class="code"></span></label>
+        <label>Original time: <span id="time-span" class="code"></span></label>
+        <label>Instrumented result: <span id="instrumented-result-span" class="code"></span></label>
+        <label>Instrumented error: <span id="instrumented-error-span" class="code"></span></label>
+        <label>Instrumented time: <span id="instrumented-time-span" class="code"></span></label>
+      </div>
+    </div>
+  </body>
+</html>

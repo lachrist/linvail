@@ -6,10 +6,10 @@ module.exports = function (calls, wrap) {
   var global = (function () { return this } ());
   if (!global.Reflect)
     throw new Error("Cannot find the Reflect objects");
-  global.Reflect.unary = function (o, x) { return eval(o+" x") };
-  global.Reflect.binary = function (o, l, r) { return eval("l "+o+" r") };
-  global.Reflect.test = function (x) { return x };
-  global.Reflect.literal = function (x) { return x };
+  global.Reflect.unary = function unary (o, x) { return eval(o+" x") };
+  global.Reflect.binary = function binary (o, l, r) { return eval("l "+o+" r") };
+  global.Reflect.test = function test (x) { return x };
+  global.Reflect.literal = function literal (x) { return x };
   var sources = {};
   var search = Search(sources);
   var wrappers = new WeakSet();

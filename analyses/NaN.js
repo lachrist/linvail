@@ -8,22 +8,20 @@ calls.push = function (info) {
 };
 function wrap (val, ctx) {
   if (val !== val) {
-    var wrapper = {id:++id, unwrap:unwrap, toString:toString}
-    console.log(wrapper + "appeared");
-    console.dir(calls[calls.length-1]);
-    // msg  = "NaN #" + (++id) + " appeared";
-    // if (call.node)
-    //   msg += " at " + JSON.stringify(call.node.loc.start);
-    // msg += " the function was " + call.function.name;
-    // if (call.NaNs.length)
-    //   msg += " and involved NaNs: " + call.NaNs;
-    // console.log(msg);
+    var wrapper = {id:++id, unwrap:unwrap, toString:toString};
+    var call = calls[calls.length - 1];
+    var log  = wrapper + " appeared";
+    if (call.node)
+      log += " at " + JSON.stringify(call.node.loc.start);
+    log += " while applying " + call.function.name;
+    if (call.NaNs.length)
+      log += " and involved NaNs: " + call.NaNs;
+    console.log(log);
     return wrapper;
   }
 }
 function toString () { return "NaN-" + this.id }
 function unwrap (ctx) {
-  console.log(this + " got used");
   calls[calls.length-1].NaNs.push(this);
   return NaN;
 }

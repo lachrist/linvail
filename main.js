@@ -1,15 +1,12 @@
 
 var Search = require("./search.js");
 var Oracle = require("./oracle.js");
+var Reflect = require("./reflect.js");
 
 module.exports = function (calls, wrap) {
+  Reflect();
   var global = (function () { return this } ());
-  if (!global.Reflect)
-    throw new Error("Cannot find the Reflect objects");
-  global.Reflect.unary = function unary (o, x) { return eval(o+" x") };
-  global.Reflect.binary = function binary (o, l, r) { return eval("l "+o+" r") };
-  global.Reflect.test = function test (x) { return x };
-  global.Reflect.literal = function literal (x) { return x };
+  Reflect = global.Reflect;
   var sources = {};
   var search = Search(sources);
   var wrappers = new WeakSet();
@@ -54,5 +51,6 @@ module.exports = function (calls, wrap) {
   linvail.delete    = function (obj, key, idx)        { return apply(Reflect.deleteProperty, undefined, [obj, key],           idx) };
   linvail.enumerate = function (obj, idx)             { return apply(Reflect.enumerate,      undefined, [obj],                idx) };
   linvail.test      = function (val, idx)             { return apply(Reflect.test,           undefined, [val],                idx) };
+  linvail.Try = function (val, idx, ast) { }
   global.aran = linvail;
 };

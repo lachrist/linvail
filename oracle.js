@@ -8,7 +8,9 @@ function map (f, xs1) {
   return xs2;
 }
 
-module.exports = function (enter, leave) {
+module.exports = function (data) {
+  var enter = data.enter;
+  var leave = data.leave;
   var vessel = Vessel(enter, leave);
   var vessels = new WeakMap();
   // TODO: defineProperty, getOwnPropertyDescriptor

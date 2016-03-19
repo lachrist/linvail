@@ -250,15 +250,11 @@ function search (ast, idx) {
 
 },{}],8:[function(require,module,exports){
 
-module.exports = function () {
-  return {
-    copy: function (obj1) {
-      var obj2 = Object.create(Object.getPrototype(obj1));
-      for (var key in obj1)
-        obj2[key] = obj1[key];
-      return obj2;
-    } 
-  }
+exports.copy = function (obj1) {
+  var obj2 = Object.create(obj1.__proto__);
+  for (var key in obj1)
+    obj2[key] = obj1[key];
+  return obj2;
 }
 
 },{}],9:[function(require,module,exports){
@@ -310,4 +306,7 @@ module.exports = function (leave, enter) {
   return function (object) { return new Proxy(object, traps) };
 };
 
+},{}]},{},[1]);
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+aran.__eval__=aran.__eval__||eval;aran.__apply__=aran.__apply__||function(f,t,xs){return f.apply(t,xs)};aran.__defineProperties__=aran.__defineProperties__||Object.defineProperties;aran.Ast({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"x"},"init":{"type":"UnaryExpression","operator":"-","argument":{"type":"Literal","value":1,"raw":"1","bounds":[4,4]},"prefix":true,"bounds":[3,4]}}],"kind":"var","bounds":[2,4]},{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"y"},"init":{"type":"CallExpression","callee":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"Math","bounds":[7,7]},"property":{"type":"Identifier","name":"sqrt"}},"arguments":[{"type":"Identifier","name":"x","bounds":[8,8]}],"bounds":[6,8]}}],"kind":"var","bounds":[5,8]}],"sourceType":"script","bounds":[1,8]},"file:///Users/soft/Desktop/workspace/linvail/analyses/target.js");var aran1;var x=aran.unary("-",aran.literal(1,4),3);var y=aran.apply(aran.get((aran1=Math),"sqrt",6),aran1,[x],6);
 },{}]},{},[1]);

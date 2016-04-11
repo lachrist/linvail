@@ -2,8 +2,10 @@
 module.exports = function () {
   var global = (function () { return this } ());
   var Reflect = global.Reflect;
+  if (!global.Proxy)
+    throw new Erro("Cannit find the Proxy API");
   if (!Reflect)
-    throw new Error("Cannot find the Reflect objects");
+    throw new Error("Cannot find the Reflect API");
   if (!Reflect.unary)
     Reflect.unary = function unary (o, x) { return eval(o+" x") };
   if (!Reflect.binary)
@@ -13,4 +15,3 @@ module.exports = function () {
   if (!Reflect.literal)
     Reflect.literal = function literal (x) { return x };
 }
-

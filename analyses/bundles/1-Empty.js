@@ -1,51 +1,79 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var Linvail = require("../main.js");
-var id = 0, calls = [];
-calls.push = function (info) {
-  info.NaNs = [];
-  calls[length] = info;
-};
-function wrap (val) {
-  if (val !== val) {
-    console.log("NaN #" + (++id));
-    console.dir(calls[calls.length - 1]);
-    return {id:id, unwrap:unwrap};
+Linvail([], function () { });
+},{"../main.js":5}],2:[function(require,module,exports){
+
+module.exports = function () {
+  var asts = [];
+  return {
+    add: function (ast, url) {
+      asts[asts.length] = ast;
+      ast.url = ast;
+      lineage(null, ast);
+    },
+    search: function (idx) {
+      for (var i=0; i<asts.length; i++) {
+        var node = search(asts[i], idx)
+        if (node)
+          return node
+      }
+    }
   }
 }
-function unwrap () {
-  calls[calls.length-1].NaNs.push(this.id);
-  return NaN;
-}
-Linvail(calls, wrap);
-},{"../main.js":4}],2:[function(require,module,exports){
 
-var Search = require("./search.js");
+function lineage (parent, ast) {
+  if (typeof ast === "object" && ast !== null) {
+    if (ast.bounds) {
+      ast.parent = parent;
+      parent = ast;
+    }
+    for (var key in ast)
+      lineage(parent, ast[key]);
+  }
+}
+
+function search (ast, idx) {
+  var tmp;
+  if (typeof ast !== "object" || ast === null)
+    return;
+  if (ast.bounds && idx === ast.bounds[0])
+    return ast;
+  if (ast.bounds && (idx < ast.bounds[0] || idx > ast.bounds[1]))
+    return;
+  for (var k in ast)
+    if (tmp = search(ast[k], idx))
+      return tmp;
+}
+
+},{}],3:[function(require,module,exports){
+
 var Oracle = require("./oracle.js");
 
 module.exports = function (stack, data) {
   var oracle = Oracle(data);
   return {
-    apply: function (fct, ths, args, loc) {
-      loc.function = fct;
-      loc.this = ths;
-      loc.arguments = args;
-      stack.push(loc);
+    apply: function (fct, ths, args, ast) {
+      stack.push(arguments);
       var res = oracle.apply(fct, ths, args);
       stack.pop(res);
       return res;
     },
-    construct: function (cst, args, loc) {
-      loc.constructor = cts;
-      loc.arguments = args;
-      stack.push(loc);
+    construct: function (cst, args, ast) {
+      stack.push(arguments);
       var res = oracle.construct(cts, args);
       stack.pop(res);
       return res;
+    },
+    try: function (ast) { stack.push(arguments) },
+    finally: function () {
+      var loc = stack.pop();
+      while(loc.type !== "TryStatemnt")
+        loc = stack.pop();
     }
   }
 }
 
-},{"./oracle.js":5,"./search.js":7}],3:[function(require,module,exports){
+},{"./oracle.js":6}],4:[function(require,module,exports){
 
 module.exports = function (wrap) {
   var wrappers = new WeakSet();
@@ -61,9 +89,9 @@ module.exports = function (wrap) {
   }
 }
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 
-var Search = require("./search.js");
+var Ast = require("./ast.js");
 var Polyfill = require("./polyfill.js");
 var Control = require("./control.js");
 var Data = require("./data.js");
@@ -71,29 +99,30 @@ var Util = require("./util.js");
 
 module.exports = function (stack, wrap) {
   Polyfill();
-  var sources = {};
-  var search = Search(sources);
+  var ast = Ast();
   var control = Control(stack, Data(wrap));
   var Reflect = Util.copy((function () { return this } ()).Reflect);
   var eval = (function () { return this } ()).eval;
   (function () { return this } ()).aran = {
-    Ast:        function (ast, url)             { sources[url] = ast },
-    literal:    function (val, idx)             { return control.apply(Reflect.literal,        undefined, [val],                search(idx)) },
-    unary:      function (op, arg, idx)         { return control.apply(Reflect.unary,          undefined, [op, arg],            search(idx)) },
-    binary:     function (op, left, right, idx) { return control.apply(Reflect.binary,         undefined, [op, left, right],    search(idx)) },
-    apply:      function (fct, ths, args, idx)  { return control.apply(fct,                    ths,       args,                 search(idx)) },
-    construct:  function (cst, args, idx)       { return control.construct(cst,                           args,                 search(idx)) },
-    eval:       function (args, idx)            { return control.apply(eval,                   undefined, args,                 search(idx)) },
-    get:        function (obj, key, idx)        { return control.apply(Reflect.get,            undefined, [obj, key, obj],      search(idx)) },
-    set:        function (obj, key, val, idx)   { return control.apply(Reflect.set,            undefined, [obj, key, val, obj], search(idx)) },
-    delete:     function (obj, key, idx)        { return control.apply(Reflect.deleteProperty, undefined, [obj, key],           search(idx)) },
-    enumerate:  function (obj, idx)             { return control.apply(Reflect.enumerate,      undefined, [obj],                search(idx)) },
-    test:       function (val, idx)             { return control.apply(Reflect.test,           undefined, [val],                search(idx)) }
+    Ast:       ast.add,
+    literal:   function (val, idx)             { return control.apply(Reflect.literal,        undefined, [val],                search(idx)) },
+    unary:     function (op, arg, idx)         { return control.apply(Reflect.unary,          undefined, [op, arg],            search(idx)) },
+    binary:    function (op, left, right, idx) { return control.apply(Reflect.binary,         undefined, [op, left, right],    search(idx)) },
+    apply:     function (fct, ths, args, idx)  { return control.apply(fct,                    ths,       args,                 search(idx)) },
+    construct: function (cst, args, idx)       { return control.construct(cst,                           args,                 search(idx)) },
+    eval:      function (args, idx)            { return control.apply(eval,                   undefined, args,                 search(idx)) },
+    get:       function (obj, key, idx)        { return control.apply(Reflect.get,            undefined, [obj, key, obj],      search(idx)) },
+    set:       function (obj, key, val, idx)   { return control.apply(Reflect.set,            undefined, [obj, key, val, obj], search(idx)) },
+    delete:    function (obj, key, idx)        { return control.apply(Reflect.deleteProperty, undefined, [obj, key],           search(idx)) },
+    enumerate: function (obj, idx)             { return control.apply(Reflect.enumerate,      undefined, [obj],                search(idx)) },
+    test:      function (val, idx)             { return control.apply(Reflect.test,           undefined, [val],                search(idx)) },
+    Try:       function (idx)                  { return control.try(search(idx)) },
+    Finally:   function (idx)                  { return control.finally() }
   };
 };
 
 
-},{"./control.js":2,"./data.js":3,"./polyfill.js":6,"./search.js":7,"./util.js":8}],5:[function(require,module,exports){
+},{"./ast.js":2,"./control.js":3,"./data.js":4,"./polyfill.js":7,"./util.js":8}],6:[function(require,module,exports){
 
 var Vessel = require("./vessel.js");
 
@@ -205,13 +234,15 @@ module.exports = function (data) {
 };
 
 
-},{"./vessel.js":9}],6:[function(require,module,exports){
+},{"./vessel.js":9}],7:[function(require,module,exports){
   
 module.exports = function () {
   var global = (function () { return this } ());
   var Reflect = global.Reflect;
+  if (!global.Proxy)
+    throw new Erro("Cannit find the Proxy API");
   if (!Reflect)
-    throw new Error("Cannot find the Reflect objects");
+    throw new Error("Cannot find the Reflect API");
   if (!Reflect.unary)
     Reflect.unary = function unary (o, x) { return eval(o+" x") };
   if (!Reflect.binary)
@@ -222,43 +253,13 @@ module.exports = function () {
     Reflect.literal = function literal (x) { return x };
 }
 
-
-},{}],7:[function(require,module,exports){
-
-module.exports = function (sources) {
-  return function (idx) {
-    for (url in  sources) {
-      var n = search(sources[url], idx)
-      if (n)
-        return {url:url, top:sources[url], node:n};
-    }
-  }
-}
-
-function search (ast, idx) {
-  var tmp;
-  if (typeof ast !== "object" || ast === null)
-    return;
-  if (ast.bounds && idx === ast.bounds[0])
-    return ast;
-  if (ast.bounds && (idx < ast.bounds[0] || idx > ast.bounds[1]))
-    return;
-  for (var k in ast)
-    if (tmp = search(ast[k], idx))
-      return tmp;
-}
-
 },{}],8:[function(require,module,exports){
 
-module.exports = function () {
-  return {
-    copy: function (obj1) {
-      var obj2 = Object.create(Object.getPrototype(obj1));
-      for (var key in obj1)
-        obj2[key] = obj1[key];
-      return obj2;
-    } 
-  }
+exports.copy = function (obj1) {
+  var obj2 = Object.create(obj1.__proto__);
+  for (var key in obj1)
+    obj2[key] = obj1[key];
+  return obj2;
 }
 
 },{}],9:[function(require,module,exports){

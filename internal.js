@@ -60,6 +60,7 @@ module.exports = function (enter, leave) {
     } else if ("set" in descriptor) {
       Reflect.apply(descriptor.set, receiver, value);
     }
+    return value;
   };
 
   return function (object) { return new Proxy(object, traps) }; 

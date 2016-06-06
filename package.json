@@ -6,6 +6,7 @@
 , "homepage": "http://github.com/lachrist/linvail"
 , "license" : "MIT"
 , "files" : ["index.js", "internal.js", "membrane.js"]
+, "dependencies": {"aran":"1.1.1"}
 , "main": "index.js"
 , "keywords" : ["JavaScript", "Shadow Execution", "Proxy", "ES6 Proxy", "Instrumentation", "Dynamic Analysis"]
 }

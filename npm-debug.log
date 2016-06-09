@@ -1,112 +1,29 @@
 0 info it worked if it ends with ok
-1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'publish' ]
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'link', '../aran' ]
 2 info using npm@3.9.3
 3 info using node@v6.2.1
-4 verbose publish [ '.' ]
-5 silly cache add args [ '.', null ]
-6 verbose cache add spec .
-7 silly cache add parsed spec Result {
-7 silly cache add   raw: '.',
-7 silly cache add   scope: null,
-7 silly cache add   name: null,
-7 silly cache add   rawSpec: '.',
-7 silly cache add   spec: '/Users/soft/Desktop/workspace/linvail',
-7 silly cache add   type: 'directory' }
-8 verbose addLocalDirectory /Users/soft/.npm/linvail/2.0.6/package.tgz not in flight; packing
-9 verbose correctMkdir /Users/soft/.npm correctMkdir not in flight; initializing
-10 info lifecycle linvail@2.0.6~prepublish: linvail@2.0.6
-11 silly lifecycle linvail@2.0.6~prepublish: no script for prepublish, continuing
-12 verbose tar pack [ '/Users/soft/.npm/linvail/2.0.6/package.tgz',
-12 verbose tar pack   '/Users/soft/Desktop/workspace/linvail' ]
-13 verbose tarball /Users/soft/.npm/linvail/2.0.6/package.tgz
-14 verbose folder /Users/soft/Desktop/workspace/linvail
-15 verbose addLocalTarball adding from inside cache /Users/soft/.npm/linvail/2.0.6/package.tgz
-16 verbose correctMkdir /Users/soft/.npm correctMkdir not in flight; initializing
-17 silly cache afterAdd linvail@2.0.6
-18 verbose afterAdd /Users/soft/.npm/linvail/2.0.6/package/package.json not in flight; writing
-19 verbose correctMkdir /Users/soft/.npm correctMkdir not in flight; initializing
-20 verbose afterAdd /Users/soft/.npm/linvail/2.0.6/package/package.json written
-21 silly publish { name: 'linvail',
-21 silly publish   description: 'Linvail is JavaScript shadow executer built on top of Aran',
-21 silly publish   version: '2.0.6',
-21 silly publish   author: { name: 'Laurent Christophe', email: 'lachrist@vub.ac.be' },
-21 silly publish   repository:
-21 silly publish    { type: 'git',
-21 silly publish      url: 'git+https://github.com/lachrist/linvail.git' },
-21 silly publish   homepage: 'http://github.com/lachrist/linvail',
-21 silly publish   license: 'MIT',
-21 silly publish   files: [ 'internal.js', 'main.js', 'membrane.js' ],
-21 silly publish   dependencies: { aran: '1.2.2' },
-21 silly publish   main: 'main.js',
-21 silly publish   keywords:
-21 silly publish    [ 'JavaScript',
-21 silly publish      'Shadow Execution',
-21 silly publish      'Proxy',
-21 silly publish      'ES6 Proxy',
-21 silly publish      'Instrumentation',
-21 silly publish      'Dynamic Analysis' ],
-21 silly publish   gitHead: '1a310cd42a40fa188d18cc1ba427fa5fccf849a9',
-21 silly publish   bugs: { url: 'https://github.com/lachrist/linvail/issues' },
-21 silly publish   readme: 'ERROR: No README data found!',
-21 silly publish   _id: 'linvail@2.0.6',
-21 silly publish   scripts: {},
-21 silly publish   _shasum: '36a30dad12126a1e73229c7fdcb6a4b40d42a354',
-21 silly publish   _from: '.' }
-22 verbose getPublishConfig undefined
-23 silly mapToRegistry name linvail
-24 silly mapToRegistry using default registry
-25 silly mapToRegistry registry https://registry.npmjs.org/
-26 silly mapToRegistry data Result {
-26 silly mapToRegistry   raw: 'linvail',
-26 silly mapToRegistry   scope: null,
-26 silly mapToRegistry   name: 'linvail',
-26 silly mapToRegistry   rawSpec: '',
-26 silly mapToRegistry   spec: 'latest',
-26 silly mapToRegistry   type: 'tag' }
-27 silly mapToRegistry uri https://registry.npmjs.org/linvail
-28 verbose publish registryBase https://registry.npmjs.org/
-29 silly publish uploading /Users/soft/.npm/linvail/2.0.6/package.tgz
-30 verbose request uri https://registry.npmjs.org/linvail
-31 verbose request sending authorization for write operation
-32 info attempt registry request try #1 at 5:04:59 PM
-33 verbose request using bearer token for auth
-34 verbose request id 17d50978480720a5
-35 http request PUT https://registry.npmjs.org/linvail
-36 http 403 https://registry.npmjs.org/linvail
-37 verbose headers { 'content-type': 'application/json',
-37 verbose headers   'cache-control': 'max-age=300',
-37 verbose headers   'content-length': '95',
-37 verbose headers   'accept-ranges': 'bytes',
-37 verbose headers   date: 'Thu, 09 Jun 2016 15:05:00 GMT',
-37 verbose headers   via: '1.1 varnish',
-37 verbose headers   connection: 'keep-alive',
-37 verbose headers   'x-served-by': 'cache-ams4148-AMS',
-37 verbose headers   'x-cache': 'MISS',
-37 verbose headers   'x-cache-hits': '0',
-37 verbose headers   'x-timer': 'S1465484699.014106,VS0,VE1036',
-37 verbose headers   vary: 'Accept-Encoding' }
-38 verbose request invalidating /Users/soft/.npm/registry.npmjs.org/linvail on PUT
-39 error publish Failed PUT 403
-40 verbose stack Error: "You cannot publish over the previously published version 2.0.6." : linvail
-40 verbose stack     at makeError (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:264:12)
-40 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:252:14)
-40 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:172:14)
-40 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:200:22)
-40 verbose stack     at emitTwo (events.js:106:13)
-40 verbose stack     at Request.emit (events.js:191:7)
-40 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1067:10)
-40 verbose stack     at emitOne (events.js:101:20)
-40 verbose stack     at Request.emit (events.js:188:7)
-40 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:988:12)
-41 verbose statusCode 403
-42 verbose pkgid linvail
-43 verbose cwd /Users/soft/Desktop/workspace/linvail
-44 error Darwin 14.5.0
-45 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "publish"
-46 error node v6.2.1
-47 error npm  v3.9.3
-48 error code E403
-49 error "You cannot publish over the previously published version 2.0.6." : linvail
-50 error If you need help, you may report this error at:
-50 error     <https://github.com/npm/npm/issues>
-51 verbose exit [ 1, true ]
+4 verbose linkPkg /Users/soft/Desktop/workspace/aran
+5 silly gentlyRm /usr/local/lib/node_modules/aran is being purged
+6 verbose gentlyRm don't care about contents; nuking /usr/local/lib/node_modules/aran
+7 verbose stack Error: EACCES: permission denied, symlink '/Users/soft/Desktop/workspace/aran' -> '/usr/local/lib/node_modules/aran'
+7 verbose stack     at Error (native)
+8 verbose cwd /Users/soft/Desktop/workspace/linvail
+9 error Darwin 14.5.0
+10 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "link" "../aran"
+11 error node v6.2.1
+12 error npm  v3.9.3
+13 error path /Users/soft/Desktop/workspace/aran
+14 error code EACCES
+15 error errno -13
+16 error syscall symlink
+17 error Error: EACCES: permission denied, symlink '/Users/soft/Desktop/workspace/aran' -> '/usr/local/lib/node_modules/aran'
+17 error     at Error (native)
+17 error  { Error: EACCES: permission denied, symlink '/Users/soft/Desktop/workspace/aran' -> '/usr/local/lib/node_modules/aran'
+17 error     at Error (native)
+17 error   errno: -13,
+17 error   code: 'EACCES',
+17 error   syscall: 'symlink',
+17 error   path: '/Users/soft/Desktop/workspace/aran',
+17 error   dest: '/usr/local/lib/node_modules/aran' }
+18 error Please try running this command again as root/Administrator.
+19 verbose exit [ -13, true ]

@@ -66,12 +66,3 @@ module.exports = function (enter, leave) {
   return function (object) { return new Proxy(object, traps) }; 
 
 };
-
-
-// var Vessel = module.exports;
-// var vessel = Vessel(function (x) {return (console.log("enter "+x),x)}, function (x) {return (console.log("leave "+x),x)});
-// var o = {};
-// var p = vessel(o);
-// console.log(p.a = 123);
-// console.log("yolo");
-// console.log(p.a);

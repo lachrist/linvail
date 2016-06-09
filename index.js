@@ -7,6 +7,11 @@ module.exports = function (stack, wrap) {
 
   var membrane = Membrane(wrap);
   var internal = Internal(membrane.enter, membrane.leave);
+  function register (x, i) {
+    var p = internal(x);
+    internals.set(p, x);
+    return membrane.enter(p, aran.node(i));
+  }
   var internals = new WeakMap();
 
   function get (o, k, r) {
@@ -51,17 +56,22 @@ module.exports = function (stack, wrap) {
   }
 
   var traps = {};
-  traps.literal = function (x, i) {
-    if (x && typeof x === "object" || typeof x === "function") {
-      var x2 = internal(x);
-      internals.set(x2, x);
-      x = x2;
-    }
-    return membrane.enter(x, aran.node(i));
+  traps.primitive = function (x, i) { return membrane.enter(x, aran.node(i)) };
+  traps.closure = register;
+  traps.object = function (ds, i) {
+    var o = {};
+    ds.forEach(function (d) {
+      ("get" in d) && (d.get = membrane.leave(d.get, aran.node(i)));
+      ("set" in d) && (d.set = membrane.leave(d.set, aran.node(i))); 
+      Object.defineProperty(o, d.key, d)
+    });
+    return register(o, i);
   };
-  traps.test = function (x, i) {
-    return membrane.leave(x, aran.node(i));
-  };
+  traps.array = register;
+  traps.regexp = function (p, f, i) { return register(new RegExp(p, f), i) };
+  traps.test = function (x, i) { return membrane.leave(x, aran.node(i)) };
+  traps.eval = function (x, i) { return membrane.leave(x, aran.node(i)) };
+  traps.with = function (x, i) { return membrane.leave(x, aran.node(i)) };
   traps.unary = function (o, x, i) {
     stack.push(aran.node(i))
     x = membrane.leave(x, "argument");
@@ -108,16 +118,17 @@ module.exports = function (stack, wrap) {
     stack.push(aran.node(i));
     o = membrane.leave(o, "object");
     k = membrane.leave(k, "key");
-    var r = Reflect.deleteProperty(o, k);
+    var r = delete o[k];
     return (stack.pop(), r);
   };
   traps.enumerate = function (o, i) {
     stack.push(aran.node(i));
     o = membrane.leave(o, "object");
-    k = membrane.leave(k, "key");
-    var r = Reflect.deleteProperty(o, k);
-    return (stack.pop(), r);
-  } 
+    var ks = [];
+    for (var k in o)
+      ks.push(k);
+    return (stack.pop(), ks);
+  };
 
   global.__linvail__ = traps;
   var aran = Aran({traps:Object.keys(traps), namespace:"__linvail__", loc:true});

@@ -1,5 +1,5 @@
 
-var Linvail = require("./index.js");
+var Linvail = require("linvail");
 var stack = {};
 stack.push = function (x) { console.log(x) };
 stack.pop = function (x) { console.log("pop") };
@@ -14,10 +14,16 @@ printers.context = function (ctx) {
 }
 printers.value = function (x) {
   if (typeof x === "String")
-    return JSON.stringify(x)
+    return JSON.stringify(x);
+  if (typeof x === "boolean" || typeof x === "number")
+    return String(x);
   if (typeof x === "function")
     return "[function]";
-  return String(x);
+  if (Array.isArray(x))
+    return "[array]";
+  if (x instanceof RegExp)
+    return "[regexp]";
+  return "[object]";
 }
 function wrap (x, ctx) {
   counter++;

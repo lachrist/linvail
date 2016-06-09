@@ -1,12 +1,12 @@
 { "name" : "linvail"
 , "description" : "Linvail is JavaScript shadow executer built on top of Aran"
-, "version" : "2.0.5"
+, "version" : "2.0.6"
 , "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
 , "repository": "lachrist/linvail"
 , "homepage": "http://github.com/lachrist/linvail"
 , "license" : "MIT"
-, "files" : ["index.js", "internal.js", "membrane.js"]
-, "dependencies": {"aran":"1.2.0"}
-, "main": "index.js"
+, "files" : ["main.js", "internal.js", "membrane.js"]
+, "dependencies": {"aran":"1.2.1"}
+, "main": "main.js"
 , "keywords" : ["JavaScript", "Shadow Execution", "Proxy", "ES6 Proxy", "Instrumentation", "Dynamic Analysis"]
 }

@@ -7,7 +7,7 @@ module.exports = function (stack, wrap) {
 
   var membrane = Membrane(wrap);
   var internal = Internal(membrane.enter, membrane.leave);
-  function register (x, i) {
+  function internalize (x, i) {
     var p = internal(x);
     internals.set(p, x);
     return membrane.enter(p, aran.node(i));
@@ -57,7 +57,7 @@ module.exports = function (stack, wrap) {
 
   var traps = {};
   traps.primitive = function (x, i) { return membrane.enter(x, aran.node(i)) };
-  traps.closure = register;
+  traps.closure = internalize;
   traps.object = function (ds, i) {
     var o = {};
     ds.forEach(function (d) {
@@ -65,10 +65,10 @@ module.exports = function (stack, wrap) {
       ("set" in d) && (d.set = membrane.leave(d.set, aran.node(i))); 
       Object.defineProperty(o, d.key, d)
     });
-    return register(o, i);
+    return internalize(o, i);
   };
-  traps.array = register;
-  traps.regexp = function (p, f, i) { return register(new RegExp(p, f), i) };
+  traps.array = internalize;
+  traps.regexp = function (p, f, i) { return internalize(new RegExp(p, f), i) };
   traps.test = function (x, i) { return membrane.leave(x, aran.node(i)) };
   traps.eval = function (x, i) { return membrane.leave(x, aran.node(i)) };
   traps.with = function (x, i) { return membrane.leave(x, aran.node(i)) };

@@ -11,9 +11,9 @@ printers.context = function (ctx) {
   if (ctx && ctx.type)
     return ctx.type + "@" + ctx.loc.start.line + ":" + ctx.loc.start.column;
   return "";
-}
+};
 printers.value = function (x) {
-  if (typeof x === "String")
+  if (typeof x === "string")
     return JSON.stringify(x);
   if (typeof x === "boolean" || typeof x === "number")
     return String(x);
@@ -24,7 +24,7 @@ printers.value = function (x) {
   if (x instanceof RegExp)
     return "[regexp]";
   return "[object]";
-}
+};
 function wrap (x, ctx) {
   counter++;
   console.log("wrap "+printers.context(ctx)+" "+printers.value(x)+" into #"+counter);

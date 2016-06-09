@@ -1,6 +1,6 @@
 { "name" : "linvail"
 , "description" : "Linvail is JavaScript shadow executer built on top of Aran"
-, "version" : "2.0.6"
+, "version" : "2.0.7"
 , "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
 , "repository": "lachrist/linvail"
 , "homepage": "http://github.com/lachrist/linvail"

@@ -6,15 +6,16 @@ var counter = 0;
 function wrap (x, ctx) {
   var w = {inner:x, unwrap:unwrap, id:++counter};
   wrappers.add(w);
-  console.log("wrap "+ctx+" "+printers.raw(x)+" into "+printers.wrapper(w));
+  console.log("wrap "+printers.context(ctx)+" "+printers.raw(x)+" into "+printers.wrapper(w));
   return w;
 }
 function unwrap (ctx) {
-  console.log("unwrap "+ctx+" "+printers.wrapper(this));
+  console.log("unwrap "+printers.context(ctx)+" "+printers.wrapper(this));
   return this.inner;
 }
 // Printers //
 var printers = {};
+printers.context = function (ctx) { debugger; return (ctx && "type" in ctx) ? printers.node(ctx) : String(ctx) }
 printers.node = function (node) { return node.type + "@" + node.loc.start.line + ":" + node.loc.start.column };
 printers.wrapper = function (x) { return wrappers.has(x) && "#"+x.id };
 printers.raw = function (x) {

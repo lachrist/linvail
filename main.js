@@ -127,7 +127,7 @@ module.exports = function (stack, wrap) {
     stack.push({function:Reflect.deleteProperty, arguments:[o,k], node:aran.node(i)});
     o = membrane.leave(o, 0);
     k = membrane.leave(k, 1);
-    var r = delete o[k];
+    var r = membrane.enter(delete o[k], "result");
     return (stack.pop(r), r);
   };
   traps.enumerate = function (o, i) {

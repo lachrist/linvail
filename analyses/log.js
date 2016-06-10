@@ -1,4 +1,3 @@
-
 var Linvail = require("linvail");
 // Wrapper //
 var wrappers = new WeakSet();
@@ -14,25 +13,44 @@ function unwrap (ctx) {
   return this.inner;
 }
 // Printers //
+var builtins = new WeakMap();
+[ "Reflect.get",
+  "Reflect.set",
+  "Reflect.enumerate",
+  "Reflect.deleteProperty",
+  "Reflect.unary",
+  "Reflect.binary" ].forEach(function (name) { builtins.set(eval(name), name) });
 var printers = {};
 printers.node = function (node) { return node.type + "@" + node.loc.start.line + ":" + node.loc.start.column };
-printers.context = function (ctx) { return (ctx && typeof ctx === "object" && "type" in ctx) ? printers.node(ctx) : String(ctx) }
+printers.context = function (ctx) {
+  if (ctx === undefined)
+    return "???";
+  if (typeof ctx === "string")
+    return ctx;
+  if (typeof ctx === "number")
+    return "arguments["+ctx+"]";
+  if (ctx && typeof ctx === "object" && "type" in ctx)
+    return printers.node(ctx);
+  throw new Error("Unkwnown context");
+}
 printers.wrapper = function (x) { return wrappers.has(x) && "#"+x.id };
 printers.raw = function (x) {
   if ([null, undefined, true, false].indexOf(x) !== -1 || typeof x === "number")
     return x;
   if (typeof x === "string")
     return JSON.stringify(x);
+  if (builtins.has(x))
+    return builtins.get(x);
   return Object.prototype.toString.apply(x);
 };
 printers.value = function (x) { return printers.wrapper(x) || printers.raw(x) };
 printers.call = function (call) {
-  return "{" + (("function" in call) ? "function:"+printers.value(call.function) : "constructor:"+printers.value(call.constructor))
+  return ">> " + (("function" in call) ? "function: "+printers.value(call.function) : "constructor: "+printers.value(call.constructor))
     + ", arguments: [" + call.arguments.map(printers.value).join(",") + "]"
-    + ", node: " + printers.node(call.node) + "}";
+    + ", node: " + printers.node(call.node);
 };
 // Exports //
 var stack = {};
 stack.push = function (call) { console.log(printers.call(call)) };
-stack.pop = function (result) { console.log("return: "+printers.value(result)) };
+stack.pop = function (result) { console.log("<< "+printers.value(result)) };
 module.exports = Linvail(stack, wrap);

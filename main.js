@@ -100,7 +100,7 @@ module.exports = function (stack, wrap) {
     var r = (internals.has(f))
       ? Reflect.apply(internals.get(f), t, xs)
       : membrane.enter(Reflect.apply(f, membrane.leave(t, "this"), xs = xs.map(membrane.leave)), "result");
-    return (stack.pop(), r);
+    return (stack.pop(r), r);
   };
   traps.construct = function (c, xs, i) {
     stack.push({constructor:c, arguments:xs, node:aran.node(i)});
@@ -124,7 +124,7 @@ module.exports = function (stack, wrap) {
     return (stack.pop(v), v);
   };
   traps.delete = function (o, k, i) {
-    stack.push({function:Reflect.delete, arguments:[o,k], node:aran.node(i)});
+    stack.push({function:Reflect.deleteProperty, arguments:[o,k], node:aran.node(i)});
     o = membrane.leave(o, 0);
     k = membrane.leave(k, 1);
     var r = delete o[k];

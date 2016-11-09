@@ -26,6 +26,7 @@ module.exports = function (stack, wrap) {
   function get (o, k, r) {
     var b = internals.has(o);
     b && (o = internals.get(o));
+    o = Object(o);
     var d = Reflect.getOwnPropertyDescriptor(o, k);
     if (!d) {
       var p = Reflect.getPrototypeOf(o);
@@ -53,6 +54,7 @@ module.exports = function (stack, wrap) {
   function set (o, k, v, r) {
     var b = internals.has(o);
     b && (o = internals.get(o));
+    o = Object(o);
     var d = Reflect.getOwnPropertyDescriptor(o, k);
     if (!d) {
       var p = Reflect.getPrototypeOf(o);

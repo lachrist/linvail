@@ -43,232 +43,7 @@
       }
     </style>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
-    <script>require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"../../aran/main.js":[function(require,module,exports){
-// node otiluke/run.js --demo --transform aran/analyses --out aran/analyses/demo.html
-// node otiluke/run.js --test --transform aran/analyses/2-Trace.js --port 8080
-// > cat analysis.js instrumented.js | node
-
-// var Aran = require("aran");
-// var aran = ({
-//   namespace: "meta",
-//   traps: ["eval"],
-//   loc: true,
-// });
-// global.meta = {};
-// meta.eval = function (xs, i) {
-//   console.log("eval at "+aran.node(i).loc);
-//   return aran.instrument(xs[0]);
-// };
-// eval(aran.instrument(Fs.readFileSync("target.js", "utf8)));
-
-var Instrument = require("./instrument.js");
-var Esprima = require("esprima");
-
-var global = (function () { return this } ());
-
-function search (ast, idx) {
-  var tmp;
-  if (typeof ast !== "object" || ast === null)
-    return;
-  if ("__min__" in ast && idx === ast.__min__)
-    return ast;
-  if (idx < ast.__min__ || idx > ast.__max__)
-    return;
-  for (var k in ast)
-    if (tmp = search(ast[k], idx))
-      return tmp;
-}
-
-module.exports = function (options) {
-  if (typeof options !== "object" || options === null)
-    options = {};
-  var suboptions = {loc:options.loc, range:options.range};
-  var instrument = Instrument(options.namespace || "_meta_", options.traps || []);
-  var asts = [];
-  var sources = [];
-  return {
-    instrument: function (code, source) {
-      var ast = typeof code === "string" ? Esprima.parse(code, suboptions) : code;
-      asts.push(ast);
-      sources.push(source);
-      return instrument(ast);
-    },
-    node: function (index) {
-      for (var i=0; i<asts.length; i++) {
-        var node = search(asts[i], index);
-        if (node)
-          return node;
-      }
-    },
-    source: function (index) {
-      for (var i=0; i<asts.length; i++)
-        if (index >= asts[i].__min__ && index <= asts[i].__max__)
-          return sources[i];
-    }
-  };
-};
-
-},{"./instrument.js":1,"esprima":2}],"./main.js":[function(require,module,exports){
-
-var Internal = require("./internal.js");
-
-module.exports = function (enter, leave) {
-
-  var internal = Internal(enter, leave);
-  var internals = new WeakMap();
-  function internalize (x, i, s) {
-    var p = internal(x);
-    internals.set(p, x);
-    return enter(p, i, s);
-  }
-
-  function apply (f, t, xs, i) {
-    f = leave(f, i, "function");
-    if (internals.has(f))
-      return Reflect.apply(internals.get(f), t, xs);
-    t = leave(t, i, "this");
-    for (var j=0, l=xs.length; j<l; j++)
-      xs[i] = leave(xs[i], i, j);
-    return enter(Reflect.apply(f, t, xs), i, "result");
-  }
-
-  function construct (c, xs, i) {
-    c = leave(c, i, "constructor");
-    if (internals.has(c))
-      return Reflect.construct(internals.get(c), xs);
-    for (var j=0, l=xs.length; j<l; j++)
-      xs[i] = leave(xs[i], i, j);
-    return enter(Reflect.construct(f, xs), i, "result");
-  }
-
-  function get (o, k, r, i) {
-    var b = internals.has(o);
-    b && (o = internals.get(o));
-    o = Object(o);
-    var d = Reflect.getOwnPropertyDescriptor(o, k);
-    if (!d) {
-      var p = Reflect.getPrototypeOf(o);
-      return p ? get(leave(p, i, "prototype"), k, r, i) : enter(undefined, i, "result");
-    }
-    if ("value" in d)
-      return b ? d.value : enter(d.value, i, "result");
-    if ("get" in d)
-      return apply(d.get, r, [], i);
-    return enter(undefined, i, "result");
-  }
-
-  var set = (function () {
-    function init (rr, k, v, i) {
-      var b = internals.has(rr);
-      b && (rr = internals.get(rr));
-      Reflect.defineProperty(rr, k, {
-        configurable: true,
-        enumerable: true,
-        writable: true,
-        value: b ? v : leave(v, i, "value")
-      });
-    }
-    return function (o, k, v, r, rr, i) {
-      var b = internals.has(o);
-      b && (o = internals.get(o));
-      o = Object(o);
-      var d = Reflect.getOwnPropertyDescriptor(o, k);
-      if (!d) {
-        var p = Reflect.getPrototypeOf(o);
-        p ? set(leave(p, i, "prototype"), k, v, r, rr, i) : init(rr, k, v, i);
-      } else if ("value" in d && d.writable) {
-        init(rr, k, v, i);
-      } else if ("set" in d) {
-        apply(d.set, r, [v], i);
-      }
-    }
-  } ());
-
-  var traps = {};
-  traps.primitive = function (x, i) { return enter(x, i, "primitive") };
-  traps.array = function (xs, i) { return internalize(x, i, "array") };
-  traps.closure = function (f, i) { return internalize(f, i, "closure") };
-  traps.regexp = function (p, f, i) { return internalize(new RegExp(p, f), i, "regexp") };
-  traps.object = function (ds, i) {
-    var o = {};
-    ds.forEach(function (d) {
-      ("get" in d) && (d.get = leave(d.get, i));
-      ("set" in d) && (d.set = leave(d.set, i)); 
-      Object.defineProperty(o, d.key, d)
-    });
-    return internalize(o, i, "object");
-  };
-  traps.test = leave;
-  traps.eval = leave;
-  traps.with = leave;
-  traps.unary = function (o, x, i) {
-    switch (o) {
-      case "-":      return enter(-      leave(x, i, "argument"), i, "result");
-      case "+":      return enter(+      leave(x, i, "argument"), i, "result");
-      case "~":      return enter(~      leave(x, i, "argument"), i, "result");
-      case "typeof": return enter(typeof leave(x, i, "argument"), i, "result");
-      case "void":   return enter(void   leave(x, i, "argument"), i, "result");
-      case "delete": return enter(delete leave(x, i, "argument"), i, "result");
-    }
-    throw new Error("Unknwon unary operator: "+o);
-  };
-  traps.binary = function (o, l, r, i) {
-    switch (o) {
-      // Arithmetic
-      case "+":          return enter(leave(l, i, "left") +          leave(r, i, "right"), i, "result");
-      case "-":          return enter(leave(l, i, "left") -          leave(r, i, "right"), i, "result");
-      case "*":          return enter(leave(l, i, "left") *          leave(r, i, "right"), i, "result");
-      case "/":          return enter(leave(l, i, "left") /          leave(r, i, "right"), i, "result");
-      // Comparison
-      case "==":         return enter(leave(l, i, "left") ==         leave(r, i, "right"), i, "result");
-      case "!=":         return enter(leave(l, i, "left") !=         leave(r, i, "right"), i, "result");
-      case "===":        return enter(leave(l, i, "left") ===        leave(r, i, "right"), i, "result");
-      case "!==":        return enter(leave(l, i, "left") !==        leave(r, i, "right"), i, "result");
-      case "<":          return enter(leave(l, i, "left") <          leave(r, i, "right"), i, "result");
-      case "<=":         return enter(leave(l, i, "left") <=         leave(r, i, "right"), i, "result");
-      case ">":          return enter(leave(l, i, "left") >          leave(r, i, "right"), i, "result");
-      case ">=":         return enter(leave(l, i, "left") >=         leave(r, i, "right"), i, "result");
-      // Object
-      case "in":         return enter(leave(l, i, "left") in         leave(r, i, "right"), i, "result");
-      case "instanceof": return enter(leave(l, i, "left") instanceof leave(r, i, "right"), i, "result");
-      // Bit
-      case "<<":         return enter(leave(l, i, "left") <<         leave(r, i, "right"), i, "result");
-      case ">>":         return enter(leave(l, i, "left") >>         leave(r, i, "right"), i, "result");
-      case ">>>":        return enter(leave(l, i, "left") >>>        leave(r, i, "right"), i, "result");
-      case "%":          return enter(leave(l, i, "left") %          leave(r, i, "right"), i, "result");
-      case "|":          return enter(leave(l, i, "left") |          leave(r, i, "right"), i, "result");
-      case "^":          return enter(leave(l, i, "left") ^          leave(r, i, "right"), i, "result");
-      case "&":          return enter(leave(l, i, "left") &          leave(r, i, "right"), i, "result");
-    }
-    throw new Error("Unknwon binary operator: "+o);
-  };
-  traps.apply = apply;
-  traps.construct = construct;
-  traps.get = function (o, k, i) {
-    return get(leave(o, i, "target"), leave(k, i, "key"), o);
-  };
-  traps.set = function (o, k, v, i) {
-    var rr = leave(o, i, "target")
-    set(rr, leave(k, i, "key"), v, o, rr, i);
-    return v;
-  };
-  traps.delete = function (o, k, i) {
-    return enter(delete leave(o, i, "target")[leave(k, i, "key")], i);
-  };
-  traps.enumerate = function (o, i) {
-    o = leave(o, i, "target");
-    var ks = [];
-    var length = 0;
-    for (var k in o)
-      ks[length++] = k;
-    return internalize(ks, i);
-  };
-
-  return traps;
-
-};
-
-},{"./internal.js":4}],1:[function(require,module,exports){
+    <script>require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
 // The visitors of this file either:
 //   1) visit an expression node and return an expression string
@@ -6789,8 +6564,8 @@ window.addEventListener("load", function () {
         select.appendChild(option);
       });
     }
-    select(document.getElementById("transpile-select"), editors.transpile, {"run.js":"\nvar Aran = require(\"../../aran/main.js\");\nvar Linvail = require(\"./main.js\");\n\nmodule.exports = function (options) {\n  var id = 0;\n  var wrappers = new WeakSet();\n  function print (x) {\n    if (wrappers.has(x))\n      return \"#\"+x.meta;\n    if (Array.isArray(x))\n      return \"[array]\";\n    switch (typeof x) {\n      case \"object\": return \"[object]\";\n      case \"function\": return \"[function]\";\n      case \"string\": return JSON.stringify(x);\n    }\n    return String(x);\n  }\n  function loc (i) {\n    if (!i)\n      return i;\n    var n = aran.node(i);\n    return aran.source(i)+\"@\"+n.loc.start.line+\":\"+n.loc.start.column;\n  }\n  var active = true;\n  function enter (x, i, s) {\n    if (!active)\n      return x;\n    options.log(indent+\"<< \"+print(x)+\" #\"+(++id)+\" \"+loc(i)+\" \"+s+\"\\n\");\n    var w = {base:x, meta:id};\n    wrappers.add(w);\n    return w;\n  }\n  function leave (x, i, s) {\n    if (!active)\n      return x;\n    if (wrappers.has(x)) {\n      options.log(indent+\">> \"+print(x.base)+\" #\"+x.meta+\" \"+loc(i)+\" \"+s+\"\\n\");\n      return x.base;\n    }\n    return x;\n  }\n  var linvail = Linvail(enter, leave);\n  global.meta = {};\n  var indent = \"  \";\n  Object.keys(linvail).forEach(function (k) {\n    global.meta[k] = function () {\n      active = false;\n      if (k === \"get\") {\n        var o = arguments[0];\n        options.log(\"WESH\\n\");\n        o.base.a;\n        options.log(\"TOLO\\n\");\n      }\n      active = true;\n      options.log(indent+\"BEFORE \"+k+\" \"+[].map.call(arguments, print).join(\" \")+\"\\n\");\n      indent += \"  \";\n      var result = linvail[k].apply(null, arguments);\n      indent = indent.substring(0, indent.length-2);\n      options.log(indent+\"AFTER \"+k+\" \"+print(result)+\"\\n\");\n      return result;\n    };\n  });\n  var aran = Aran({\n    traps: Object.keys(linvail),\n    namespace: \"meta\",\n    loc: true\n  });\n  return aran.instrument;\n}\n"});
-    select(document.getElementById("main-select"), editors.main, {});
+    select(document.getElementById("transpile-select"), editors.transpile, {"1-Identity.js":"var Aran = require(\"aran\");\nvar Linvail = require(\"linvail\");\n// This analysis does nothing! *yay*\nmodule.exports = function (options) {\n  // Values entering instrumented code are forwarded\n  function enter (val, idx, ctx) { return val }\n  // Values leaving instrumented code are forwarded\n  function leave (val, idx, ctx) { return val }\n  global._meta_ = Linvail(enter, leave);\n  var aran = Aran({\n    traps: Object.keys(global._meta_),\n    namespace: \"_meta_\",\n    loc: true\n  });\n  return aran.instrument;\n};","2-Wrapper.js":"var Aran = require(\"aran\");\nvar Linvail = require(\"linvail\");\n// No observable effects but all values flowing\n// through the instrumented code are wrappers!\nmodule.exports = function (options) {\n  // Testing for an `inner` field is not good enough.\n  // We use this collection to be sure we are not\n  // confusing wrappers and resembling program's\n  // values.\n  var wrappers = new WeakSet();\n  // All entering values are wrapped\n  function enter (val, idx, ctx) {\n    var wrp = {inner:val};\n    wrappers.add(wrp);\n    return wrp;\n  }\n  // If a leaving value is a wrapper, it is unwrapped\n  function leave (val, idx, ctx) {\n    return wrappers.has(val) ? val.inner : val;\n  }\n  global._meta_ = Linvail(enter, leave);\n  var aran = Aran({\n    traps: Object.keys(global._meta_),\n    namespace: \"_meta_\",\n    loc: true\n  });\n  return aran.instrument;\n};","3-Trace-Control.js":"var Aran = require(\"aran\");\nvar Linvail = require(\"linvail\");\n// This analysis traces the program's control flow.\n// It could have been done directly with Aran!\nfunction identity (x) { return x }\n// To avoid looping this function should not trigger\n// user-defined code such as proxy traps!\nfunction print (val) {\n  if (Array.isArray(val))\n    return \"[array]\";\n  switch (typeof val) {\n    case \"object\": return val ? \"[object]\" : \"null\";\n    case \"function\": return \"[function]\";\n    case \"string\": return JSON.stringify(val);\n  }\n  return String(val);\n}\nmodule.exports = function (options) {\n  // Reification of the program's callstack.\n  var stack = [];\n  // The identity membrane is used.\n  var linvail = Linvail(identity, identity);\n  global._meta_ = {};\n  // Linvail does not defines Try nor Finally traps.\n  Object.keys(linvail).forEach(function (key) {\n    global._meta_[key] = function () {\n      options.log(stack.join(\".\")+\" >> \"+key+\"(\"+[].map.call(arguments, print).join(\", \")+\")\\n\");\n      stack.push(key);\n      var res = linvail[key].apply(null, arguments);\n      stack.pop();\n      options.log(stack.join(\".\")+\" << \"+print(res)+\"\\n\");\n      return res;\n    };\n  });\n  // Try => Mark the stack.\n  global._meta_.try = function (idx) {\n    stack.push(\"try\");\n  };\n  // Finally => restaure the stack.\n  global._meta_.finally = function (idx) {\n    while (stack.pop() !== \"try\");\n  };\n  var aran = Aran({\n    traps: Object.keys(global._meta_),\n    namespace: \"_meta_\",\n    loc: true\n  });\n  return aran.instrument;\n};","4-Trace-Data.js":"var Aran = require(\"aran\");\nvar Linvail = require(\"linvail\");\n// This analysis trace the program's control flow and\n// also the program value flow, even primitive values!\nfunction isprimitive (val) {\n  return !val || val === true\n      || typeof val === \"number\"\n      || typeof val === \"string\";\n}\nmodule.exports = function (options) {\n  // Refified callstack\n  var stack = [];\n  // Primitive values are converted to objects\n  var wrappers = new WeakSet();\n  // Reified store\n  var counter = 0;\n  var pointers = new WeakMap();\n  // Atomic value printing\n  function print (val) {\n    if (pointers.has(val))\n      return \"#\"+pointers.get(val);\n    if (Array.isArray(val))\n      return \"[array]\";\n    switch (typeof val) {\n      case \"object\": return val ? \"[object]\" : \"null\";\n      case \"function\": return \"[function]\";\n      case \"string\": return JSON.stringify(val);\n    }\n    return String(val);\n  }\n  // Atomic code location printing\n  function loc (idx) {\n    if (!idx)\n      return idx;\n    var start = aran.node(idx).loc.start;\n    return aran.source(idx)+\"@\"+start.line+\":\"+start.column;\n  }\n  // Entering primitive values are wrapped.\n  // Objects are associated with a unique number.\n  function enter (val, idx, ctx) {\n    if (isprimitive(val)) {\n      val = {inner:val};\n      wrappers.add(val);\n      pointers.set(val, ++counter);\n      options.log(stack.join(\".\")+\" <- #\"+counter+\"(\"+print(val.inner)+\") at \"+loc(idx)+\" as \"+ctx+\"\\n\");\n      return val;\n    }\n    if (!pointers.has(val))\n      pointers.set(val, ++counter);\n    options.log(stack.join(\".\")+\" <- \"+print(val)+\" at \"+loc(idx)+\" as \"+ctx+\"\\n\");\n    return val;\n  }\n  // Leaving wrapped primitive are unwrapped.\n  function leave (val, idx, ctx) {\n    options.log(stack.join(\".\")+\" -> \"+print(val)+\" at \"+loc(idx)+\" as \"+ctx+\"\\n\");\n    return wrappers.has(val) ? val.inner : val;\n  }\n  // The traps Try and Catch are not defined by Linvail.\n  var linvail = Linvail(enter, leave);\n  global._meta_ = {};\n  Object.keys(linvail).forEach(function (key) {\n    global._meta_[key] = function () {\n      options.log(stack.join(\".\")+\" >> \"+key+\"(\"+[].map.call(arguments, print).join(\", \")+\")\\n\");\n      stack.push(key);\n      var res = linvail[key].apply(null, arguments);\n      stack.pop();\n      options.log(stack.join(\".\")+\" << \"+print(res)+\"\\n\");\n      return res;\n    };\n  });\n  // Try => Mark the stack.\n  global._meta_.try = function (idx) {\n    stack.push(\"try\");\n  };\n  // Finally => restaure the stack.\n  global._meta_.finally = function (idx) {\n    while (stack.pop() !== \"try\");\n  };\n  var aran = Aran({\n    traps: Object.keys(global._meta_),\n    namespace: \"_meta_\",\n    loc: true\n  });\n  return aran.instrument;\n};","5-NaN.js":"var Aran = require(\"aran\");\nvar Linvail = require(\"linvail\");\n// This analysis tracks NaN values for debugging purposes.\n// It is a combination of 3-Trace and 2-Wrapper.\nmodule.exports = function (options) {\n  var stack = [];\n  var NaNs = new WeakSet();\n  var counter = 0;\n  function print (val) {\n    if (NaNs.has(val))\n      return \"#\"+val.id;\n    if (Array.isArray(val))\n      return \"[array]\";\n    switch (typeof val) {\n      case \"object\": return val ? \"[object]\" : \"null\";\n      case \"function\": return \"[function]\";\n      case \"string\": return JSON.stringify(val);\n    }\n    return String(val);\n  }\n  function loc (idx) {\n    if (!idx)\n      return idx;\n    var start = aran.node(idx).loc.start;\n    return aran.source(idx)+\"@\"+start.line+\":\"+start.column;\n  }\n  function enter (val, idx, ctx) {\n    // NaN is the only value which is not equal to itself\n    if (val === val)\n      return val;\n    options.log(stack.join(\".\")+\" NaN #\"+(++counter)+\" appeared at \"+loc(idx)+\" as \"+ctx+\"\\n\");\n    var marker = {id:counter};\n    NaNs.add(marker);\n    return marker;\n  }\n  function leave (val, idx, ctx) {\n    if (!NaNs.has(val))\n      return val;\n    options.log(stack.join(\".\")+\" NaN #\"+val.id+\" used at \"+loc(idx)+\" as \"+ctx+\"\\n\");\n    return NaN;\n  }\n  var linvail = Linvail(enter, leave);\n  global._meta_ = {};\n  Object.keys(linvail).forEach(function (key) {\n    global._meta_[key] = function () {\n      options.log(stack.join(\".\")+\" >> \"+key+\"(\"+[].map.call(arguments, print).join(\", \")+\")\\n\");\n      stack.push(key);\n      var res = linvail[key].apply(null, arguments);\n      stack.pop();\n      options.log(stack.join(\".\")+\" << \"+print(res)+\"\\n\");\n      return res;\n    };\n  });\n  global._meta_.try = function (idx) {\n    stack.push(\"try\");\n  };\n  global._meta_.finally = function (idx) {\n    while (callstack.pop() !== \"try\");\n  };\n  var aran = Aran({\n    traps: Object.keys(global._meta_),\n    namespace: \"_meta_\",\n    loc: true\n  });\n  return aran.instrument;\n};"});
+    select(document.getElementById("main-select"), editors.main, {"delta-nan.js":"function delta (a, b, c) {\n  return b*b - 4*a*c;\n}\nfunction solve (a, b, c) {\n  var s1 = ((-b) + Math.sqrt(delta(a, b, c))) / (2*a);\n  var s2 = ((-b) - Math.sqrt(delta(a, b, c))) / (2*a);\n  return [s1, s2];\n}\nsolve(5, 1, 6);","fac.js":"\nfunction fac (n) {\n  if (n <= 0)\n    return 1;\n  return n * fac(n - 1);\n}\n\nfac(6);\n","fibo.js":"\nfunction fibo (n) {\n  if (n < 2)\n    return n;\n  return fibo(n - 1) + fibo(n -2);\n}\n\nfibo(6);\n"});
     editors.main.__selected__ || (editors.main.__selected__ = "main.js");
   } ());
   // Benchmark //
@@ -6834,7 +6609,236 @@ window.addEventListener("load", function () {
     };
   } ());
 });
-},{}]},{},[5]);
+},{}],"aran":[function(require,module,exports){
+// node otiluke/run.js --demo --transform aran/analyses --out aran/analyses/demo.html
+// node otiluke/run.js --test --transform aran/analyses/2-Trace.js --port 8080
+// > cat analysis.js instrumented.js | node
+
+// var Aran = require("aran");
+// var aran = ({
+//   namespace: "meta",
+//   traps: ["eval"],
+//   loc: true,
+// });
+// global.meta = {};
+// meta.eval = function (xs, i) {
+//   console.log("eval at "+aran.node(i).loc);
+//   return aran.instrument(xs[0]);
+// };
+// eval(aran.instrument(Fs.readFileSync("target.js", "utf8)));
+
+var Instrument = require("./instrument.js");
+var Esprima = require("esprima");
+
+var global = (function () { return this } ());
+
+function search (ast, idx) {
+  var tmp;
+  if (typeof ast !== "object" || ast === null)
+    return;
+  if ("__min__" in ast && idx === ast.__min__)
+    return ast;
+  if (idx < ast.__min__ || idx > ast.__max__)
+    return;
+  for (var k in ast)
+    if (tmp = search(ast[k], idx))
+      return tmp;
+}
+
+module.exports = function (options) {
+  if (typeof options !== "object" || options === null)
+    options = {};
+  var suboptions = {loc:options.loc, range:options.range};
+  var instrument = Instrument(options.namespace || "_meta_", options.traps || []);
+  var asts = [];
+  var sources = [];
+  return {
+    instrument: function (code, source) {
+      var ast = typeof code === "string" ? Esprima.parse(code, suboptions) : code;
+      asts.push(ast);
+      sources.push(source);
+      return instrument(ast);
+    },
+    node: function (index) {
+      for (var i=0; i<asts.length; i++) {
+        var node = search(asts[i], index);
+        if (node)
+          return node;
+      }
+    },
+    source: function (index) {
+      for (var i=0; i<asts.length; i++)
+        if (index >= asts[i].__min__ && index <= asts[i].__max__)
+          return sources[i];
+    }
+  };
+};
+
+},{"./instrument.js":1,"esprima":2}],"linvail":[function(require,module,exports){
+
+var Internal = require("./internal.js");
+
+module.exports = function (enter, leave) {
+
+  var internal = Internal(enter, leave);
+  var internals = new WeakMap();
+  function internalize (x, i, s) {
+    var p = internal(x);
+    internals.set(p, x);
+    return enter(p, i, s);
+  }
+
+  function apply (f, t, xs, i) {
+    f = leave(f, i, "function");
+    if (internals.has(f))
+      return Reflect.apply(internals.get(f), t, xs);
+    t = leave(t, i, "this");
+    for (var j=0, l=xs.length; j<l; j++)
+      xs[i] = leave(xs[i], i, j);
+    return enter(Reflect.apply(f, t, xs), i, "result");
+  }
+
+  function construct (c, xs, i) {
+    c = leave(c, i, "constructor");
+    if (internals.has(c))
+      return Reflect.construct(internals.get(c), xs);
+    for (var j=0, l=xs.length; j<l; j++)
+      xs[i] = leave(xs[i], i, j);
+    return enter(Reflect.construct(f, xs), i, "result");
+  }
+
+  function get (o, k, r, i) {
+    var b = internals.has(o);
+    b && (o = internals.get(o));
+    o = Object(o);
+    var d = Reflect.getOwnPropertyDescriptor(o, k);
+    if (!d) {
+      var p = Reflect.getPrototypeOf(o);
+      return p ? get(leave(p, i, "prototype"), k, r, i) : enter(undefined, i, "result");
+    }
+    if ("value" in d)
+      return b ? d.value : enter(d.value, i, "result");
+    if ("get" in d)
+      return apply(d.get, r, [], i);
+    return enter(undefined, i, "result");
+  }
+
+  var set = (function () {
+    function init (rr, k, v, i) {
+      var b = internals.has(rr);
+      b && (rr = internals.get(rr));
+      Reflect.defineProperty(rr, k, {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: b ? v : leave(v, i, "value")
+      });
+    }
+    return function (o, k, v, r, rr, i) {
+      var b = internals.has(o);
+      b && (o = internals.get(o));
+      o = Object(o);
+      var d = Reflect.getOwnPropertyDescriptor(o, k);
+      if (!d) {
+        var p = Reflect.getPrototypeOf(o);
+        p ? set(leave(p, i, "prototype"), k, v, r, rr, i) : init(rr, k, v, i);
+      } else if ("value" in d && d.writable) {
+        init(rr, k, v, i);
+      } else if ("set" in d) {
+        apply(d.set, r, [v], i);
+      }
+    }
+  } ());
+
+  var traps = {};
+  traps.primitive = function (x, i) { return enter(x, i, "primitive") };
+  traps.array = function (xs, i) { return internalize(xs, i, "array") };
+  traps.closure = function (f, i) { return internalize(f, i, "closure") };
+  // We cannot proxified transparently RegExp:
+  // > (new Proxy(/abc/, {})).test("abc")
+  // TypeError: Method RegExp.prototype.test called on incompatible receiver [object Object]
+  traps.regexp = function (p, f, i) { return new RegExp(p, f), i, "regexp" };
+  traps.object = function (ds, i) {
+    var o = {};
+    ds.forEach(function (d) {
+      ("get" in d) && (d.get = leave(d.get, i));
+      ("set" in d) && (d.set = leave(d.set, i)); 
+      Object.defineProperty(o, d.key, d)
+    });
+    return internalize(o, i, "object");
+  };
+  traps.test = function (x, i) { return leave(x, i, "test") };
+  traps.with = function (o, i) { return leave(o, i, "with") };
+  traps.eval = function (xs, i) { return leave(xs[0], i, "eval") };
+  traps.unary = function (o, x, i) {
+    switch (o) {
+      case "-":      return enter(-      leave(x, i, "argument"), i, "result");
+      case "+":      return enter(+      leave(x, i, "argument"), i, "result");
+      case "!":      return enter(!      leave(x, i, "argument"), i, "result");
+      case "~":      return enter(~      leave(x, i, "argument"), i, "result");
+      case "typeof": return enter(typeof leave(x, i, "argument"), i, "result");
+      case "void":   return enter(void   leave(x, i, "argument"), i, "result");
+      case "delete": return enter(delete leave(x, i, "argument"), i, "result");
+    }
+    throw new Error("Unknwon unary operator: "+o);
+  };
+  traps.binary = function (o, l, r, i) {
+    switch (o) {
+      // Arithmetic
+      case "+":          return enter(leave(l, i, "left") +          leave(r, i, "right"), i, "result");
+      case "-":          return enter(leave(l, i, "left") -          leave(r, i, "right"), i, "result");
+      case "*":          return enter(leave(l, i, "left") *          leave(r, i, "right"), i, "result");
+      case "/":          return enter(leave(l, i, "left") /          leave(r, i, "right"), i, "result");
+      // Comparison
+      case "==":         return enter(leave(l, i, "left") ==         leave(r, i, "right"), i, "result");
+      case "!=":         return enter(leave(l, i, "left") !=         leave(r, i, "right"), i, "result");
+      case "===":        return enter(leave(l, i, "left") ===        leave(r, i, "right"), i, "result");
+      case "!==":        return enter(leave(l, i, "left") !==        leave(r, i, "right"), i, "result");
+      case "<":          return enter(leave(l, i, "left") <          leave(r, i, "right"), i, "result");
+      case "<=":         return enter(leave(l, i, "left") <=         leave(r, i, "right"), i, "result");
+      case ">":          return enter(leave(l, i, "left") >          leave(r, i, "right"), i, "result");
+      case ">=":         return enter(leave(l, i, "left") >=         leave(r, i, "right"), i, "result");
+      // Object
+      case "in":         return enter(leave(l, i, "left") in         leave(r, i, "right"), i, "result");
+      case "instanceof": return enter(leave(l, i, "left") instanceof leave(r, i, "right"), i, "result");
+      // Bit
+      case "<<":         return enter(leave(l, i, "left") <<         leave(r, i, "right"), i, "result");
+      case ">>":         return enter(leave(l, i, "left") >>         leave(r, i, "right"), i, "result");
+      case ">>>":        return enter(leave(l, i, "left") >>>        leave(r, i, "right"), i, "result");
+      case "%":          return enter(leave(l, i, "left") %          leave(r, i, "right"), i, "result");
+      case "|":          return enter(leave(l, i, "left") |          leave(r, i, "right"), i, "result");
+      case "^":          return enter(leave(l, i, "left") ^          leave(r, i, "right"), i, "result");
+      case "&":          return enter(leave(l, i, "left") &          leave(r, i, "right"), i, "result");
+    }
+    throw new Error("Unknwon binary operator: "+o);
+  };
+  traps.apply = apply;
+  traps.construct = construct;
+  traps.get = function (o, k, i) {
+    return get(leave(o, i, "target"), leave(k, i, "key"), o);
+  };
+  traps.set = function (o, k, v, i) {
+    var rr = leave(o, i, "target")
+    set(rr, leave(k, i, "key"), v, o, rr, i);
+    return v;
+  };
+  traps.delete = function (o, k, i) {
+    return enter(delete leave(o, i, "target")[leave(k, i, "key")], i);
+  };
+  traps.enumerate = function (o, i) {
+    o = leave(o, i, "target");
+    var ks = [];
+    var length = 0;
+    for (var k in o)
+      ks[length++] = enter(k, i, "key");
+    return ks;
+  };
+
+  return traps;
+
+};
+
+},{"./internal.js":4}]},{},[5]);
 </script>
   </head>
   <body>

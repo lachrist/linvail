@@ -1,6 +1,6 @@
 { "name" : "linvail"
 , "description" : "Linvail enables shadow execution of JavaScript programs"
-, "version" : "3.0.0"
+, "version" : "3.0.1"
 , "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
 , "repository": "lachrist/linvail"
 , "homepage": "http://github.com/lachrist/linvail"

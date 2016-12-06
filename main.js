@@ -17,7 +17,7 @@ module.exports = function (enter, leave) {
       return Reflect.apply(internals.get(f), t, xs);
     t = leave(t, i, "this");
     for (var j=0, l=xs.length; j<l; j++)
-      xs[i] = leave(xs[i], i, j);
+      xs[j] = leave(xs[j], i, j);
     return enter(Reflect.apply(f, t, xs), i, "result");
   }
 
@@ -26,7 +26,7 @@ module.exports = function (enter, leave) {
     if (internals.has(c))
       return Reflect.construct(internals.get(c), xs);
     for (var j=0, l=xs.length; j<l; j++)
-      xs[i] = leave(xs[i], i, j);
+      xs[j] = leave(xs[j], i, j);
     return enter(Reflect.construct(f, xs), i, "result");
   }
 

@@ -138,15 +138,15 @@ module.exports = function (enter, leave) {
   traps.apply = apply;
   traps.construct = construct;
   traps.get = function (o, k, i) {
-    return get(leave(o, i, "target"), leave(k, i, "key"), o);
+    return get(leave(o, i, "target"), leave(k, i, "key"), o, i);
   };
   traps.set = function (o, k, v, i) {
-    var rr = leave(o, i, "target")
+    var rr = leave(o, i, "target");
     set(rr, leave(k, i, "key"), v, o, rr, i);
     return v;
   };
   traps.delete = function (o, k, i) {
-    return enter(delete leave(o, i, "target")[leave(k, i, "key")], i);
+    return enter(delete leave(o, i, "target")[leave(k, i, "key")], i, "result");
   };
   traps.enumerate = function (o, i) {
     o = leave(o, i, "target");

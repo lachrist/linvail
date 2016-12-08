@@ -6,18 +6,23 @@ function initialize (object, key, value) {
     writable: true,
     value: value
   });
-}
+};
 
 module.exports = function (enter, leave) {
 
   var traps = {};
 
   traps.apply = function (target, ths, args) {
-    return leave(Reflect.apply(target, enter(ths), args.map(enter)));
+    ths = enter(ths);
+    for (var i=0, l=args.length; i<l; i++)
+      args[i] = enter(args[i]);
+    return leave(Reflect.apply(ths, args));
   };
 
   traps.construct = function (target, args) {
-    return leave(Reflect.construct(target, args.map(enter)));
+    for (var i=0, l=args.length; i<l; i++)
+      args[i] = enter(args[i]);
+    return leave(Reflect.construct(target, args));
   };
 
   traps.getOwnPropertyDescriptor = function (target, key) {
@@ -63,6 +68,6 @@ module.exports = function (enter, leave) {
     return value;
   };
 
-  return function (object) { return new Proxy(object, traps) }; 
+  return function (target) { return new Proxy(target, traps) }; 
 
 };

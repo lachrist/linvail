@@ -1,6 +1,6 @@
 # Linvail
 
-Linvail is an [npm module](https://www.npmjs.com/linvail) built on top of [Aran](https://github.com/lachrist/aran) which enables so called ``heavy-wieght'' dynamic analyses of JavaScript programs.
+Linvail is an [npm module](https://www.npmjs.com/linvail) built on top of [Aran](https://github.com/lachrist/aran) which enables so called *heavy-wieght* dynamic analyses of JavaScript programs.
 To install, run `npm install aran linvail`.
 Technically, invoking the top-level function of this module returns the Aran's traps necessary to implement a transitive membrane around the instrumented code.
 In clear that means that Linvail enables you to intercept all the values entering and leaving instrumented code areas.

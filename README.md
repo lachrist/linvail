@@ -5,7 +5,7 @@ To install, run `npm install aran linvail`.
 Technically, invoking the top-level function of this module returns the Aran's traps necessary to implement a transitive membrane around the instrumented code.
 In clear that means that Linvail enables you to intercept all the values entering and leaving instrumented code areas.
 As shown below, tracking the instrumented program's values then becomes easy by wrapping them as they enter and unwrapping them as the leave.
-In [Linvail's demo page](https://rawgit/lachrist/linvail/master/demo/index.html) you can experiment other analyses which actually do something.
+In [Linvail's demo page](http://rawgit.com/lachrist/linvail/master/demo/index.html) you can experiment other analyses which actually do something.
 
 ```js
 var Aran = require("aran");

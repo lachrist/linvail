@@ -8,27 +8,27 @@ function initialize (object, key, value) {
   });
 };
 
-module.exports = function (enter, leave) {
+module.exports = function (membrane) {
 
   var traps = {};
 
   traps.apply = function (target, ths, args) {
-    ths = enter(ths);
+    ths = membrane.enter(ths);
     for (var i=0, l=args.length; i<l; i++)
-      args[i] = enter(args[i]);
-    return leave(Reflect.apply(ths, args));
+      args[i] = membrane.enter(args[i]);
+    return membrane.leave(Reflect.apply(ths, args));
   };
 
   traps.construct = function (target, args) {
     for (var i=0, l=args.length; i<l; i++)
-      args[i] = enter(args[i]);
-    return leave(Reflect.construct(target, args));
+      args[i] = membrane.enter(args[i]);
+    return membrane.leave(Reflect.construct(target, args));
   };
 
   traps.getOwnPropertyDescriptor = function (target, key) {
     var descriptor = Reflect.getOwnPropertyDescriptor(target, key);
     if (descriptor && "value" in descriptor)
-      descriptor.value = leave(descriptor.value);
+      descriptor.value = membrane.leave(descriptor.value);
     return descriptor;
   };
 
@@ -38,7 +38,7 @@ module.exports = function (enter, leave) {
       (k in descriptor) && (copy[k] = descriptor[k]);
     });
     if ("value" in copy)
-      copy.value = enter(copy.value);
+      copy.value = membrane.enter(copy.value);
     return Reflect.defineProperty(target, key, copy);
   };
 
@@ -49,7 +49,7 @@ module.exports = function (enter, leave) {
       return prototype ? Reflect.get(prototype, key, receiver) : undefined;
     }
     if ("value" in descriptor)
-      return leave(descriptor.value);
+      return membrane.leave(descriptor.value);
     if ("get" in descriptor)
       return Reflect.apply(descriptor.get, receiver, []);
     return undefined;

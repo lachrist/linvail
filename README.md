@@ -4,47 +4,39 @@ Linvail is an [npm module](https://www.npmjs.com/linvail) built on top of [Aran]
 To install, run `npm install aran linvail`.
 Technically, invoking the top-level function of this module returns the Aran's traps necessary to implement a transitive membrane around the instrumented code.
 In clear that means that Linvail enables you to intercept all the values entering and leaving instrumented code areas.
-As shown below, tracking the instrumented program's values then becomes easy by wrapping them as they enter and unwrapping them as the leave.
+The code below is an [Otiluke's transpiler](https://github.com/lachrist/otiluke) which implements the identity membrane.
 In [Linvail's demo page](http://rawgit.com/lachrist/linvail/master/demo/index.html) you can experiment other analyses which actually do something.
 
 ```js
 var Aran = require("aran");
 var Linvail = require("linvail");
-// No observable effects but all values flowing
-// through the instrumented code are wrappers!
 module.exports = function (options) {
-  // Testing for an `inner` field is not good enough.
-  // We use this collection to be sure we are not
-  // confusing wrappers and resembling program's
-  // values.
-  var wrappers = new WeakSet();
-  // All entering values are wrapped
   function enter (val, idx, ctx) {
-    var wrp = {inner:val};
-    wrappers.add(wrp);
-    return wrp;
+    return val;
   }
-  // If a leaving value is a wrapper, it is unwrapped
   function leave (val, idx, ctx) {
-    return wrappers.has(val) ? val.inner : val;
+    return val;
   }
   global._meta_ = Linvail(enter, leave);
   var aran = Aran({
     traps: Object.keys(global._meta_),
-    namespace: "_meta_",
-    loc: true
+    namespace: "_meta_"
   });
   return aran.instrument;
 };
 ```
 
-## Why do I need Linvail?
+## Why the heck do I need Linvail for?
 
-[Aran](https://github.com/lachrist/aran) and simple program instrumentation in general is good for introspecting the control flow and tracking pointer value which can be properly differentiated.
+[Aran](https://github.com/lachrist/aran) and simple program instrumentation in general is good for introspecting the control flow and tracking pointer values which can be properly differentiated.
 Things become more difficult when the analysis has to reason about primitive values as well.
-Indeed there is no way at the JavaScript language level to differentiate two `null` values even though they have a different origin.
-This observation extends to every primitive values that share the same value but have a different origin.
-In the remainder of this section we give three examples of dynamic analysis which encounters such problem and are therefore difficult to build directly on top of [Aran](https://github.com/lachrist/aran) and simple program instrumenter in general.
+For instance there is no way at the JavaScript language level to differentiate two `null` values even though they have a different origin.
+Such restriction applies to every primitive values.
+Technically, it is because primitive values are inlined into different parts of the program's state -- e.g.: inside the environment and structures inside the store.
+All of these copying blur the concept of a primitive value's identity and lifetime.
+On the contrary, objects -- i.e. pointers -- can be properly differentiated based on their address in the store.
+Such situation happens in almost every mainstream programming languages.
+In the remainder of this section we give three examples of dynamic analyses which requires differentiating primitive values based on their origin and are therefore challenging to implement properly on top of [Aran](https://github.com/lachrist/aran) and simple program instrumenter in general.
 
 1. **Debugging NaN appearances**
   In this first example, we want to provide an analysis which tracks the origin of `NaN` (not-a-number) values.
@@ -57,6 +49,7 @@ In the remainder of this section we give three examples of dynamic analysis whic
   ```
   Simply printing every appearance of `NaN` values runs under the risk of overwhelming the programmer with unrelated `NaN` appearances.
   We would like to know only of the `NaN` that caused the alert to display an buggy message.
+  It is therefore crucial to differentiate `NaN` values which cannot be done at the JavaScript language level.
 
 2. **Taint analysis**
   Taint analysis consists in marking -- or *tainting* -- values coming from predefined source of information and preventing them from flowing through predefined sinks of information.
@@ -68,24 +61,89 @@ In the remainder of this section we give three examples of dynamic analysis whic
   sendToShadyThirdPartyServer(secrets); // predefined sink
   ```
   Lets suppose that the password was `"trustno1"`.
+  N.B. strings are primitive values in JavaScript.
   After splitting this string to characters we cannot simply taint all string being `"t"`, `"r"`, `"u"`, `"s"`, `"t"`, "`n`", "`o`", `"1"`.
-  That would lead to serious over-tainting and diminish the usefulness of the analysis.
-  As for the `Nan` debugger we crucially need to differentiate between primitive values sharing the same value but having a different origin.
+  This would lead to serious over-tainting and diminish the precision and usefulness of the analysis.
+  As for the `Nan` debugger we crucially need to differentiate primitive values based on their origin and not only their value.
 
 3. **Concolic Testing**
-  Concolic testing aims at automatically explore all the control-flow paths a program can take for validation purpose.
+  Concolic testing aims at automatically exploring all the control-flow paths a program can take for validation purpose.
   It involves gathering mathematic formula on a program's inputs as it is being executed.
   Later, these formula can be given to a constraint solver to steer the program into a unexplored execution path.
   Consider the program below which has two different outcomes based on the birthdate of the user.
-  A successful concolic tester should be able to generate an input that leads the program to the consequent branch and an other input that leads the program to the alternate branch.
+  A successful concolic tester should be able to generate an birthdate input that leads the program to the consequent branch and an other birthdate input that leads the program to the alternate branch.
   ```js
-  var bdate = document.getElemenById("bdate").value; // new symbolic value [α]
+  var input = document.getElemenById("bdate").value;
+  var bdate = input.value // new symbolic value [α]
   var age = bdate - 2016; // new constraint [β = α - 2016]
   var isminor = age > 17; // new constraint [γ = β > 17]
-  if (isminor) { // path condition [γ && γ = β > 17 && β = α - 2016]
+  if (isminor) {          // path condition [γ && γ = β > 17 && β = α - 2016]
     // do something
-  } else { // path condition [!γ && γ = β > 17 && β = α - 2016]
+  } else {                // path condition [!γ && γ = β > 17 && β = α - 2016]
     // do something else
   }
   ```
-  The two path conditions could not have beeen generated without being able to properly differentatiate primitive values based on their origin.
+  It should be clear that confusing two primitive values having different origin would easily lead to erroneous path constraint.
+
+## Solutions
+
+In this section we investigate different ways to track primitive values across the program's execution.
+
+1. *Shadow States*
+  For low-level languages such as binary code, primitive values are often tracked by maintaining a so called "shadow state" that mirrors the concrete program state.
+  This shadow state contains analysis-related information about the program values situated at the same location in the concrete state. 
+  [Valgrind](http://valgrind.org/) is a popular binary instrumentation framework which utilizes this technique to enables many data-flow analyses.
+  The difficulty of this technique lies in maintaining the shadow state as non-instrumented functions are being executed.
+  An important class of functions that cannot be instrumented are built-in functions.
+  Because the semantic of JavaScript built-in functions is much more complex than the semantic of built-in binary code procedures, we argue that shadow state can never be completely kept in sync with the concrete state.
+2. *Record And Replay*
+  Record and replay systems such as [Jalangi](https://github.com/SRA-SiliconValley/jalangi) are an intelligent response to the challenge of keeping in sync the shadow states with the concrete state.
+  Observing that divergences between the shadow and concrete states cannot be completely avoided, these systems allows divergences in the replay phase which can be resolved by the trace gathered during the record phase.
+  We propose two arguments against such technique:
+  First, every time divergences are resolved in the replay phase, values with unknown origin are being introduced which necessarily diminish the precision of the resulting analysis.
+  Second, the replay phase only provide information about partial execution which can be puzzling to reason about.
+3. *Wrappers*
+  Instead of providing a entire separated shadow state, wrappers constitutes a finer grained solution.
+  By wrapping primitive values inside objects we can simply let them propagate.
+  The problem with wrappers is to make them behave like their wrapped primitive value.
+
+
+
+2. *Boxed Values*
+
+  JavaScript enables to box the following primitive values: booleans, numbers and strings.
+  However this solution is not perfect for two reasons: first it does not enables tracking `undefined` and `null` and second, as shown below, boxed values does not always behave like their primitive counterpart.
+  ```js
+  // Strings cannot be differentiated based on their origin
+  var string1 = "abc";
+  var string2 = "abc";
+  assert(string1 === string2);
+  // Boxed strings can be differentiated based on their origin
+  var boxedString1 = new String("abc");
+  var boxedString2 = new String("abc");
+  assert(boxedString1 !== boxedString2);
+  // In some cases boxed string behave like strings.
+  assert(string1 + string2 === boxedString1 + boxedString2);
+  assert(JSON.stringify({a:string1}) === JSON.stringify({a:boxedString1}));
+  // In some other cases they don't...
+  var x = "bar";
+  string1.foo = x;
+  boxedString1.foo = x;
+  assert(string1.foo !== boxedString1.foo);
+  ```
+3. *valueOf method*
+  A similar mechanism to boxed value is to 
+  Many builtin JavaScript procedures expecting a primitive value but receiving on object will try to convert this object into a primitive using its `valueOf` method.
+  ```js
+  var x = null
+  var xValueOf = {
+    inner: null,
+    valueOf: function () { this.inner }
+  }
+  assert(JSON.stringify({a:x}) !== JSON.stringify({a:xValueOf}));
+  ```
+  Under the hood, boxed primitive values are using the `valueOf` method to convert an object
+
+4. *explicit wrapper*
+
+

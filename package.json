@@ -1,10 +1,27 @@
-{ "name" : "linvail"
-, "description" : "Linvail enables shadow execution of JavaScript programs"
-, "version" : "3.0.1"
-, "author" : {"name":"Laurent Christophe", "email":"lachrist@vub.ac.be"}
-, "repository": "lachrist/linvail"
-, "homepage": "http://github.com/lachrist/linvail"
-, "license" : "MIT"
-, "main": "main.js"
-, "keywords" : ["JavaScript", "Shadow Execution", "Proxy", "ES6 Proxy", "Instrumentation", "Dynamic Analysis"]
+{
+  "name": "linvail",
+  "description": "Linvail enables shadow execution of JavaScript programs",
+  "version": "3.0.1",
+  "author": {
+    "name": "Laurent Christophe",
+    "email": "lachrist@vub.ac.be"
+  },
+  "repository": "lachrist/linvail",
+  "homepage": "http://github.com/lachrist/linvail",
+  "license": "MIT",
+  "main": "main.js",
+  "keywords": [
+    "JavaScript",
+    "Shadow Execution",
+    "Proxy",
+    "ES6 Proxy",
+    "Instrumentation",
+    "Dynamic Analysis"
+  ],
+  "dependencies": {
+    "acorn": "^5.5.3",
+    "aran": "^2.0.0",
+    "array-lite": "^0.1.0",
+    "astring": "^1.2.0"
+  }
 }

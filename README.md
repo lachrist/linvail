@@ -38,13 +38,13 @@ eval(instrument([
 ].join("\n"), null));
 ```
 
-* [demo/analysis/identity](TODO):
+* [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/75094a24/demo/output/identity-delta.html):
   Demonstrate the API of linvail but don't produce observable effects.
-* [demo/analysis/wrapper](TODO):
+* [demo/analysis/wrapper](https://cdn.rawgit.com/lachrist/linvail/75094a24/demo/output/wrapper-delta.html):
   Every values entering instrumented areas are wrapped to provide a well-defined identity.
   Every wrapper leaving instrumented areas are unwrapped to avoid heisenbugs.
   Wrapping and unwrapping operations are logged.
-* [demo/analysis/concolic](TODO):
+* [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/75094a24/demo/output/concolic-delta.html):
   Same as above but also logs the arguments and result of triggered aran's traps.
   The resulting log is a detailed data-flow trace which can be fed to a SMT solver after formatting.
 
@@ -53,11 +53,6 @@ eval(instrument([
 I'm [Laurent Christophe](http://soft.vub.ac.be/soft/members/lachrist) a phd student at the Vrij Universiteit of Brussel (VUB).
 I'm working at the SOFT language lab in close relation with my promoters [Coen De Roover](http://soft.vub.ac.be/soft/members/cderoove) and [Wolfgang De Meuter](http://soft.vub.ac.be/soft/members/wdmeuter).
 I'm currently being employed on the [Tearless](http://soft.vub.ac.be/tearless/pages/index.html) project.
-
-![tearless](readme/tearless.png)
-![soft](readme/soft.png)
-![vub](readme/vub.png)
-
 
 <!-- 
 

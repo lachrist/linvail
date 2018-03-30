@@ -1,6 +1,69 @@
 # Linvail
 
-Linvail is an [npm module](https://www.npmjs.com/linvail) built on top of [Aran](https://github.com/lachrist/aran) which enables data-flow centric dynamic analyses such as taint analyses and symbolic execution of JavaScript programs.
+Linvail is [npm module](https://www.npmjs.com/linvail) that implements a control access system around JavaScript code instrumented by [Aran](https://github.com/lachrist/aran).
+Linvail's motivation is to build dynamic analyses capable of tracking primitive values across the object graph.
+
+```js
+const Aran = require("aran");
+const Acorn = require("acorn");
+const Astring = require("astring");
+const Linvail = require("linvail");
+
+const print = (value) => {
+  if (value && typeof value === "object")
+    return "#object";
+  if (typeof value === "function")
+    return "#function";
+  if (typeof value === "string")
+    return JSON.stringify(value);
+  return String(value);
+}
+
+const aran = Aran({namespace:"META", sandbox:true}); // Sandboxing must be enabled!
+const instrument = (script, parent) =>
+  Astring.generate(aran.weave(Acorn.parse(script), pointcut, parent));
+let counter = 0;
+const linvail = Linvail(instrument, {
+  enter: (value) => (console.log("@"+(++counter)+" = "+print(value)), {base:value,meta:counter}),
+  leave: (value) => (console.log("using @"+value.meta), value.base)
+});
+const pointcut = Object.keys(linvail.traps);
+const META = linvail.traps;
+let sandbox = linvail.sandbox; // aran's setup must have access to the linvail's sandbox
+eval(Astring.generate(aran.setup(pointcut)));
+eval(instrument([
+  "const o = {foo:null};",           // log: @22 = null
+  "console.log(JSON.stringify(o));", // log: {"foo":null}
+  "o.foo;"                           // log: using @22
+].join("\n"), null));
+```
+
+* [demo/analysis/identity](TODO):
+  Demonstrate the API of linvail but don't produce observable effects.
+* [demo/analysis/wrapper](TODO):
+  Every values entering instrumented areas are wrapped to provide a well-defined identity.
+  Every wrapper leaving instrumented areas are unwrapped to avoid heisenbugs.
+  Wrapping and unwrapping operations are logged.
+* [demo/analysis/concolic](TODO):
+  Same as above but also logs the arguments and result of triggered aran's traps.
+  The resulting log is a detailed data-flow trace which can be fed to a SMT solver after formatting.
+
+## Acknowledgments
+
+I'm [Laurent Christophe](http://soft.vub.ac.be/soft/members/lachrist) a phd student at the Vrij Universiteit of Brussel (VUB).
+I'm working at the SOFT language lab in close relation with my promoters [Coen De Roover](http://soft.vub.ac.be/soft/members/cderoove) and [Wolfgang De Meuter](http://soft.vub.ac.be/soft/members/wdmeuter).
+I'm currently being employed on the [Tearless](http://soft.vub.ac.be/tearless/pages/index.html) project.
+
+![tearless](readme/tearless.png)
+![soft](readme/soft.png)
+![vub](readme/vub.png)
+
+
+<!-- 
+
+built on top of  that enable control the flow of values that enter and leave instrumented code areas.
+ values 
+to deploy a transitive membranewhich enables data-flow centric dynamic analyses such as taint analyses and symbolic execution of JavaScript programs.
 To install, run `npm install aran linvail`.
 Technically, invoking the top-level function of this module returns the Aran's traps necessary to implement a transitive membrane around the instrumented code.
 In clear that means that Linvail enables you to intercept all the values entering and leaving instrumented code areas.
@@ -10,6 +73,23 @@ In [Linvail's demo page](http://rawgit.com/lachrist/linvail/master/demo/index.ht
 ```js
 var Aran = require("aran");
 var Linvail = require("linvail");
+const aran = Aran({namespace:"META"});
+const instrument = (script, parent) =>
+  Astring.generate(aran.weave(Acorn.parse(script), pointcut, parent));
+const membrane = {};
+let counter = 0;
+const pointers = new WeakMap();
+const print = (value) => {
+  if (pointers.has(value))
+    return 
+  if (value && typeof value === "object")
+    return "object";
+  if (typeof value === "function")
+    return "function";
+  return String(value);
+}
+membrane.enter = (value) => console.log("enter "+print(value))
+
 module.exports = function (options) {
   function enter (val, idx, ctx) {
     return val;
@@ -28,7 +108,7 @@ module.exports = function (options) {
 
 ## Why the heck do I need Linvail for?
 
-[Aran](https://github.com/lachrist/aran) and simple program instrumentation in general is good for introspecting the control flow and tracking pointer values which can be properly differentiated.
+[Aran](https://github.com/lachrist/aran) and program instrumentation in general is good for introspecting the control flow and tracking pointers.
 Things become more difficult when the analysis has to reason about primitive values as well.
 For instance there is no way at the JavaScript language level to differentiate two `null` values even though they have a different origin.
 Such restriction applies to every primitive values.
@@ -107,43 +187,41 @@ In this section we investigate different ways to track primitive values across t
   By wrapping primitive values inside objects we can simply let them propagate.
   The problem with wrappers is to make them behave like their wrapped primitive value.
 
+  2. *Boxed Values*
+    JavaScript enables to box the following primitive values: booleans, numbers and strings.
+    However this solution is not perfect for two reasons: first it does not enables tracking `undefined` and `null` and second, as shown below, boxed values does not always behave like their primitive counterpart.
+    ```js
+    // Strings cannot be differentiated based on their origin
+    var string1 = "abc";
+    var string2 = "abc";
+    assert(string1 === string2);
+    // Boxed strings can be differentiated based on their origin
+    var boxedString1 = new String("abc");
+    var boxedString2 = new String("abc");
+    assert(boxedString1 !== boxedString2);
+    // In some cases boxed string behave like strings.
+    assert(string1 + string2 === boxedString1 + boxedString2);
+    assert(JSON.stringify({a:string1}) === JSON.stringify({a:boxedString1}));
+    // In some other cases they don't...
+    var x = "bar";
+    string1.foo = x;
+    boxedString1.foo = x;
+    assert(string1.foo !== boxedString1.foo);
+    ```
+  3. *valueOf method*
+    A similar mechanism to boxed value is to 
+    Many builtin JavaScript procedures expecting a primitive value but receiving on object will try to convert this object into a primitive using its `valueOf` method.
+    ```js
+    var x = null
+    var xValueOf = {
+      inner: null,
+      valueOf: function () { this.inner }
+    }
+    assert(JSON.stringify({a:x}) !== JSON.stringify({a:xValueOf}));
+    ```
+    Under the hood, boxed primitive values are using the `valueOf` method to convert an object
+
+  4. *explicit wrapper*
 
 
-2. *Boxed Values*
-
-  JavaScript enables to box the following primitive values: booleans, numbers and strings.
-  However this solution is not perfect for two reasons: first it does not enables tracking `undefined` and `null` and second, as shown below, boxed values does not always behave like their primitive counterpart.
-  ```js
-  // Strings cannot be differentiated based on their origin
-  var string1 = "abc";
-  var string2 = "abc";
-  assert(string1 === string2);
-  // Boxed strings can be differentiated based on their origin
-  var boxedString1 = new String("abc");
-  var boxedString2 = new String("abc");
-  assert(boxedString1 !== boxedString2);
-  // In some cases boxed string behave like strings.
-  assert(string1 + string2 === boxedString1 + boxedString2);
-  assert(JSON.stringify({a:string1}) === JSON.stringify({a:boxedString1}));
-  // In some other cases they don't...
-  var x = "bar";
-  string1.foo = x;
-  boxedString1.foo = x;
-  assert(string1.foo !== boxedString1.foo);
-  ```
-3. *valueOf method*
-  A similar mechanism to boxed value is to 
-  Many builtin JavaScript procedures expecting a primitive value but receiving on object will try to convert this object into a primitive using its `valueOf` method.
-  ```js
-  var x = null
-  var xValueOf = {
-    inner: null,
-    valueOf: function () { this.inner }
-  }
-  assert(JSON.stringify({a:x}) !== JSON.stringify({a:xValueOf}));
-  ```
-  Under the hood, boxed primitive values are using the `valueOf` method to convert an object
-
-4. *explicit wrapper*
-
-
+ -->

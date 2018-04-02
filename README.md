@@ -28,14 +28,14 @@ const linvail = Linvail(instrument, {
   leave: (value) => (console.log("using @"+value.meta), value.base)
 });
 const pointcut = Object.keys(linvail.traps);
-const META = linvail.traps;
-let sandbox = linvail.sandbox; // aran's setup must have access to the linvail's sandbox
-eval(Astring.generate(aran.setup(pointcut)));
-eval(instrument([
+global.META = linvail.traps;
+META.GLOBAL = linvail.sandbox;
+global.eval(Astring.generate(aran.setup(pointcut)));
+global.eval(instrument([
   "const o = {foo:null};",           // log: @22 = null
   "console.log(JSON.stringify(o));", // log: {"foo":null}
   "o.foo;"                           // log: using @22
-].join("\n"), null));
+].join("\n")));
 ```
 
 * [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/36d0fe2b/demo/output/identity-delta.html):

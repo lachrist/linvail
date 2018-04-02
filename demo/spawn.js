@@ -2,5 +2,5 @@
   "console.log = function () { \n",
   "  postMessage(Array.from(arguments).map(String).join(' ')+'\\n');\n",
   "};\n",
-  analysis+"("+JSON.stringify(script)+");\n"
+  analysis+"("+JSON.stringify(script)+", "+JSON.stringify(path)+");\n"
 ])));

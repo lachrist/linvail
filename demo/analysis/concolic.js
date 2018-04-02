@@ -22,26 +22,31 @@ const print = (value) => {
 };
 
 const aran = Aran({namespace:"META", sandbox:true});
-const instrument = (script, parent) =>
-  Astring.generate(aran.weave(Acorn.parse(script), pointcut, parent));
+const location = (serial) => serial ?
+  "@"+aran.root(serial).path+":"+aran.node(serial).loc.start.line :
+  "@setup";
+const instrument = (script, parent, path) => {
+  const estree = Acorn.parse(script, {locations:true});
+  estree.path = path;
+  return Astring.generate(aran.weave(estree, pointcut, parent));
+};
 const linvail = Linvail(instrument, {
-  enter: (value) => ({base:value, meta:"@"+(++counter2)}),
+  enter: (value) => ({base:value, meta:"#"+(++counter2)}),
   leave: (wrapper) => wrapper.base
 });
 const pointcut = Object.keys(linvail.traps);
-const META = {};
+global.META = {};
 
 ///////////////
 // Producers //
 ///////////////
-
-
-["catch", "primitive", "discard", "regexp", "arrival", "function"].forEach((name) => {
+["catch", "primitive", "discard", "regexp", "function"].forEach((name) => {
   META[name] = function () {
     const result = linvail.traps[name].apply(null, arguments);
     arguments[arguments.length-2] = print(arguments[arguments.length-2]);
+    arguments.length--;
     arguments.join = Array.prototype.join;
-    console.log(result.meta+" = "+name+"("+arguments.join(", ")+")");
+    console.log(result.meta+" = "+name+"("+arguments.join(", ")+") "+location(arguments[arguments.length]));
     return result;
   };
 });
@@ -53,8 +58,9 @@ const META = {};
   META[name] = function () {
     const result = linvail.traps[name].apply(null, arguments);
     arguments[arguments.length-2] = arguments[arguments.length-2].meta;
+    arguments.length--;
     arguments.join = Array.prototype.join;
-    console.log(name+"("+arguments.join(", ")+")");
+    console.log(name+"("+arguments.join(", ")+") "+location(arguments[arguments.length]));
     return result;
   };
 });
@@ -65,9 +71,10 @@ const META = {};
 const metaof = (value) => value.meta;
 const property = (pair) => "["+pair[0].meta+","+pair[1].meta+"]";
 const combine = (result, name, origin, serial) => {
-  console.log(result.meta+"("+print(result.base)+") = "+name+"("+origin+", "+serial+")");
+  console.log(result.meta+" = "+name+"("+origin+") "+location(serial)+" // "+print(result.base));
   return result;
 };
+META.arrival = linvail.traps.arrival;
 META.apply = (value1, value2, values, serial) => combine(
   linvail.traps.apply(value1, value2, values, serial),
   "apply", value1.meta+", "+value2.meta+", ["+values.map(metaof)+"]", serial);
@@ -99,6 +106,6 @@ META.binary = (operator, value1, value2, serial) => combine(
   linvail.traps.binary(operator, value1, value2, serial),
   "binary", "\""+operator+"\", "+value1.meta+", "+value2.meta, serial);
 
-let sandbox = linvail.sandbox;
-eval(Astring.generate(aran.setup(pointcut)));
-module.exports = (script) => eval(instrument(script, null));
+META.GLOBAL = linvail.sandbox;
+global.eval(Astring.generate(aran.setup(pointcut)));
+module.exports = (script, path) => global.eval(instrument(script, null, path));

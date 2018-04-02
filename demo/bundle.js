@@ -31,3 +31,4 @@ const bundle = (analysis, target) => SandboxScenario(
 bundle("identity", "delta");
 bundle("wrapper", "delta");
 bundle("concolic", "delta");
+bundle("json", "json");

@@ -27,6 +27,41 @@ const map = (array, arrow) => {
   return result;
 };
 
+// In nested proxies (tower of reflection), it can be observed that the getOwnPropertyDescriptor is invoked on the inner proxy.
+//
+// function Handlers (prefix) {
+//   const handlers = {};
+//   ["getPrototypeOf", "setPrototypeOf", "isExtensible", "preventExtensions", "apply", "construct"].forEach((name) => {
+//     handlers[name] = function () {
+//       console.log("begin "+prefix+"."+name);
+//       const result = Reflect[name].apply(null, arguments);
+//       console.log("end "+prefix+"."+name);
+//       return result;
+//     };
+//   });
+//   ["get", "has", "set", "defineProperty", "getOwnPropertyDescriptor", "deleteProperty"].forEach((name) => {
+//     handlers[name] = function () {
+//       console.log("begin "+prefix+"."+name+" "+String(arguments[1]));
+//       const result = Reflect[name].apply(null, arguments);
+//       console.log("end "+prefix+"."+name+" "+String(arguments[1]));
+//       return result;
+//     };
+//   });
+//   return handlers;
+// };
+// > var p1 = new Proxy({foo:123}, Handlers("inner"));
+// undefined
+// > var p2 = new Proxy(p1, Handlers("outer"));
+// undefined
+// > p2.foo
+// begin outer.get foo
+// begin inner.get foo
+// end inner.get foo
+// end outer.get foo
+// begin inner.getOwnPropertyDescriptor foo
+// end inner.getOwnPropertyDescriptor foo
+// 123
+
 module.exports = (membrane, enter, leave) => {
 
   const targets = new WeakMap();
@@ -48,14 +83,14 @@ module.exports = (membrane, enter, leave) => {
   handlers.preventExtensions = (target) => Reflect_preventExtensions(target.inner);
 
   handlers.getOwnPropertyDescriptor = (target, key) => {
-    const descriptor = Reflect_getOwnPropertyDescriptor(target, key);
+    const descriptor = Reflect_getOwnPropertyDescriptor(target.inner, key);
     if (descriptor)
       descriptor.value = enter(descriptor.value);
     return descriptor;
   };
 
   handlers.defineProperty = (target, key, descriptor) => Reflect_defineProperty(
-    target,
+    target.inner,
     key, 
     Object_assign(
       {},

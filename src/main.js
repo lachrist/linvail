@@ -1,5 +1,4 @@
 
-// object.__proto__ array.length function.prototype regexp.lastIndex
 const Meta = require("./meta.js");
 const Base = require("./base.js");
 const NormalizeArray = require("./normalize-array.js");
@@ -42,23 +41,10 @@ module.exports = (instrument, membrane) => {
   ///////////////
   // Producers //
   ///////////////
-  // TRANSPARENT: read load
   traps.catch = (value, serial) => enter(value);
   traps.primitive = (value, serial) => membrane.enter(value);
   traps.discard = (identifier, value, serial) => membrane.enter(value);
   traps.regexp = (value, serial) => membrane.enter(base.flip(value));
-  traps.arrival = (strict, value, serial) => {
-    value.callee = membrane.enter(value.callee);
-    if (!strict)
-      value.arguments.callee = value.callee;
-    Reflect_setPrototypeOf(value.arguments, base.flip(Object_prototype));
-    value.arguments.length = membrane.enter(value.arguments.length);
-    value.arguments[Symbol_iterator] = enter(value.arguments[Symbol_iterator]);
-    value.this = value.new ? membrane.enter(value.this) : value.this;
-    value.arguments = membrane.enter(value.arguments);
-    value.new = membrane.enter(value.new);
-    return membrane.enter(value);
-  };
   traps["function"] = (value, serial) => {
     Reflect_defineProperty(value, "length", {
       value: membrane.enter(value.length),
@@ -88,7 +74,6 @@ module.exports = (instrument, membrane) => {
   ///////////////
   // Consumers //
   ///////////////
-  // TRANSPARENT: declare write return failure completion save
   traps.throw = (value, serial) => leave(value);
   traps.success = (strict, direct, value, serial) => direct ? value : leave(value);
   traps.test = (value, serial) => membrane.leave(value);
@@ -97,6 +82,20 @@ module.exports = (instrument, membrane) => {
   ///////////////
   // Combiners //
   ///////////////
+  traps.arrival = (strict, value1, value2, value3, value4, serial) => {
+    const $value1 = membrane.enter(value1);
+    if (!strict)
+      value4.callee = $value1;
+    Reflect_setPrototypeOf(value4, base.flip(Object_prototype));
+    value4.length = membrane.enter(value4.length);
+    value4[Symbol_iterator] = enter(value4[Symbol_iterator]);
+    return [
+      $value1,
+      membrane.enter(value2),
+      value2 ? membrane.enter(value3) : value3,
+      membrane.enter(value4)
+    ];
+  };
   traps.apply = (value1, value2, values, serial) => Reflect_apply(membrane.leave(value1), value2, values);
   traps.invoke = (value1, value2, values, serial) => Reflect_apply(
     membrane.leave(membrane.leave(value1)[leave(value2)]),
@@ -124,6 +123,7 @@ module.exports = (instrument, membrane) => {
   ///////////////
   // Interface //
   ///////////////
-  global.global = global;
-  return {membrane:membrane, traps:traps, base:base, meta:meta, sandbox:base.flip(global)};
+  const sandbox = Object.create(global);
+  sandbox.global = sandbox;
+  return {membrane:membrane, enter:enter, leave:leave, traps:traps, base:base, meta:meta, sandbox:base.flip(sandbox)};
 };

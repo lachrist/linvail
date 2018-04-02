@@ -22,7 +22,7 @@ const linvail = Linvail(instrument, {
   leave: (value) => (console.log("using @"+value.meta), value.base)
 });
 const pointcut = Object.keys(linvail.traps);
-const META = linvail.traps;
-let sandbox = linvail.sandbox;
-eval(Astring.generate(aran.setup(pointcut)));
-module.exports = (script) => eval(instrument(script, null));
+global.META = linvail.traps;
+META.GLOBAL = linvail.sandbox;
+global.eval(Astring.generate(aran.setup(pointcut)));
+module.exports = (script) => global.eval(instrument(script, null));

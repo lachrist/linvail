@@ -25,27 +25,28 @@ const Reflect_ownKeys = Reflect.ownKeys;
 const Reflect_apply = Reflect.apply;
 const Reflect_construct = Reflect.construct;
 
-module.exports = (instrument, membrane) => {
+module.exports = (membrane) => {
   const enter = (value) => membrane.enter(
     value && typeof value === "object" || typeof value === "function" ?
-    meta.restore(value) || base.flip(value) :
+    meta.unflip(value) || base.flip(value) :
     value);
   const leave = (value) => (value = membrane.leave(value),
     value && typeof value === "object" || typeof value === "function" ?
-    base.restore(value) || meta.flip(value) :
+    base.unflip(value) || meta.flip(value) :
     value);
   const narray = NormalizeArray(enter, leave);
   const meta = Meta(membrane, enter, leave);
   const base = Base(membrane, enter, leave);
-  const traps = {};
+  const advice = {SANDBOX:base.flip(global)};
   ///////////////
   // Producers //
   ///////////////
-  traps.catch = (value, serial) => enter(value);
-  traps.primitive = (value, serial) => membrane.enter(value);
-  traps.discard = (identifier, value, serial) => membrane.enter(value);
-  traps.regexp = (value, serial) => membrane.enter(base.flip(value));
-  traps["function"] = (value, serial) => {
+  advice.begin = (strict, direct, value) => enter(value);
+  advice.catch = (value, serial) => enter(value);
+  advice.primitive = (value, serial) => membrane.enter(value);
+  advice.discard = (identifier, value, serial) => membrane.enter(value);
+  advice.regexp = (value, serial) => membrane.enter(base.flip(value));
+  advice.closure = (value, serial) => {
     Reflect_defineProperty(value, "length", {
       value: membrane.enter(value.length),
       writable: false,
@@ -74,15 +75,15 @@ module.exports = (instrument, membrane) => {
   ///////////////
   // Consumers //
   ///////////////
-  traps.throw = (value, serial) => leave(value);
-  traps.success = (strict, direct, value, serial) => direct ? value : leave(value);
-  traps.test = (value, serial) => membrane.leave(value);
-  traps.eval = (value, serial) => instrument(String(leave(value)), serial);
-  traps.with = (value, serial) => membrane.leave(value);
+  advice.throw = (value, serial) => leave(value);
+  advice.success = (strict, direct, value, serial) => direct ? value : leave(value);
+  advice.test = (value, serial) => membrane.leave(value);
+  advice.eval = (value, serial) => membrane.instrument(String(leave(value)), serial);
+  advice.with = (value, serial) => membrane.leave(value);
   ///////////////
   // Combiners //
   ///////////////
-  traps.arrival = (strict, value1, value2, value3, value4, serial) => {
+  advice.arrival = (strict, value1, value2, value3, value4, serial) => {
     const $value1 = membrane.enter(value1);
     if (!strict)
       value4.callee = $value1;
@@ -96,34 +97,32 @@ module.exports = (instrument, membrane) => {
       membrane.enter(value4)
     ];
   };
-  traps.apply = (value1, value2, values, serial) => Reflect_apply(membrane.leave(value1), value2, values);
-  traps.invoke = (value1, value2, values, serial) => Reflect_apply(
+  advice.apply = (value, values, serial) => Reflect_apply(membrane.leave(value), membrane.enter(void 0), values);
+  advice.invoke = (value1, value2, values, serial) => Reflect_apply(
     membrane.leave(membrane.leave(value1)[leave(value2)]),
     value1,
     values);
-  traps.construct = (value, values, serial) => Reflect_construct(membrane.leave(value), values);
-  traps.get = (value1, value2, serial) => membrane.leave(value1)[leave(value2)];
-  traps.set = (value1, value2, value3, serial) => membrane.leave(value1)[leave(value2)] = value3;
-  traps.delete = (value1, value2) => membrane.enter(delete membrane.leave(value1)[leave(value2)]);
-  traps.array = (values, serial) => {
+  advice.construct = (value, values, serial) => Reflect_construct(membrane.leave(value), values);
+  advice.get = (value1, value2, serial) => membrane.leave(value1)[leave(value2)];
+  advice.set = (value1, value2, value3, serial) => membrane.leave(value1)[leave(value2)] = value3;
+  advice.delete = (value1, value2) => membrane.enter(delete membrane.leave(value1)[leave(value2)]);
+  advice.array = (values, serial) => {
     const value = [];
     Reflect_setPrototypeOf(value, base.flip(Array_prototype));
     for (let index=0, length=values.length; index < length; index++)
       value[index] = values[index];
     return membrane.enter(narray(value));
   };
-  traps.object = (properties, serial) => {
+  advice.object = (properties, serial) => {
     const value = Object_create(base.flip(Object_prototype));
     for (let index=0, length = properties.length; index < length; index++)
       value[leave(properties[index][0])] = properties[index][1];
     return membrane.enter(value);
   };
-  traps.unary = (operator, value, serial) => membrane.enter(eval(operator+" leave(value)"));
-  traps.binary = (operator, value1, value2, serial) => membrane.enter(eval("leave(value1) "+operator+" leave(value2)"));
+  advice.unary = (operator, value, serial) => membrane.enter(eval(operator+" leave(value)"));
+  advice.binary = (operator, value1, value2, serial) => membrane.enter(eval("leave(value1) "+operator+" leave(value2)"));
   ///////////////
   // Interface //
   ///////////////
-  const sandbox = Object.create(global);
-  sandbox.global = sandbox;
-  return {membrane:membrane, enter:enter, leave:leave, traps:traps, base:base, meta:meta, sandbox:base.flip(sandbox)};
+  return {membrane:membrane, enter:enter, leave:leave, advice:advice, base:base, meta:meta};
 };

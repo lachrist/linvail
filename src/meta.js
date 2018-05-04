@@ -48,14 +48,15 @@ module.exports = (membrane, enter, leave) => {
     return descriptor;
   };
 
-  handlers.defineProperty = (target, key, descriptor) => Reflect_defineProperty(
-    target,
-    key,    
-    {
-      value: enter(descriptor.value),
-      writable: descriptor.writable,
-      enumerable: descriptor.enumerable,
-      configurable: descriptor.configurable});
+  handlers.defineProperty = (target, key, descriptor) => {
+    if ("value" in descriptor)
+      descriptor.value = enter(descriptor.value);
+    if ("get" in descriptor)
+      descriptor.get = membrane.leave(enter(descriptor.get));
+    if ("set" in descriptor)
+      descriptor.set = membrane.leave(enter(descriptor.set));
+    return Reflect_defineProperty(target, key, descriptor);
+  };
 
   handlers.get = (target, key, receiver) => {
     const descriptor = Reflect_getOwnPropertyDescriptor(target, key);
@@ -114,7 +115,6 @@ module.exports = (membrane, enter, leave) => {
       map(values, enter)));
 
   return {
-    restore: (proxy) => targets.get(proxy),
     flip: (target) => {
       let proxy = proxies.get(target);
       if (!proxy) {
@@ -123,7 +123,8 @@ module.exports = (membrane, enter, leave) => {
         proxies.set(target, proxy);
       }
       return proxy;
-    }
+    },
+    unflip: (proxy) => targets.get(proxy)
   };
 
 };

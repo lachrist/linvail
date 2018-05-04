@@ -84,18 +84,17 @@ module.exports = (membrane, enter, leave) => {
 
   handlers.getOwnPropertyDescriptor = (target, key) => {
     const descriptor = Reflect_getOwnPropertyDescriptor(target.inner, key);
-    if (descriptor)
+    if (descriptor) {
       descriptor.value = enter(descriptor.value);
+      descriptor.configurable = true; // Introduce an Heisenbug to avoid breaking proxy invariant
+    }
     return descriptor;
   };
 
   handlers.defineProperty = (target, key, descriptor) => Reflect_defineProperty(
     target.inner,
-    key, 
-    Object_assign(
-      {},
-      descriptor,
-      {value:leave(descriptor.value)}));
+    key,
+    descriptor);
 
   handlers.has = (target, key) => Reflect_has(target.inner, key);
 
@@ -123,7 +122,7 @@ module.exports = (membrane, enter, leave) => {
           enumerable: true,
           configurable: true
         };
-        descriptor.value = value;
+        descriptor.value = leave(value);
         Reflect_defineProperty(receiver, key, descriptor);
         return true;
       }
@@ -165,7 +164,6 @@ module.exports = (membrane, enter, leave) => {
   // data property on the proxy target but the proxy did not return its actual value
 
   return {
-    restore: (proxy) => targets.get(proxy),
     flip: (target) => {
       let proxy = proxies.get(target);
       if (!proxy) {
@@ -179,7 +177,8 @@ module.exports = (membrane, enter, leave) => {
         targets.set(proxy, target);
       }
       return proxy;
-    }
+    },
+    unflip: (proxy) => targets.get(proxy),
   };
 
 };

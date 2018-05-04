@@ -20,15 +20,16 @@ const callback = (name) => (error, script) => {
   ].join("\n"), "utf8");
 }
 
-const bundle = (analysis, target) => SandboxScenario(
+const bundle = (instrument, target) => SandboxScenario(
   {type:"raw", path:__dirname+"/spawn.js"},
   [
-    {type:"browserify", path:__dirname+"/analysis/"+analysis+".js"}],
+    {type:"browserify", path:__dirname+"/instrument/"+instrument+".js"}],
   [
     {type:"raw", path:__dirname+"/target/"+target+".js"}],
-  callback(analysis+"-"+target));
+  callback(instrument+"-"+target));
 
 bundle("identity", "delta");
+bundle("identity-explicit", "delta");
 bundle("wrapper", "delta");
 bundle("concolic", "delta");
-bundle("json", "json");
+// bundle("json", "json");

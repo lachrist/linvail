@@ -184,4 +184,5 @@ module.exports = (membrane) => {
   advice.binary = (operator, value1, value2, serial) => membrane.enter(eval("baseof(membrane.leave(value1)) "+operator+" baseof(membrane.leave(value2))"));
 
   return linvail;
+
 };

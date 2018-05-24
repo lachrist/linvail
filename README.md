@@ -144,7 +144,6 @@ All of these copying blur the concept of a primitive value's identity and lifeti
 On the contrary, objects can be properly differentiated based on their address in the store.
 Such situation happens in almost every mainstream programming languages.
 We now discuss several strategies to provide an identity to primitive values:
-
 1. *Shadow States*
   For low-level languages such as binary code, primitive values are often tracked by maintaining a so called "shadow state" that mirrors the concrete program state.
   This shadow state contains analysis-related information about the program values situated at the same location in the concrete state. 
@@ -153,23 +152,19 @@ We now discuss several strategies to provide an identity to primitive values:
   In JavaScript this problem typically arises when objects are passed to non instrumented functions such as built-ins.
   Keeping the shadow store in sync during such operation requires to know the exact semantic of the non-instrumented function. 
   Since they are so many different builtin functions in JavaScript, this is a very hard thing to do.
-
 2. *Record And Replay*
   Record and replay systems such as [Jalangi](https://github.com/SRA-SiliconValley/jalangi) are an intelligent response to the challenge of keeping in sync the shadow states with the concrete state.
   Acknowledging that divergences between the shadow and concrete states cannot be completely avoided, these systems allows divergences in the replay phase which can be resolved by the trace gathered during the record phase.
   We propose two arguments against such technique:
   First, every time divergences are resolved in the replay phase, values with unknown origin are being introduced which necessarily diminish the precision of the resulting analysis.
   Second, the replay phase only provide information about partial execution which can be puzzling to reason about.
-
 3. *Wrappers*
   Instead of providing a entire separated shadow state, wrappers constitutes a finer grained solution.
   By wrapping primitive values inside objects we can simply let them propagate through the data flow of the base program.
   The challenge introduced by wrappers is to make them behave like their wrapped primitive value to non-instrumented code.
-  
   1. *Boxed Values*
     JavaScript enables to box booleans, numbers and strings.
-    Despite that: symbols, `undefined` and `null` cannot be tracked by this method, boxed values do not always behave like their primitive counterpart.
-    
+    Despite that: symbols, `undefined` and `null` cannot be tracked by this method, boxed values do not always behave like their primitive counterpart.    
     ```js
     // Strings cannot be differentiated based on their origin
     let string1 = "abc";
@@ -187,7 +182,6 @@ We now discuss several strategies to provide an identity to primitive values:
     boxed_string1.foo = "bar";
     assert(string1.foo !== boxed_string1.foo);
     ```
-  
   2. *valueOf method*
     A similar mechanism to boxed value is to use the `valueOf` method.
     Many builtin JavaScript procedures expecting a primitive value but receiving on object will try to convert this object into a primitive using its `valueOf` method.
@@ -200,7 +194,6 @@ We now discuss several strategies to provide an identity to primitive values:
     assert(JSON.stringify({a:x}) !== JSON.stringify({a:xValueOf}));
     ```
     Under the hood, boxed primitive values are using the `valueOf` method to convert an object
-  
   3. *explicit wrapper*
   Finally a last options consists in using explicit wrappers which should cleanup before escaping to non-instrumented code.
   This requires to setup an access control system between instrumented code and non-instrumented code.

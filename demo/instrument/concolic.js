@@ -33,6 +33,7 @@ const advice = {SANDBOX:linvail.advice.SANDBOX};
 ///////////////
 // Producers //
 ///////////////
+advice.arrival = linvail.advice.arrival;
 ["begin", "catch", "primitive", "discard", "regexp", "closure"].forEach((name) => {
   advice[name] = function () {
     const result = linvail.advice[name].apply(null, arguments);
@@ -47,7 +48,7 @@ const advice = {SANDBOX:linvail.advice.SANDBOX};
 ///////////////
 // Consumers //
 ///////////////
-["throw", "test", "eval", "with", "success"].forEach((name) => {
+["return", "throw", "success", "test", "eval", "with"].forEach((name) => {
   advice[name] = function () {
     const result = linvail.advice[name].apply(null, arguments);
     arguments[arguments.length-2] = arguments[arguments.length-2].meta;
@@ -67,7 +68,6 @@ const combine = (result, name, origin, serial) => {
   console.log(result.meta+" = "+name+"("+origin+") "+location(serial)+" // "+print(result.base));
   return result;
 };
-advice.arrival = linvail.advice.arrival;
 advice.apply = (value, values, serial) => combine(
   linvail.advice.apply(value, values, serial),
   "apply", value.meta+", ["+values.map(metaof)+"]", serial);

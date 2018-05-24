@@ -1,5 +1,7 @@
 # Linvail
 
+**Under Development**
+
 Linvail is [npm module](https://www.npmjs.com/linvail) that implements a control access system around JavaScript code instrumented by [Aran](https://github.com/lachrist/aran).
 Linvail's motivation is to build dynamic analyses capable of tracking primitive values across the object graph.
 

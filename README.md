@@ -78,7 +78,7 @@ if (isNaN(division.result))
 
 ## Demonstrators
 
-* [demo/analysis/identity-explicit.js]https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-explicit-delta.html
+* [demo/analysis/identity-explicit.js](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-explicit-delta.html)
   Demonstrate the API of linvail but don't produce any observable effect.
 * [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-delta.html):
   Same as above but uses the simplified live API of Aran.

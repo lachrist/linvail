@@ -1,44 +1,82 @@
 # Linvail
 
-**Under Development**
-
 Linvail is [npm module](https://www.npmjs.com/linvail) that implements a control access system around JavaScript code instrumented by [Aran](https://github.com/lachrist/aran).
 Linvail's motivation is to build dynamic analyses capable of tracking primitive values across the object graph.
 
+# Getting Started
+
+```sh
+npm install acorn aran astring linvail 
+```
+
 ```js
-const Aran = require("aran");
 const Acorn = require("acorn");
+const Aran = require("aran");
 const Astring = require("astring");
 const Linvail = require("linvail");
 
-const print = (value) => {
-  if (value && typeof value === "object")
-    return "#object";
-  if (typeof value === "function")
-    return "#function";
-  if (typeof value === "string")
-    return JSON.stringify(value);
-  return String(value);
-}
-
-const aran = Aran({namespace:"META", sandbox:true}); // Sandboxing must be enabled!
+const aran = Aran({namespace:"META", sandbox:true});
 const instrument = (script, parent) =>
   Astring.generate(aran.weave(Acorn.parse(script), pointcut, parent));
 let counter = 0;
-const linvail = Linvail(instrument, {
-  enter: (value) => (console.log("@"+(++counter)+" = "+print(value)), {base:value,meta:counter}),
-  leave: (value) => (console.log("using @"+value.meta), value.base)
+const linvail = Linvail({
+  instrument: instrument,
+  enter: (value) => ({meta:"#"+(counter++), base:value}),
+  leave: (value) => value.base
 });
-const pointcut = Object.keys(linvail.traps);
-global.META = linvail.traps;
-META.GLOBAL = linvail.sandbox;
-global.eval(Astring.generate(aran.setup(pointcut)));
-global.eval(instrument([
-  "const o = {foo:null};",           // log: @22 = null
-  "console.log(JSON.stringify(o));", // log: {"foo":null}
-  "o.foo;"                           // log: using @22
-].join("\n")));
+const pointcut = Object.keys(linvail.advice);
+
+global.META = Object.assign({}, linvail.advice);
+global.META.primitive = (primitive, serial) => {
+  const result = linvail.advice.primitive(primitive, serial);
+  console.log(result.meta+"("+result.base+") [@"+serial+"]");
+  return result;
+};
+global.META.binary = (operator, left, right, serial) => {
+  const result = linvail.advice.binary(operator, left, right, serial);
+  console.log(result.meta+"("+result.base+") = "+left.meta+" "+operator+" "+right.meta+" [@"+serial+"]");
+  return result;
+};
+
+global.eval(Astring.generate(aran.setup()));
+global.eval(instrument(`
+let division = {};
+division.dividend = 1 - 1;
+division.divisor = 20 - 2 * 10;
+division.result = division.dividend / division.divisor;
+if (isNaN(division.result))
+  console.log("!!!NaN division result!!!");
+`));
 ```
+
+```
+#6(apply) [@2]
+#10(defineProperty) [@2]
+#14(getPrototypeOf) [@2]
+#18(keys) [@2]
+#22(iterator) [@2]
+#24(undefined) [@2]
+#26(dividend) [@6]
+#27(1) [@9]
+#28(1) [@10]
+#29(0) = #27 - #28 [@8]
+#30(divisor) [@12]
+#31(20) [@15]
+#32(2) [@17]
+#33(10) [@18]
+#34(20) = #32 * #33 [@16]
+#35(0) = #31 - #34 [@14]
+#36(result) [@20]
+#37(dividend) [@23]
+#38(divisor) [@25]
+#39(NaN) = #29 / #35 [@22]
+#42(result) [@30]
+#45(log) [@33]
+#46(!!!NaN division result!!!) [@35]
+!!!NaN division result!!!
+```
+
+# Demonstrators
 
 * [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-delta.html):
   Demonstrate the API of linvail but don't produce observable effects.
@@ -49,10 +87,7 @@ global.eval(instrument([
 * [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/concolic-delta.html):
   Same as above but also logs the arguments and result of triggered aran's traps.
   The resulting log is a detailed data-flow trace which can be fed to a SMT solver after formatting.
-<!-- * [demo/analysis/json](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/json-json.html):
-  A quirky way to track primitive values through `JSON.stringify` - `JSON.parse` tunnels.
-  The string returned by `JSON.stringify` is altered which can easily cause heisenbugs.
- -->
+
 ## Acknowledgments
 
 I'm [Laurent Christophe](http://soft.vub.ac.be/soft/members/lachrist) a phd student at the Vrij Universiteit of Brussel (VUB).

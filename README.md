@@ -40,16 +40,16 @@ global.eval(instrument([
 ].join("\n")));
 ```
 
-* [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/36d0fe2b/demo/output/identity-delta.html):
+* [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-delta.html):
   Demonstrate the API of linvail but don't produce observable effects.
-* [demo/analysis/wrapper](https://cdn.rawgit.com/lachrist/linvail/36d0fe2b/demo/output/wrapper-delta.html):
+* [demo/analysis/wrapper](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/wrapper-delta.html):
   Every values entering instrumented areas are wrapped to provide a well-defined identity.
   Every wrapper leaving instrumented areas are unwrapped to avoid heisenbugs.
   Wrapping and unwrapping operations are logged.
-* [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/36d0fe2b/demo/output/concolic-delta.html):
+* [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/concolic-delta.html):
   Same as above but also logs the arguments and result of triggered aran's traps.
   The resulting log is a detailed data-flow trace which can be fed to a SMT solver after formatting.
-* [demo/analysis/json](https://cdn.rawgit.com/lachrist/linvail/36d0fe2b/demo/output/json-json.html):
+* [demo/analysis/json](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/json-json.html):
   A quirky way to track primitive values through `JSON.stringify` - `JSON.parse` tunnels.
   The string returned by `JSON.stringify` is altered which can easily cause heisenbugs.
 

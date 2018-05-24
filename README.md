@@ -136,12 +136,12 @@ if (isNaN(division.result))
 
 ## Discussion
 
-[Aran](https://github.com/lachrist/aran) and program instrumentation in general is good for introspecting the control flow and tracking pointers.
-Things become more difficult when the analysis has to reason about primitive values as well.
-For instance, there is no way at the JavaScript language level to differentiate two `null` values even though they have a different origin.
+[Aran](https://github.com/lachrist/aran) and program instrumentation in general is good for introspecting the control flow and pointers data flow.
+Things become more difficult when reasoning about primitive value data flow is involved.
+For instance, there is no way at the JavaScript language level to differentiate two `null` values even though they have different origins.
 This restriction strikes every JavaScript primitive values because they are inlined into different parts of the program's state -- e.g the environment and the value stack.
 All of these copying blur the concept of a primitive value's identity and lifetime.
-On the contrary, objects can be properly differentiated based on their address in the store.
+By opposition, objects can be properly differentiated based on their address in the store.
 Such situation happens in almost every mainstream programming languages.
 We now discuss several strategies to provide an identity to primitive values:
 * *Shadow States*:
@@ -149,22 +149,23 @@ We now discuss several strategies to provide an identity to primitive values:
   This shadow state contains analysis-related information about the program values situated at the same location in the concrete state. 
   [Valgrind](http://valgrind.org/) is a popular binary instrumentation framework which utilizes this technique to enables many data-flow analyses.
   The difficulty of this technique lies in maintaining the shadow state as non-instrumented functions are being executed.
-  In JavaScript this problem typically arises when objects are passed to non instrumented functions such as built-ins.
+  In JavaScript this problem typically arises when objects are passed to non instrumented functions such as builtins.
   Keeping the shadow store in sync during such operation requires to know the exact semantic of the non-instrumented function. 
   Since they are so many different builtin functions in JavaScript, this is a very hard thing to do.
 * *Record And Replay*:
-  Record and replay systems such as [Jalangi](https://github.com/SRA-SiliconValley/jalangi) are an intelligent response to the challenge of keeping in sync the shadow states with the concrete state.
-  Acknowledging that divergences between the shadow and concrete states cannot be completely avoided, these systems allows divergences in the replay phase which can be resolved by the trace gathered during the record phase.
+  Record and replay systems such as [Jalangi](https://github.com/SRA-SiliconValley/jalangi) are an intelligent response to the challenge of keeping in sync the shadow state with its concrete state.
+  Acknowledging that divergences between shadow and concrete states cannot be completely avoided, these systems allows divergences in the replay phase which can be recovered from by utilizing the trace gathered during the record phase.
   We propose two arguments against such technique:
   First, every time divergences are resolved in the replay phase, values with unknown origin are being introduced which necessarily diminish the precision of the resulting analysis.
   Second, the replay phase only provide information about partial execution which can be puzzling to reason about.
 * *Wrappers*:
-  Instead of providing a entire separated shadow state, wrappers constitutes a finer grained solution.
+  Instead of providing an entire separated shadow state, wrappers constitute a finer grained solution.
   By wrapping primitive values inside objects we can simply let them propagate through the data flow of the base program.
   The challenge introduced by wrappers is to make them behave like their wrapped primitive value to non-instrumented code.
+  We explore three solutions to this challenge:
   * *Boxed Values*:
     JavaScript enables to box booleans, numbers and strings.
-    Despite that: symbols, `undefined` and `null` cannot be tracked by this method, boxed values do not always behave like their primitive counterpart.    
+    Despite that symbols, `undefined` and `null` cannot be tracked by this method, boxed values do not always behave like their primitive counterpart within builtins.    
     ```js
     // Strings cannot be differentiated based on their origin
     let string1 = "abc";
@@ -189,9 +190,9 @@ We now discuss several strategies to provide an identity to primitive values:
   * *`valueOf` Method*:
     A similar mechanism to boxed value is to use the `valueOf` method.
     Many JavaScript builtins expecting a primitive value but receiving an object will try to convert this object into a primitive using its `valueOf` method.
-    As for boxed values this solution is not bullet proof and there exists many cases where `valueOf` wrappers will behave differentially within JavaScirpt builtins.
+    As for boxed values this solution is not bullet proof and there exists many cases where the `valueOf` method will not be invoked.
   * *Explicit Wrappers*:
-    Finally a last options consists in using explicit wrappers which should cleanup before escaping to non-instrumented code.
+    Finally a last options consists in using explicit wrappers which should be cleaned up before escaping to non-instrumented code.
     This requires to setup an access control system between instrumented code and non-instrumented code.
     This the solution that Linvail directly enables.
 

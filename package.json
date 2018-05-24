@@ -1,7 +1,7 @@
 {
   "name": "linvail",
   "description": "Control Access System for Aran",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "author": {
     "name": "Laurent Christophe",
     "email": "lachrist@vub.ac.be"
@@ -16,12 +16,10 @@
     "sandbox-scenario": "0.0.12"
   },
   "keywords": [
+    "Aran",
     "JavaScript",
     "Instrumentation",
     "Dynamic Analysis",
-    "Sandboxing",
-    "Monitoring",
-    "Tracing",
     "Shadow Execution"
   ]
 }

@@ -49,10 +49,10 @@ global.eval(instrument([
 * [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/concolic-delta.html):
   Same as above but also logs the arguments and result of triggered aran's traps.
   The resulting log is a detailed data-flow trace which can be fed to a SMT solver after formatting.
-* [demo/analysis/json](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/json-json.html):
+<!-- * [demo/analysis/json](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/json-json.html):
   A quirky way to track primitive values through `JSON.stringify` - `JSON.parse` tunnels.
   The string returned by `JSON.stringify` is altered which can easily cause heisenbugs.
-
+ -->
 ## Acknowledgments
 
 I'm [Laurent Christophe](http://soft.vub.ac.be/soft/members/lachrist) a phd student at the Vrij Universiteit of Brussel (VUB).

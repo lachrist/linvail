@@ -11,8 +11,8 @@ const print = (value) => {
 }
 let counter = 0;
 const membrane = {
-  enter: (value) => (console.log("@"+(++counter)+" = "+print(value)), {base:value,meta:counter}),
-  leave: (value) => (console.log("use @"+value.meta), value.base)
+  enter: (value) => (console.log("@"+(++counter)+" = "+print(value)), {concrete:value,shadow:counter}),
+  leave: (value) => (console.log("use @"+value.shadow), value.concrete)
 };
 membrane.instrument = AranLive(Linvail(membrane).advice, {sandbox:true}).instrument;
 module.exports = membrane.instrument;

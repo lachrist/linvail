@@ -15,26 +15,26 @@ const Aran = require("aran");
 const Astring = require("astring");
 const Linvail = require("linvail");
 
-const aran = Aran({namespace:"META", sandbox:true});
+const aran = Aran({namespace:"TRAPS", sandbox:true});
 const instrument = (script, parent) =>
   Astring.generate(aran.weave(Acorn.parse(script), pointcut, parent));
 let counter = 0;
 const linvail = Linvail({
   instrument: instrument,
-  enter: (value) => ({base:value, meta:"#"+(counter++)}),
-  leave: (value) => value.base
+  enter: (value) => ({concrete:value, shadow:"#"+(counter++)}),
+  leave: (value) => value.concrete
 });
 const pointcut = Object.keys(linvail.advice);
 
-global.META = Object.assign({}, linvail.advice);
-global.META.primitive = (primitive, serial) => {
+global.TRAPS = Object.assign({}, linvail.advice);
+global.TRAPS.primitive = (primitive, serial) => {
   const result = linvail.advice.primitive(primitive, serial);
-  console.log(result.meta+"("+result.base+") // @"+serial);
+  console.log(result.shadow+"("+result.concrete+") // @"+serial);
   return result;
 };
-global.META.binary = (operator, left, right, serial) => {
+global.TRAPS.binary = (operator, left, right, serial) => {
   const result = linvail.advice.binary(operator, left, right, serial);
-  console.log(result.meta+"("+result.base+") = "+left.meta+" "+operator+" "+right.meta+" // @"+serial);
+  console.log(result.shadow+"("+result.concrete+") = "+left.shadow+" "+operator+" "+right.shadow+" // @"+serial);
   return result;
 };
 

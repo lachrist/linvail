@@ -78,15 +78,15 @@ if (isNaN(division.result))
 
 ## Demonstrators
 
-* [demo/analysis/identity-explicit.js](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-explicit-delta.html)
+* [demo/analysis/identity-explicit.js](https://cdn.rawgit.com/lachrist/linvail/2f24e769/demo/output/identity-explicit-delta.html)
   Demonstrate the API of linvail but don't produce any observable effect.
-* [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/identity-delta.html):
+* [demo/analysis/identity](https://cdn.rawgit.com/lachrist/linvail/2f24e769/demo/output/identity-delta.html):
   Same as above but uses the simplified live API of Aran.
-* [demo/analysis/wrapper](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/wrapper-delta.html):
+* [demo/analysis/wrapper](https://cdn.rawgit.com/lachrist/linvail/2f24e769/demo/output/wrapper-delta.html):
   Every values entering instrumented areas are wrapped to provide a well-defined identity.
   Every wrapper leaving instrumented areas are unwrapped so the behavior of the base program is not altered.
   Wrapping and unwrapping operations are logged.
-* [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/c92cbbb3/demo/output/concolic-delta.html):
+* [demo/analysis/concolic](https://cdn.rawgit.com/lachrist/linvail/2f24e769/demo/output/concolic-delta.html):
   Same as above but also logs the arguments and result of triggered aran's traps.
   The resulting log is a detailed data-flow trace which with proper formating can be fed to a SMT solver.
 

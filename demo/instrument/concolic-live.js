@@ -1,6 +1,4 @@
-const Acorn = require("acorn");
-const Aran = require("aran");
-const Astring = require("astring");
+const AranLive = require("aran/live");
 const Linvail = require("linvail");
 
 let counter1 = 0;
@@ -23,24 +21,21 @@ const print = (value) => {
 
 const membrane = {
   enter: (value) => ({concrete:value, shadow:"#"+(++counter2)}),
-  leave: (wrapper) => wrapper.concrete,
-  instrument: (script, serial) => Astring.generate(aran.weave(Acorn.parse(script, {locations:true}), pointcut, serial))
+  leave: (wrapper) => wrapper.concrete
 };
 
 const linvail = Linvail(membrane);
 
-const pointcut = Object.keys(linvail.advice);
+const location = (serial) => aranlive.node(serial).loc.start.line;
 
-const location = (serial) => aran.node(serial).loc.start.line;
-
-global.ADVICE = {SANDBOX:linvail.advice.SANDBOX};
+const advice = {SANDBOX:linvail.advice.SANDBOX};
 
 ///////////////
 // Producers //
 ///////////////
-ADVICE.arrival = linvail.advice.arrival;
+advice.arrival = linvail.advice.arrival;
 ["begin", "catch", "primitive", "discard", "regexp", "closure"].forEach((name) => {
-  ADVICE[name] = function () {
+  advice[name] = function () {
     const result = linvail.advice[name].apply(null, arguments);
     arguments[arguments.length-2] = print(arguments[arguments.length-2]);
     arguments.length--;
@@ -54,7 +49,7 @@ ADVICE.arrival = linvail.advice.arrival;
 // Consumers //
 ///////////////
 ["return", "throw", "success", "test", "eval", "with"].forEach((name) => {
-  ADVICE[name] = function () {
+  advice[name] = function () {
     const result = linvail.advice[name].apply(null, arguments);
     arguments[arguments.length-2] = arguments[arguments.length-2].shadow;
     arguments.length--;
@@ -73,37 +68,36 @@ const combine = (result, name, origin, serial) => {
   console.log(result.shadow+" = "+name+"("+origin+") "+location(serial)+" // "+print(result.concrete));
   return result;
 };
-ADVICE.apply = (value, values, serial) => combine(
+advice.apply = (value, values, serial) => combine(
   linvail.advice.apply(value, values, serial),
   "apply", value.shadow+", ["+values.map(shadowof)+"]", serial);
-ADVICE.invoke = (value1, value2, values, serial) => combine(
+advice.invoke = (value1, value2, values, serial) => combine(
   linvail.advice.invoke(value1, value2, values, serial),
   "invoke", value1.shadow+", "+value2.shadow+", ["+values.map(shadowof)+"]", serial);
-ADVICE.construct = (value, values, serial) => combine(
+advice.construct = (value, values, serial) => combine(
   linvail.advice.construct(value, values, serial),
   "construct", value.shadow+", ["+values.map(shadowof)+"]", serial);
-ADVICE.get = (value1, value2, serial) => combine(
+advice.get = (value1, value2, serial) => combine(
   linvail.advice.get(value1, value2, serial),
   "get", value1.shadow+", "+value2.shadow, serial);
-ADVICE.set = (value1, value2, value3, serial) => combine(
+advice.set = (value1, value2, value3, serial) => combine(
   linvail.advice.set(value1, value2, value3, serial),
   "set", value1.shadow+", "+value2.shadow+", "+value3.advice, serial);
-ADVICE.delete = (value1, value2, serial) => combine(
+advice.delete = (value1, value2, serial) => combine(
   linvail.advice.delete(value1, value2, serial),
   "delete", value1.shadow+", "+value2.shadow, serial);
-ADVICE.array = (values, serial) => combine(
+advice.array = (values, serial) => combine(
   linvail.advice.array(values, serial),
   "array", "["+values.map(shadowof)+"]", serial);
-ADVICE.object = (properties, serial) => combine(
+advice.object = (properties, serial) => combine(
   linvail.advice.object(properties, serial),
   "object", "["+properties.map(property)+"]", serial);
-ADVICE.unary = (operator, value, serial) => combine(
+advice.unary = (operator, value, serial) => combine(
   linvail.advice.unary(operator, value, serial),
   "unary", "\""+operator+"\", "+value.shadow, serial);
-ADVICE.binary = (operator, value1, value2, serial) => combine(
+advice.binary = (operator, value1, value2, serial) => combine(
   linvail.advice.binary(operator, value1, value2, serial),
   "binary", "\""+operator+"\", "+value1.shadow+", "+value2.shadow, serial);
 
-const aran = Aran({namespace:"ADVICE", sandbox:true});
-global.eval(Astring.generate(aran.setup()));
-module.exports = membrane.instrument;
+const aranlive = AranLive(advice, {sandbox:true});
+module.exports = membrane.instrument = (script, parent) => aranlive.instrument(script, parent, {locations:true});

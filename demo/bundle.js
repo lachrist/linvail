@@ -29,6 +29,8 @@ const bundle = (instrument, target) => SandboxScenario(
   callback(instrument+"-"+target));
 
 bundle("identity", "delta");
-bundle("identity-explicit", "delta");
+bundle("identity-live", "delta");
 bundle("wrapper", "delta");
+bundle("wrapper-live", "delta");
 bundle("concolic", "delta");
+bundle("concolic-live", "delta");

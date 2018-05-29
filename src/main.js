@@ -3,6 +3,7 @@ const MetaProxy = require("./meta-proxy.js");
 const BaseProxy = require("./base-proxy.js");
 const NormalizedArray = require("./normalized-array.js");
 
+const Error = global.Error;
 const String = global.String;
 const eval = global.eval;
 const Object_create = Object.create;
@@ -158,30 +159,87 @@ module.exports = (membrane) => {
   ///////////////
   // Combiners //
   ///////////////
-  advice.apply = ($$value, _values, serial) => Reflect_apply(membrane.leave($$value), void 0, _values);
-  advice.invoke = (value1, value2, values, serial) => {
-    const $value1 = membrane.leave(value1);
-    return Reflect_apply(membrane.leave($value1[baseof(membrane.leave(value2))]), $value1, values);
+  advice.apply = ($$value, array$$value, serial) => {
+    switch (array$$value.length) {
+      case 0: return membrane.leave($$value)();
+      case 1: return membrane.leave($$value)(array$$value[0]);
+      case 2: return membrane.leave($$value)(array$$value[0], array$$value[1]);
+      case 3: return membrane.leave($$value)(array$$value[0], array$$value[1], array$$value[2]);
+    }
+    return Reflect_apply(membrane.leave($$value), void 0, array$$value);
   };
-  advice.construct = (value, values, serial) => Reflect_construct(membrane.leave(value), values);
-  advice.get = (value1, value2, serial) => membrane.leave(value1)[baseof(membrane.leave(value2))];
-  advice.set = (value1, value2, value3, serial) => membrane.leave(value1)[baseof(membrane.leave(value2))] = value3;
-  advice.delete = (value1, value2) => membrane.enter(delete membrane.leave(value1)[baseof(membrane.leave(value2))]);
-  advice.array = (values, serial) => {
-    const value = [];
-    Reflect_setPrototypeOf(value, metaof(Array_prototype));
-    for (let index=0, length=values.length; index < length; index++)
-      value[index] = values[index];
-    return membrane.enter(narray(value));
+  advice.invoke = ($$value1, $$value2, array$$value, serial) => {
+    const $value1 = membrane.leave($$value1);
+    return Reflect_apply(membrane.leave($value1[baseof(membrane.leave($$value2))]), $value1, array$$value);
   };
-  advice.object = (properties, serial) => {
+  advice.construct = ($$value, array$$value, serial) => {
+    switch (array$$value.length) {
+      case 0: return new (membrane.leave($$value))();
+      case 1: return new (membrane.leave($$value))(array$$value[0]);
+      case 2: return new (membrane.leave($$value))(array$$value[0], array$$value[1]);
+      case 3: return new (membrane.leave($$value))(array$$value[0], array$$value[1], array$$value[2]);
+    }
+    return Reflect_construct(membrane.leave($$value), array$$value);
+  };
+  advice.get = ($$value1, $$value2, serial) => {
+    const $value1 = membrane.leave($$value1);
+    const value2 = baseof(membrane.leave($$value2));
+    if ($value1 && (typeof $value1 === "object" || typeof $value1 === "function"))
+      return $value1[value2];
+    return membrane.enter($value1[value2]);
+  }
+  advice.set = ($$value1, $$value2, $$value3, serial) => membrane.leave($$value1)[baseof(membrane.leave($$value2))] = $$value3;
+  advice.delete = ($$value1, $$value2) => membrane.enter(delete membrane.leave($$value1)[baseof(membrane.leave($$value2))]);
+  advice.array = (array$$value, serial) => {
+    const $$value = [];
+    Reflect_setPrototypeOf($$value, metaof(Array_prototype));
+    for (let index=0, length=array$$value.length; index < length; index++)
+      $$value[index] = array$$value[index];
+    return membrane.enter(narray($$value));
+  };
+  advice.object = (_properties, serial) => {
     const value = Object_create(metaof(Object_prototype));
-    for (let index=0, length = properties.length; index < length; index++)
-      value[baseof(membrane.leave(properties[index][0]))] = properties[index][1];
+    for (let index=0, length = _properties.length; index < length; index++)
+      value[baseof(membrane.leave(_properties[index][0]))] = _properties[index][1];
     return membrane.enter(value);
   };
-  advice.unary = (operator, value, serial) => membrane.enter(eval(operator+" baseof(membrane.leave(value))"));
-  advice.binary = (operator, value1, value2, serial) => membrane.enter(eval("baseof(membrane.leave(value1)) "+operator+" baseof(membrane.leave(value2))"));
+  advice.unary = (operator, $$value, serial) => {
+    switch (operator) {
+      case "-":      return membrane.enter(-      baseof(membrane.leave($$value)));
+      case "+":      return membrane.enter(+      baseof(membrane.leave($$value)));
+      case "!":      return membrane.enter(!      baseof(membrane.leave($$value)));
+      case "~":      return membrane.enter(~      baseof(membrane.leave($$value)));
+      case "typeof": return membrane.enter(typeof baseof(membrane.leave($$value)));
+      case "void":   return membrane.enter(void   baseof(membrane.leave($$value)));
+    }
+    throw new Error("Unknown unary operator: "+operator);
+  };
+  advice.binary = (operator, $$value1, $$value2, serial) => {
+    switch (operator) {
+      case "==":  return membrane.enter(baseof(membrane.leave($$value1)) ==  baseof(membrane.leave($$value2)));
+      case "!=":  return membrane.enter(baseof(membrane.leave($$value1)) !=  baseof(membrane.leave($$value2)));
+      case "===": return membrane.enter(baseof(membrane.leave($$value1)) === baseof(membrane.leave($$value2)));
+      case "!==": return membrane.enter(baseof(membrane.leave($$value1)) !== baseof(membrane.leave($$value2)));
+      case "<":   return membrane.enter(baseof(membrane.leave($$value1)) <   baseof(membrane.leave($$value2)));
+      case "<=":  return membrane.enter(baseof(membrane.leave($$value1)) <=  baseof(membrane.leave($$value2)));
+      case ">":   return membrane.enter(baseof(membrane.leave($$value1)) >   baseof(membrane.leave($$value2)));
+      case ">=":  return membrane.enter(baseof(membrane.leave($$value1)) >=  baseof(membrane.leave($$value2)));
+      case "<<":  return membrane.enter(baseof(membrane.leave($$value1)) <<  baseof(membrane.leave($$value2)));
+      case ">>":  return membrane.enter(baseof(membrane.leave($$value1)) >>  baseof(membrane.leave($$value2)));
+      case ">>>": return membrane.enter(baseof(membrane.leave($$value1)) >>> baseof(membrane.leave($$value2)));
+      case "+":   return membrane.enter(baseof(membrane.leave($$value1)) +   baseof(membrane.leave($$value2)));
+      case "-":   return membrane.enter(baseof(membrane.leave($$value1)) -   baseof(membrane.leave($$value2)));
+      case "*":   return membrane.enter(baseof(membrane.leave($$value1)) *   baseof(membrane.leave($$value2)));
+      case "/":   return membrane.enter(baseof(membrane.leave($$value1)) /   baseof(membrane.leave($$value2)));
+      case "%":   return membrane.enter(baseof(membrane.leave($$value1)) %   baseof(membrane.leave($$value2)));
+      case "|":   return membrane.enter(baseof(membrane.leave($$value1)) |   baseof(membrane.leave($$value2)));
+      case "^":   return membrane.enter(baseof(membrane.leave($$value1)) ^   baseof(membrane.leave($$value2)));
+      case "&":   return membrane.enter(baseof(membrane.leave($$value1)) &   baseof(membrane.leave($$value2)));
+      case "in":  return membrane.enter(baseof(membrane.leave($$value1)) in  baseof(membrane.leave($$value2)));
+      case "instanceof": return membrane.enter(baseof(membrane.leave($$value1)) instanceof baseof(membrane.leave($$value2)));
+    }
+    throw new Error("Unknown binary operator: "+operator);
+  };
 
   return linvail;
 

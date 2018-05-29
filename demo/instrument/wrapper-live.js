@@ -1,15 +1,10 @@
-const Acorn = require("acorn");
-const Aran = require("aran");
-const Astring = require("astring");
+const AranLive = require("aran/live");
 const Linvail = require("linvail");
 
 let counter = 0;
 let wrappers = new WeakMap();
 
-const aran = Aran({namespace:"ADVICE", sandbox:true});
-const linvail = Linvail({
-  instrument: (script, serial) =>
-    Astring.generate(aran.weave(Acorn.parse(script, {locations:true}), pointcut, serial)),
+const membrane = {
   enter: (value) => {
     if (value && typeof value === "object" || typeof value === "function") {
       var wrapper = wrappers.get(value);
@@ -26,8 +21,8 @@ const linvail = Linvail({
     return wrapper;
   },
   leave: (value) => (console.log(">> #"+value.shadow), value.concrete)
-});
-global.ADVICE = linvail.advice;
-const pointcut = Object.keys(ADVICE);
-global.eval(Astring.generate(aran.setup()));
-module.exports = linvail.membrane.instrument;
+};
+const linvail = Linvail(membrane);
+const aranlive = AranLive(linvail.advice, {sandbox:true});
+membrane.instrument = aranlive.instrument;
+module.exports = aranlive.instrument;

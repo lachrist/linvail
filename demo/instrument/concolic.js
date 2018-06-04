@@ -1,5 +1,5 @@
 const Acorn = require("acorn");
-const Aran = require("aran");
+const Aran = require("aran-access-control");
 const Astring = require("astring");
 const Linvail = require("linvail");
 
@@ -27,7 +27,7 @@ const membrane = {
   instrument: (script, serial) => Astring.generate(aran.weave(Acorn.parse(script, {locations:true}), pointcut, serial))
 };
 
-const linvail = Linvail(membrane);
+const aac = AranAccessControl(membrane);
 
 const pointcut = Object.keys(linvail.advice);
 

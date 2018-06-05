@@ -1,6 +1,6 @@
 # Linvail
 
-**!!!For obvius clarity reasons this npm module renamed aran-access-control and is available at https://github/lachrist/aran-access-control!!!**
+**!!!For obvious clarity reasons this npm module was renamed aran-access and is available at https://github/lachrist/aran-access!!!**
 
 Linvail is [npm module](https://www.npmjs.com/linvail) that implements a control access system around JavaScript code instrumented by [Aran](https://github.com/lachrist/aran).
 Linvail's motivation is to build dynamic analyses capable of tracking primitive values across the object graph.

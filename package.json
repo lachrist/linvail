@@ -1,25 +1,23 @@
 {
   "name": "linvail",
-  "description": "Access Control System for Aran",
-  "version": "5.0.1",
+  "description": "Access Control System",
+  "version": "6.0.0",
   "author": {
     "name": "Laurent Christophe",
     "email": "lachrist@vub.ac.be"
   },
-  "files": "src/",
-  "main": "src/main.js",
+  "files": "lib/",
+  "main": "lib/main.js",
   "repository": "lachrist/linvail",
   "homepage": "http://github.com/lachrist/linvail",
   "license": "MIT",
-  "devDependencies": {
-    "aran": "2.1.3",
-    "sandbox-scenario": "0.0.12"
-  },
   "keywords": [
-    "Aran",
-    "JavaScript",
-    "Instrumentation",
-    "Dynamic Analysis",
-    "Shadow Execution"
-  ]
+    "Membrane",
+    "Control Access System",
+    "Proxy",
+    "Aran"
+  ],
+  "dependencies": {
+    "virtual-proxy": "0.0.1"
+  }
 }

@@ -25,25 +25,26 @@ const builtins = {
     return _Object_setPrototypeOf(object, _Object_prototype);
   }
 };
-    
-const linvail = Linvail({
-  enter: (tame) => ({inner:tame}),
-  leave: (wrapper) => {
+
+const membrane = {
+  taint: (tame) => ({inner:tame}),
+  clean: (wrapper) => {
     if (wrapper === null || typeof wrapper !== "object" || !Reflect.getOwnPropertyDescriptor(wrapper, "inner"))
       throw new TypeError("Not a wrapper: "+wrapper);
     return wrapper.inner;
   }
-}, {check:true, builtins});
-
-linvail.builtins = builtins;
-
-linvail.assert = (boolean) => {
-  if (!boolean) {
-    throw new Error("Assertion failure");
-  }
 };
+let counter = 0;
+const assert = (boolean) => {
+  if (!boolean)
+    throw new Error("Assertion failure");
+  counter++;
+};
+const access = Linvail(membrane, {check:true, builtins});
+const options = {access, membrane, builtins, assert}
 
-require("./object.js")(linvail);
-require("./reflect.js")(linvail);
-require("./array.js")(linvail);
-require("./aran.js")(linvail);
+require("./object.js")(options);
+require("./reflect.js")(options);
+require("./array.js")(options);
+require("./aran.js")(options);
+console.log(counter+" assertions passed");

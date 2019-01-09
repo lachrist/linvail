@@ -48,9 +48,9 @@ const membrane = {
     console.log("@"+counter+" := "+(typeof tame));
     return {base:tame, meta:counter};
   },
-  clean: (inner) => {
-    console.log("using @"+inner.meta);
-    return inner.base;
+  clean: (dirty) => {
+    console.log("using @"+dirty.meta);
+    return dirty.base;
   }
 };
 const {capture, release} = Linvail(membrane);
@@ -155,9 +155,9 @@ These aran-specific builtins can be passed to Linvail to augment the oracle.
 * `tame = membrane.clean(tainted)`:
   User-defined function to convert a dirty value to a tame value.
 * `check :: boolean`, default `false`:
-  Indicates whether runtime checks should be performed to detect clashes between tame values, wild values and inner values.
+  Indicates whether runtime checks should be performed to detect clashes between tame values, wild values and dirty values.
   These checks will be performed in `capture`, `release` but also in `membrane.taint` and `membrane.clean`.
-  The original function of the membrane will be respectively set to store at `membrane._taint` and `membrane._clean`.
+  The original function of the membrane will be respectively set to `membrane._taint` and `membrane._clean`.
   This option is for debugging purpose and comes at the cost of performance overhead.
 * `aran.builtins :: object`, default `null`:
   This option is used to augment the oracle with aran-defined functions.

@@ -1,6 +1,6 @@
 # Linvail
 
-Linvail is a [npm module](https://www.npmjs.com/linvail) implements an access control system inspired from [membrane](https://tvcutsem.github.io/js-membranes).
+Linvail is a [npm module](https://www.npmjs.com/linvail) which implements an access control system inspired from [membrane](https://tvcutsem.github.io/js-membranes).
 This module's motivation was to build dynamic analyses capable of tracking primitive values across the object graph.
 Originally it was hard-coupled with the JavaScript code instrumenter [Aran](https://www.npmjs.com/aran).
 Now, this module can be used on its own.
@@ -9,31 +9,31 @@ Now, this module can be used on its own.
 
 Using Linvail requires to juggle with three sets of values: *Wild*, *Tame* and *Dirty*.
 Dirty values can only be obtained by calling the user-defined function `membrane.taint`.
-There is no restriction on dirty values because Linvail always uses the other used-defined function `membrane.clean` to clean them before using them in any operation.
-Wild values are values which seems to contain only other wild values.
-By opposition, tame values seems to only contain dirty values.
+There is no restriction on dirty values because Linvail always uses the other used-defined function `membrane.clean` before using them them in any operation.
+Wild values are values which seem to contain only other wild values.
+By opposition, tame values seem to only contain dirty values.
 A wild value can be converted to a tame value with the Linvail-defined function `capture` and a tame value can be converted to a wild value with the Linvail-defined function `release`.
 These two functions involve wrapping objects into [proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) which will perform the appropriate conversion.
 
 ![category](img/category.png)
 
 * A *wild value* is either:
-  * a primitive
-  * an object which satisfies the below constraints:
-    * its prototype is a wild value
-    * the values of its data properties are wild values
-    * the getters and setters of its accessor properties are wild values
-    * applying it with a wild value this-argument and wild value arguments will return a wild value or throw a wild value
-    * constructing it with a wild value new-target and wild value arguments will return a wild value or throw a wild value
+  * A primitive.
+  * An object which satisfies the below constraints:
+    * Its prototype is a wild value.
+    * The value of its data properties are wild values.
+    * The getter and setter of its accessor properties are wild values.
+    * Applying it with a wild value this-argument and wild value arguments will return a wild value or throw a wild value.
+    * Constructing it with a wild value new-target and wild value arguments will return a wild value or throw a wild value.
 * A *tame value* is either:
-  * a primitive
-  * an object which satisfies the below constraints:
-    * its prototype is a tame value.
-    * the values of its data properties are dirty values *except* if the reference is an array; in that case, it's `length` property remains a wild value
-    * the getters and setters of its accessor properties are tame values
-    * applying it with a dirty value this-argument and dirty value arguments will return a dirty value or throw a *wild value*
-    * constructing it with a *tame value* new-target and dirty value arguments will return a dirty value or throw a *wild value*
-* The *dirty value* set is defined by the user through the functions `membrane.taint` and `membrane.clean`
+  * A primitive.
+  * An object which satisfies the below constraints:
+    * Its prototype is a tame value.
+    * The value of its data properties are dirty values *except* if the reference is an array; in that case, it's `length` property remains a wild value.
+    * The getter and setter of its accessor properties are tame values.
+    * Applying it with a dirty value this-argument and dirty value arguments will return a dirty value or throw a wild value.
+    * Constructing it with a tame value new-target and dirty value arguments will return a dirty value or throw a wild value.
+* The *dirty value* set is defined by the user through the functions `membrane.taint` and `membrane.clean`.
 
 ```sh
 npm install linvail
@@ -84,25 +84,26 @@ Its tainted values:  { base: [ { base: 123, meta: 2 }, { base: 456, meta: 3 } ],
 
 Note how the tamed `Object.values` function was able to conserve the meta tag of its argument's values.
 This is possible because Linvail knows about the semantic of several builtin functions to optimize the behavior of their tame counter-part.
-This semantic is encoded as a collection of closures collectively named the oracle.
+This semantic is encoded as a collection of closures collectively named the *oracle*.
 
 ## The oracle
 
 In the general case, applying a foreign tame function involves cleaning-releasing arguments and capturing-tainting the result.
 This algorithm always prevent clashes between values sets but it may induce needless cleaning/re-tainting operations.
-Consider the wild identity function `(x) => x`; knowing its semantic, we could deduce that it is not needed to clean its argument as it will not perform any operation on it but simply return it.
-More specifically, in the code below, we would like that `tainted1` always resolve to the same value as `tainted2`.
+Consider the wild identity function: `(x) => x`.
+Knowing its semantic, we could deduce that it is not needed to clean its argument.
+More specifically, in the code below, we would like that `dirty1` always resolve to the same value as `dirty2`.
 
 ```js
-const tainted1 = membrane.taint("foo");
+const dirty1 = membrane.taint("foo");
 const wild = (x) => x;
 const tame = access.capture(wild);
-const tainted2 = tame(tainted1);
+const dirty2 = tame(dirty1);
 ```
 
 Many functions of the global object, could benefit from less cleaning/re-tainting than their tamed counter-part. 
 For instance, `Object.values` does not perform any operation on an object's values but simply push them in an array.
-Currently, Linvail uses a very rudimentary oracle which simply specifies the cleaning/tainting operations per builtin functions.
+Currently, Linvail uses a very rudimentary oracle which simply specifies the cleaning/tainting operations per builtin function.
 At the moment the oracle contains:
 
 * Reflect
@@ -131,7 +132,7 @@ At the moment the oracle contains:
   * `Array`
   * `Array.from`
   * `Array.of`
-* Aran (if the builtins is defined)
+* Aran (if the builtin options is defined)
   * `AranEnumerate`
   * `AranDefineDataProperty`
   * `AranDefineAccessorProperty`
@@ -154,13 +155,13 @@ These aran-specific builtins can be passed to Linvail to augment the oracle.
 * `tame = membrane.clean(tainted)`:
   User-defined function to convert a dirty value to a tame value.
 * `check :: boolean`, default `false`:
-  Indicates whether runtime checks should be performed within `capture`, `release`, `membrane.taint` and `membrane.clean` to detect clashes between tame values, wild values and inner values.
+  Indicates whether runtime checks should be performed to detect clashes between tame values, wild values and inner values.
+  These checks will be performed in `capture`, `release` but also in `membrane.taint` and `membrane.clean`.
+  The original function of the membrane will be respectively set to store at `membrane._taint` and `membrane._clean`.
   This option is for debugging purpose and comes at the cost of performance overhead.
-  This option overwrites `membrane.taint` and `membrane.clean`; the original functions are respectively set to `membrane._taint` and `membrane._clean`.
-  The original functions will still be called with `this` pointing to the membrane.
 * `aran.builtins :: object`, default `null`:
   This option is used to augment the oracle with aran-defined functions.
 * `tame = capture(wild)`:
-  Convert a wild value into a tame value.
+  Linvail-defined function to convert a wild value into a tame value.
 * `wild = release(tame)`:
-  Convert a tame value into a wild value.
+  Linvail-defined function to convert a tame value into a wild value.

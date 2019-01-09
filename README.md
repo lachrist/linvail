@@ -1,6 +1,6 @@
 # Linvail
 
-Linvail is a [npm module](https://www.npmjs.com/linvail) which implements an access control system inspired from [membrane](https://tvcutsem.github.io/js-membranes).
+Linvail is a [npm module](https://www.npmjs.com/linvail) which implements a transitive access control system based on [proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) knowne as [membrane](https://tvcutsem.github.io/js-membranes).
 This module's motivation was to build dynamic analyses capable of tracking primitive values across the object graph.
 Originally it was hard-coupled with the JavaScript code instrumenter [Aran](https://www.npmjs.com/aran).
 Now, this module can be used on its own.
@@ -13,7 +13,7 @@ There is no restriction on dirty values because Linvail always uses the other us
 Wild values are values which seem to contain only other wild values.
 By opposition, tame values seem to only contain dirty values.
 A wild value can be converted to a tame value with the Linvail-defined function `capture` and a tame value can be converted to a wild value with the Linvail-defined function `release`.
-These two functions involve wrapping objects into [proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) which will perform the appropriate conversion.
+These two functions involve wrapping objects into  which will perform the appropriate conversion.
 
 ![category](img/category.png)
 

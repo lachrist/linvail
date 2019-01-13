@@ -1,5 +1,5 @@
 
-module.exports = ({access, membrane, oracle, assert}) => {
+module.exports = ({access, membrane, assert}) => {
   
   { // Array
     { // Length

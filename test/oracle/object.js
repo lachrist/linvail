@@ -1,5 +1,5 @@
 
-module.exports = ({membrane, access, oracle, assert}) => {
+module.exports = ({membrane, access, assert}) => {
 
   { // Object
     {

@@ -1,5 +1,5 @@
 
-module.exports = ({access, membrane, assert, builtins}) => {
+module.exports = ({access, membrane, builtins, assert}) => {
   
   { // builtins.AranDefineDataProperty
     const $object1 = Object.create(null);

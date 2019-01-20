@@ -42,7 +42,7 @@ const assert = (boolean) => {
     throw new Error("Assertion failure");
   counter++;
 };
-const access = Linvail(membrane, {check:true, builtins});
+const access = Linvail(membrane, {check:true, "aran-builtins":builtins});
 const options = {access, membrane, builtins, assert}
 
 Frontier(options);

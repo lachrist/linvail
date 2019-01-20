@@ -9,11 +9,11 @@ Now, this module can be used on its own.
 
 Using Linvail requires to juggle between three sets of values: *Wild*, *Tame* and *Dirty*.
 Dirty values can only be obtained by calling the user-defined function `membrane.taint`.
-There is no restriction on dirty values because Linvail always uses the other used-defined function `membrane.clean` before using them them in any operation.
+There is no restriction on dirty values because Linvail always passes them to the other used-defined function `membrane.clean` before using them them in any operation.
 Wild values are values which seem to contain only other wild values.
 By opposition, tame values seem to only contain dirty values.
 A wild value can be converted to a tame value with the Linvail-defined function `capture` and a tame value can be converted to a wild value with the Linvail-defined function `release`.
-These two functions involve wrapping objects into ECMAScript proxies which will perform the appropriate conversion.
+These two functions involve wrapping objects into ECMAScript proxies which perform the appropriate conversion.
 
 ![category](img/category.png)
 
@@ -89,7 +89,7 @@ This semantic is encoded as a collection of closures collectively named the *ora
 ## The oracle
 
 In the general case, applying a foreign tame function involves cleaning-releasing arguments and capturing-tainting the result.
-This algorithm always prevent clashes between values sets but it may induce needless cleaning/re-tainting operations.
+This algorithm always prevent clashes between value sets but it may induce needless cleaning/re-tainting operations.
 Consider the wild identity function: `(x) => x`.
 Knowing its semantic, we could deduce that it is not needed to clean its argument.
 More specifically, in the code below, we would like that `dirty1` always resolve to the same value as `dirty2`.
@@ -101,9 +101,9 @@ const tame = access.capture(wild);
 const dirty2 = tame(dirty1);
 ```
 
-Many functions of the global object, could benefit from less cleaning/re-tainting than their tamed counter-part. 
+As for the identity function, the default application algorithm performs many unnecessary cleaning/re-tainting operations for many functions of the global object.
 For instance, `Object.values` does not perform any operation on an object's values but simply push them in an array.
-Currently, Linvail uses a very rudimentary oracle which simply specifies the cleaning/tainting operations per builtin function.
+Currently, Linvail uses a very rudimentary oracle which simply specifies the cleaning/tainting operations for every builtin function it supports.
 At the moment the oracle contains:
 
 * Reflect
@@ -132,22 +132,13 @@ At the moment the oracle contains:
   * `Array`
   * `Array.from`
   * `Array.of`
-* Aran (if the builtin options is defined)
-  * `AranEnumerate`
-  * `AranDefineDataProperty`
-  * `AranDefineAccessorProperty`
-  * `Object.fromEntries`
-
-The only coupling between Linvail and Aran resides in the oracle.
-Aran defines a handful of functions it considers as builtin to help desugar JavaScript code.
-These aran-specific builtins can be passed to Linvail to augment the oracle.
 
 ## API
 
 ### `linvail = require("linvail")(membrane, [options])`
 
 ```js
-{capture, release} = require("linvail")(membrane, {check, aran.builtins});
+{capture, release} = require("linvail")(membrane, {check, "aran-builtins":builtins});
 ```
 
 * `tainted = membrane.taint(tame)`:
@@ -159,7 +150,7 @@ These aran-specific builtins can be passed to Linvail to augment the oracle.
   These checks will be performed in `capture`, `release` but also in `membrane.taint` and `membrane.clean`.
   The original function of the membrane will be respectively set to `membrane._taint` and `membrane._clean`.
   This option is for debugging purpose and comes at the cost of performance overhead.
-* `aran.builtins :: object`, default `null`:
+* `builtins :: object`, default `null`:
   This option is used to augment the oracle with aran-defined functions.
 * `tame = capture(wild)`:
   Linvail-defined function to convert a wild value into a tame value.

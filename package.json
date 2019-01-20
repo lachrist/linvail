@@ -18,6 +18,6 @@
     "Aran"
   ],
   "dependencies": {
-    "virtual-proxy": "0.0.4"
+    "virtual-proxy": "0.0.5"
   }
 }

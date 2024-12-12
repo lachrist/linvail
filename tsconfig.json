@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    // These options only works on .ts files not .d.ts files
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "declaration": false,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "lib": ["es2022"],
+    "target": "es2022",
+    "module": "es2022",
+    "typeRoots": ["./node_modules/@types"],
+    "exactOptionalPropertyTypes": true
+  },
+  "include": ["./lib/", "./test/"]
+}

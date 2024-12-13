@@ -23,6 +23,7 @@
     "virtual-proxy": "0.0.11"
   },
   "devDependencies": {
+    "aran": "^4.1.0",
     "eslint": "^9.16.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"

@@ -3,11 +3,11 @@ import {
   Reference,
   Descriptor,
   Primitive,
-  Value,
   RawValue,
   RawReference,
+  Value,
 } from "./reflect";
-import { Proxy } from "./membrane";
+import { Handling, Membrane, Proxy } from "./membrane";
 
 export type ReflectIntrinsicRecord = {
   "Reflect.get": Reflect["get"];
@@ -16,7 +16,7 @@ export type ReflectIntrinsicRecord = {
   "Reflect.apply": Reflect["apply"];
   "Reflect.defineProperty": Reflect["defineProperty"];
   "Reflect.getOwnPropertyDescriptor": Reflect["getOwnPropertyDescriptor"];
-  "Reflect.setProtoypeOf": Reflect["setPrototypeOf"];
+  "Reflect.setPrototypeOf": Reflect["setPrototypeOf"];
   "Reflect.getPrototypeOf": Reflect["getPrototypeOf"];
   "Reflect.ownKeys": Reflect["ownKeys"];
   "Reflect.isExtensible": Reflect["isExtensible"];
@@ -81,7 +81,7 @@ export type AranIntrinsicRecord = {
     iterator: Reference<X>,
     result: Reference<X>,
   ) => Reference<X>[];
-  "aran.get": <X>(target: X, key: PropertyKey) => X;
+  "aran.get": <X>(target: Value<X>, key: RawValue) => X;
   "aran.createObject": <X>(
     prototype: null | Reference<X>,
     ...properties: (PropertyKey | X)[]
@@ -97,3 +97,15 @@ export type IntrinsicRecord = ReflectIntrinsicRecord &
   ArrayIntrinsicRecord &
   AranIntrinsicRecord &
   OtherIntrinsicRecord;
+
+export type Application = {
+  [key in keyof IntrinsicRecord]?: <X>(
+    callee: IntrinsicRecord[key],
+    that: X,
+    args: X[],
+    options: Handling<X> &
+      Membrane<X, RawValue> & {
+        intrinsics: IntrinsicRecord;
+      },
+  ) => X;
+};

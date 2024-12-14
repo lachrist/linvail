@@ -35,14 +35,17 @@ export type ProxyHandler<I, O> = {
   ) => boolean;
 };
 
-export type Region<X> = {
-  convert: (value: Value<X>) => X;
-  revert: (inner: X) => Value<X>;
+export type Handling<X> = {
+  declare: (value: Value<X>) => X;
+  access: (handle: X) => Value<X>;
+};
+
+export type Region<I, O> = {
+  enter: (outer: O) => I;
+  leave: (inner: I) => O;
 };
 
 export type Membrane<I, O> = {
-  enter: (value: O) => I;
-  leave: (value: I) => O;
-  enterReference: (target: Reference<O>) => Reference<I>;
-  leaveReference: (target: Reference<I>) => Reference<O>;
+  internalize: (reference: Reference<O>) => Reference<I>;
+  externalize: (reference: Reference<I>) => Reference<O>;
 };

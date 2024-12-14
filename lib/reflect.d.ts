@@ -25,8 +25,8 @@ export type DataDescriptor<X> = {
 
 export type AccessorDescriptor<X> = {
   __proto__: null;
-  get: Reference<X> | undefined;
-  set: Reference<X> | undefined;
+  get: Value<X> | undefined;
+  set: Value<X> | undefined;
   configurable: boolean;
   enumerable: boolean;
 };
@@ -34,36 +34,28 @@ export type AccessorDescriptor<X> = {
 export type Descriptor<X> = DataDescriptor<X> | AccessorDescriptor<X>;
 
 export type Reflect = {
-  get: <X>(target: null | Reference<X>, key: RawValue, receiver: X) => X;
-  has: <X>(target: null | Reference<X>, key: RawValue) => boolean;
+  get: <X>(target: Value<X>, key: RawValue, receiver: X) => X;
+  has: <X>(target: Value<X>, key: RawValue) => boolean;
   construct: <X>(
-    target: null | Reference<X>,
+    target: Value<X>,
     args: null | X[],
-    new_target: null | Reference<X>,
+    new_target: Value<X>,
   ) => Reference<X>;
-  apply: <X>(target: null | Reference<X>, that: X, args: null | X[]) => X;
-  getPrototypeOf: <X>(target: null | Reference<X>) => null | Reference<X>;
-  ownKeys: <X>(target: null | Reference<X>) => (string | symbol)[];
-  isExtensible: <X>(target: null | Reference<X>) => boolean;
-  set: <X>(
-    target: null | Reference<X>,
-    key: RawValue,
-    value: X,
-    receiver: X,
-  ) => boolean;
-  deleteProperty: <X>(target: null | Reference<X>, key: RawValue) => boolean;
-  setPrototypeOf: <X>(
-    target: null | Reference<X>,
-    prototype: null | undefined | Reference<X>,
-  ) => boolean;
+  apply: <X>(target: Value<X>, that: X, args: X[]) => X;
+  getPrototypeOf: <X>(target: Value<X>) => null | Reference<X>;
+  ownKeys: <X>(target: Value<X>) => (string | symbol)[];
+  isExtensible: <X>(target: Value<X>) => boolean;
+  set: <X>(target: Value<X>, key: RawValue, value: X, receiver: X) => boolean;
+  deleteProperty: <X>(target: Value<X>, key: RawValue) => boolean;
+  setPrototypeOf: <X>(target: Value<X>, prototype: Value<X>) => boolean;
   getOwnPropertyDescriptor: <X>(
-    target: null | Reference<X>,
+    target: Value<X>,
     key: RawValue,
   ) => Descriptor<X> | undefined;
-  preventExtensions: <X>(target: null | Reference<X>) => boolean;
+  preventExtensions: <X>(target: Value<X>) => boolean;
   defineProperty: <X>(
-    target: null | Reference<X>,
+    target: Value<X>,
     key: RawValue,
-    descriptor: null | Descriptor<X>,
+    descriptor: Descriptor<X>,
   ) => boolean;
 };

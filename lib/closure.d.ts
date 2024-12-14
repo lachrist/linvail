@@ -1,5 +1,5 @@
 import { ReferenceValue, Value } from "./membrane";
-import { Descriptor } from "./reflect";
+import { Descriptor } from "./proxy";
 import { Primitive, Wrapper } from "./wrapper";
 
 export type InternalDescriptor = Descriptor<InternalValue>;
@@ -13,16 +13,26 @@ export type ExternalReference = ReferenceValue<ExternalValue>;
 
 export type InternalTarget = Primitive | InternalReference;
 
+export type EnterReference = (
+  reference: ExternalReference,
+) => InternalReference;
+export type LeaveReference = (
+  reference: InternalReference,
+) => ExternalReference;
+export type Enter = (value: ExternalValue) => InternalValue;
+export type Leave = (value: InternalValue) => ExternalValue;
+
 export type Membrane = {
   intrinsics: IntrinsicRecord;
-  enterReference: (reference: ExternalReference) => InternalReference;
-  leaveReference: (reference: InternalReference) => ExternalReference;
-  enter: (value: ExternalValue) => InternalValue;
-  leave: (value: InternalValue) => ExternalValue;
+  enterReference: EnterReference;
+  leaveReference: LeaveReference;
+  enter: Enter;
+  leave: Leave;
 };
 
 export type IntrinsicRecord = {
   // Object //
+  "Object.prototype": ExternalReference;
   "Object.create": (
     prototype: null | InternalReference,
     properties: { [key in PropertyKey]: InternalDescriptor },
@@ -32,6 +42,7 @@ export type IntrinsicRecord = {
   "Object.defineProperty": (...args: unknown[]) => unknown;
   "Object.setPrototypeOf": (...args: unknown[]) => unknown;
   // Array //
+  "Array.prototype": ExternalReference;
   "Array.from": (...args: unknown[]) => unknown;
   "Array.of": (...elements: InternalValue[]) => InternalValue;
   "Array.prototype.flat": (this: unknown, ...args: unknown[]) => unknown;
@@ -51,13 +62,13 @@ export type IntrinsicRecord = {
   ) => boolean;
   "Reflect.construct": (
     target: null | InternalReference,
-    args: InternalValue[],
+    args: null | InternalValue[],
     new_target: null | InternalReference,
   ) => InternalValue;
   "Reflect.apply": (
     target: null | InternalReference,
     that: InternalValue,
-    args: InternalValue[],
+    args: null | InternalValue[],
   ) => InternalValue;
   "Reflect.setProtoypeOf": (
     target: null | InternalReference,
@@ -94,7 +105,7 @@ export type IntrinsicRecord = {
   ) => boolean;
   // Aran //
   "aran.get": (
-    target: null | InternalValue,
+    target: null | InternalReference,
     key: ExternalValue,
   ) => InternalValue;
   "aran.createObject": (

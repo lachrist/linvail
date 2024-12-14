@@ -1,17 +1,48 @@
-import { Reference } from "./reflect";
+import { Descriptor, Reference, Value } from "./reflect";
 
-// Cannot use ReferenceValue because of circularity
-export type Value<P> = P | { __brand: "Reference"; __inner: Value<P> };
+export type Proxy = new <I, O>(
+  target: Reference<I>,
+  handler: ProxyHandler<I, O>,
+) => Reference<O>;
 
-export type ReferenceValue<P> = Reference<Value<P>>;
+export type ProxyHandler<I, O> = {
+  apply: (target: Reference<I>, that: O, args: O[]) => O;
+  construct: (
+    target: Reference<I>,
+    args: O[],
+    new_target: Reference<O>,
+  ) => Reference<O>;
+  getOwnPropertyDescriptor: (
+    target: Reference<I>,
+    key: PropertyKey,
+  ) => Descriptor<O> | undefined;
+  defineProperty: (
+    target: Reference<I>,
+    key: PropertyKey,
+    descriptor: Descriptor<O>,
+  ) => boolean;
+  getPrototypeOf: (target: Reference<I>) => Reference<O> | null;
+  setPrototypeOf: (
+    target: Reference<I>,
+    prototype: Reference<O> | null,
+  ) => boolean;
+  get: (target: Reference<I>, key: PropertyKey, receiver: O) => undefined | O;
+  set: (
+    target: Reference<I>,
+    key: PropertyKey,
+    value: O,
+    receiver: O,
+  ) => boolean;
+};
 
-export type Membrane<I, E> = {
-  enter: (value: Value<E>) => Value<I>;
-  leave: (value: Value<I>) => Value<E>;
-  enterValue: (value: Value<E>) => Value<I>;
-  leaveValue: (value: Value<I>) => Value<E>;
-  enterPrimitive: (primitive: E) => I;
-  leavePrimitive: (primtivie: I) => E;
-  enterReference: (reference: ReferenceValue<E>) => ReferenceValue<I>;
-  leaveReference: (reference: ReferenceValue<I>) => ReferenceValue<E>;
+export type Region<X> = {
+  convert: (value: Value<X>) => X;
+  revert: (inner: X) => Value<X>;
+};
+
+export type Membrane<I, O> = {
+  enter: (value: O) => I;
+  leave: (value: I) => O;
+  enterReference: (target: Reference<O>) => Reference<I>;
+  leaveReference: (target: Reference<I>) => Reference<O>;
 };

@@ -1,6 +1,19 @@
 export type Reference<X> = { __brand: "Reference"; __inner: X };
 
-export type Descriptor<X> = DataDescriptor<X> | AccessorDescriptor<X>;
+export type Primitive =
+  | null
+  | undefined
+  | string
+  | number
+  | boolean
+  | symbol
+  | bigint;
+
+export type Value<X> = Primitive | Reference<X>;
+
+export type RawReference = { __brand: "Reference"; __inner: RawValue };
+
+export type RawValue = Primitive | RawReference;
 
 export type DataDescriptor<X> = {
   __proto__: null;
@@ -18,35 +31,39 @@ export type AccessorDescriptor<X> = {
   enumerable: boolean;
 };
 
-export type Membrane<I, E> = {
-  enterValue: (value: E) => I;
-  leaveValue: (value: I) => E;
-  enterReference: (target: Reference<E>) => Reference<I>;
-  leaveReference: (target: Reference<I>) => Reference<E>;
-};
+export type Descriptor<X> = DataDescriptor<X> | AccessorDescriptor<X>;
 
-export type ProxyHandler<I, O> = {
-  apply: (target: Reference<I>, that: O, args: O[]) => O;
-  construct: (target: Reference<I>, args: O[], new_target: Reference<O>) => O;
-  getOwnPropertyDescriptor: (
-    target: Reference<I>,
-    key: PropertyKey,
-  ) => Descriptor<O> | undefined;
-  defineProperty: (
-    target: Reference<I>,
-    key: PropertyKey,
-    descriptor: Descriptor<O>,
+export type Reflect = {
+  get: <X>(target: null | Reference<X>, key: RawValue, receiver: X) => X;
+  has: <X>(target: null | Reference<X>, key: RawValue) => boolean;
+  construct: <X>(
+    target: null | Reference<X>,
+    args: null | X[],
+    new_target: null | Reference<X>,
+  ) => Reference<X>;
+  apply: <X>(target: null | Reference<X>, that: X, args: null | X[]) => X;
+  getPrototypeOf: <X>(target: null | Reference<X>) => null | Reference<X>;
+  ownKeys: <X>(target: null | Reference<X>) => (string | symbol)[];
+  isExtensible: <X>(target: null | Reference<X>) => boolean;
+  set: <X>(
+    target: null | Reference<X>,
+    key: RawValue,
+    value: X,
+    receiver: X,
   ) => boolean;
-  getPrototypeOf: (target: Reference<I>) => Reference<O> | null;
-  setPrototypeOf: (
-    target: Reference<I>,
-    prototype: Reference<O> | null,
+  deleteProperty: <X>(target: null | Reference<X>, key: RawValue) => boolean;
+  setPrototypeOf: <X>(
+    target: null | Reference<X>,
+    prototype: null | undefined | Reference<X>,
   ) => boolean;
-  get: (target: Reference<I>, key: PropertyKey, receiver: O) => undefined | O;
-  set: (
-    target: Reference<I>,
-    key: PropertyKey,
-    value: O,
-    receiver: O,
+  getOwnPropertyDescriptor: <X>(
+    target: null | Reference<X>,
+    key: RawValue,
+  ) => Descriptor<X> | undefined;
+  preventExtensions: <X>(target: null | Reference<X>) => boolean;
+  defineProperty: <X>(
+    target: null | Reference<X>,
+    key: RawValue,
+    descriptor: null | Descriptor<X>,
   ) => boolean;
 };

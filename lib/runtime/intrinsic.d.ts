@@ -7,7 +7,8 @@ import {
   RawReference,
   Value,
 } from "./reflect";
-import { Lifecycle, Membrane, Proxy } from "./membrane";
+import { Membrane, Proxy } from "./membrane";
+import { Lifecycle } from "./lifecycle";
 
 export type ReflectIntrinsicRecord = {
   "Reflect.get": Reflect["get"];

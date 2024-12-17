@@ -35,11 +35,6 @@ export type ProxyHandler<I, O> = {
   ) => boolean;
 };
 
-export type Lifecycle<X> = {
-  capture: (value: Value<X>) => X;
-  release: (handle: X) => Value<X>;
-};
-
 export type Region<I, O> = {
   enter: (outer: O) => I;
   leave: (inner: I) => O;

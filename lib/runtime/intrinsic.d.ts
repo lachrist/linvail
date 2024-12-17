@@ -9,6 +9,7 @@ import {
 } from "./reflect";
 import { Membrane, Proxy } from "./membrane";
 import { Lifecycle } from "./lifecycle";
+import { LinvailIntrinsicRecord } from "./runtime";
 
 export type ReflectIntrinsicRecord = {
   "Reflect.get": Reflect["get"];
@@ -48,7 +49,7 @@ export type ObjectIntrinsicRecord = {
 export type ArrayIntrinsicRecord = {
   "Array.prototype": RawReference;
   "Array.from": (...args: unknown[]) => unknown;
-  "Array.of": <X>(...elements: X[]) => Reference<X>;
+  "Array.of": <X>(...elements: X[]) => X[];
   "Array.prototype.flat": (this: unknown, ...args: unknown[]) => unknown;
   "Array.prototype.values": (this: unknown, ...args: unknown[]) => unknown;
   "Array.prototype.concat": <X>(
@@ -97,9 +98,10 @@ export type IntrinsicRecord = ReflectIntrinsicRecord &
   ObjectIntrinsicRecord &
   ArrayIntrinsicRecord &
   AranIntrinsicRecord &
+  LinvailIntrinsicRecord &
   OtherIntrinsicRecord;
 
-export type Application = {
+export type ApplyIntrinsicRecord = {
   [key in keyof IntrinsicRecord]?: <X>(
     callee: IntrinsicRecord[key],
     that: X,

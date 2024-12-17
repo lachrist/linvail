@@ -35,9 +35,9 @@ export type ProxyHandler<I, O> = {
   ) => boolean;
 };
 
-export type Handling<X> = {
-  declare: (value: Value<X>) => X;
-  access: (handle: X) => Value<X>;
+export type Lifecycle<X> = {
+  capture: (value: Value<X>) => X;
+  release: (handle: X) => Value<X>;
 };
 
 export type Region<I, O> = {
@@ -46,6 +46,6 @@ export type Region<I, O> = {
 };
 
 export type Membrane<I, O> = {
-  internalize: (reference: Reference<O>) => Reference<I>;
-  externalize: (reference: Reference<I>) => Reference<O>;
+  internalizeReference: (reference: Reference<O>) => Reference<I>;
+  externalizeReference: (reference: Reference<I>) => Reference<O>;
 };

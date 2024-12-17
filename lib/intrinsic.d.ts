@@ -7,7 +7,7 @@ import {
   RawReference,
   Value,
 } from "./reflect";
-import { Handling, Membrane, Proxy } from "./membrane";
+import { Lifecycle, Membrane, Proxy } from "./membrane";
 
 export type ReflectIntrinsicRecord = {
   "Reflect.get": Reflect["get"];
@@ -103,7 +103,7 @@ export type Application = {
     callee: IntrinsicRecord[key],
     that: X,
     args: X[],
-    options: Handling<X> &
+    options: Lifecycle<X> &
       Membrane<X, RawValue> & {
         intrinsics: IntrinsicRecord;
       },

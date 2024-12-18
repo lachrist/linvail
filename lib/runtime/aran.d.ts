@@ -1,4 +1,4 @@
-import { RawValue, Reference, Value } from "./reflect";
+import type { RawValue, Reference, Value } from "./reflect";
 
 export type AranLibrary = {
   sliceObject: <X>(

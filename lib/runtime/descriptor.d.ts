@@ -1,4 +1,4 @@
-import { Value } from "./reflect";
+import type { Value } from "./reflect";
 
 export type DataDescriptor<X> = {
   __proto__: null;

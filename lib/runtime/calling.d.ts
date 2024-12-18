@@ -1,8 +1,8 @@
-import { AranLibrary } from "./aran";
-import { Library } from "./library";
-import { Cage } from "./cage";
-import { Membrane } from "./membrane";
-import { RawValue } from "./reflect";
+import type { Library } from "./library";
+import type { AranLibrary } from "./aran";
+import type { Cage } from "./cage";
+import type { Membrane } from "./membrane";
+import type { RawValue } from "./reflect";
 
 export type Context<X> = Cage<X> &
   Membrane<X, RawValue> & {

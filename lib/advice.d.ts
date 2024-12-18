@@ -1,4 +1,4 @@
-import { RawValue, Value } from "./runtime/reflect";
+import type { RawValue, Value } from "./runtime/reflect";
 
 export type Advice<X> = {
   capture: (value: Value<X>) => X;

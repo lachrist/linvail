@@ -1,5 +1,3 @@
-/* eslint-disable local/no-deep-import */
-
 import Curly from "./rules/curly.mjs";
 import NoGlobal from "./rules/no-global.mjs";
 import NoMethodCall from "./rules/no-method-call.mjs";

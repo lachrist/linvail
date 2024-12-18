@@ -1,5 +1,5 @@
-import { Primitive } from "../primitive";
-import { Descriptor } from "./descriptor";
+import type { Primitive } from "../primitive";
+import type { Descriptor } from "./descriptor";
 
 export type Reference<X> = { __brand: "Reference"; __inner: X };
 

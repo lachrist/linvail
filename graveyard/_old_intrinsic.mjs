@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { isDataDescriptor, isPrimitive } from "./reflect.mjs";
+import { isDataDescriptor } from "./reflect.mjs";
 
 const {
   Number,
@@ -13,12 +13,12 @@ const {
  * @type {<X>(
  *   array: X[],
  *   internalizeReference: (
- *     value: import("./reflect").RawReference,
- *   ) => import("./reflect").Reference<X>,
- * ) => import("./reflect").Reference<X>}
+ *     value: import("../lib/runtime/reflect").RawReference,
+ *   ) => import("../lib/runtime/reflect").Reference<X>,
+ * ) => import("../lib/runtime/reflect").Reference<X>}
  */
 const internalizeArray = (array, internalizeReference) => {
-  const prototype = /** @type {null | import("./reflect").RawReference} */ (
+  const prototype = /** @type {null | import("../lib/runtime/reflect").RawReference} */ (
     getPrototypeOf(array)
   );
   if (prototype !== null) {
@@ -29,7 +29,7 @@ const internalizeArray = (array, internalizeReference) => {
 
 /**
  * @type {<X>(
- *   value: import("./reflect").Value<X>,
+ *   value: import("../lib/runtime/reflect").Value<X>,
  * ) => boolean}
  */
 const toBoolean = (value) => !!value;
@@ -37,11 +37,11 @@ const toBoolean = (value) => !!value;
 /**
  * @type {<X>(
  *   handle: X,
- *   get: import("./reflect").Reflect["get"],
+ *   get: import("../lib/runtime/reflect").Reflect["get"],
  *   externalizeReference: (
- *     value: import("./reflect").Reference<X>,
- *   ) => import("./reflect").RawReference,
- *   release: (handle: X) => import("./reflect").Value<X>,
+ *     value: import("../lib/runtime/reflect").Reference<X>,
+ *   ) => import("../lib/runtime/reflect").RawReference,
+ *   release: (handle: X) => import("../lib/runtime/reflect").Value<X>,
  * ) => X[]}
  */
 const listHandle = (handle, get, externalizeReference, release) => {
@@ -61,10 +61,10 @@ const listHandle = (handle, get, externalizeReference, release) => {
 /**
  * @type {<X>(
  *   handle: X,
- *   has: import("./reflect").Reflect["has"],
- *   get: import("./reflect").Reflect["get"],
- *   release: (handle: X) => import("./reflect").Value<X>,
- * ) => import("./reflect").Descriptor<X>}
+ *   has: import("../lib/runtime/reflect").Reflect["has"],
+ *   get: import("../lib/runtime/reflect").Reflect["get"],
+ *   release: (handle: X) => import("../lib/runtime/reflect").Value<X>,
+ * ) => import("../lib/runtime/reflect").Descriptor<X>}
  */
 const toDescriptor = (handle, has, get, release) => {
   const value = release(handle);
@@ -89,10 +89,10 @@ const toDescriptor = (handle, has, get, release) => {
 
 /**
  * @type {<X>(
- *   value: undefined | import("./reflect").Descriptor<X>,
- *   object_prototype: import("./reflect").Reference<X>,
- *   capture: (value: import("./reflect").Value<X>) => X,
- * ) => undefined | import("./reflect").Reference<X>}
+ *   value: undefined | import("../lib/runtime/reflect").Descriptor<X>,
+ *   object_prototype: import("../lib/runtime/reflect").Reference<X>,
+ *   capture: (value: import("../lib/runtime/reflect").Value<X>) => X,
+ * ) => undefined | import("../lib/runtime/reflect").Reference<X>}
  */
 const internalizeReferenceDescriptor = (
   descriptor,
@@ -123,7 +123,7 @@ const internalizeReferenceDescriptor = (
 };
 
 /**
- * @type {import("./global").ApplyIntrinsicRecord}
+ * @type {import("../lib/runtime/global").ApplyIntrinsicRecord}
  */
 export const apply_intrinsic_record = {
   // Aran //

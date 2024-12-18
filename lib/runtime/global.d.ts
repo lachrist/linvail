@@ -1,8 +1,11 @@
-import { Reflect, Reference, RawValue, RawReference, Value } from "./reflect";
-import { Membrane, Proxy } from "./membrane";
-import { Cage } from "./cage";
-import { Descriptor } from "./descriptor";
-import { Primitive } from "../primitive";
+import type {
+  Reflect,
+  Reference,
+  RawValue,
+  RawReference,
+  Value,
+} from "./reflect";
+import type { Descriptor } from "./descriptor";
 
 export type Global = {
   Reflect: Reflect;

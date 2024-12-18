@@ -1,4 +1,4 @@
-import { RawReference, Reference, Value } from "./reflect";
+import type { Value } from "./reflect";
 
 /////////////
 // WeakSet //

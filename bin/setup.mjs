@@ -22,7 +22,9 @@ const intrinsics = globalEval(
 
 /** @type {import("./wrapper").WrapperCage} */
 const cage = {
+  // eslint-disable-next-line local/no-method-call, no-use-before-define
   capture: (value) => cage_library.capture(value),
+  // eslint-disable-next-line local/no-method-call, no-use-before-define
   release: (handle) => cage_library.release(handle),
 };
 

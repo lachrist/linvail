@@ -54,6 +54,7 @@ export const load = async (url, context, nextLoad) => {
       },
     );
     result.source = generate(root2);
+    console.log(result.source);
   }
   return result;
 };

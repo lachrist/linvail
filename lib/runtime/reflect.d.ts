@@ -1,37 +1,13 @@
-export type Reference<X> = { __brand: "Reference"; __inner: X };
+import { Primitive } from "../primitive";
+import { Descriptor } from "./descriptor";
 
-export type Primitive =
-  | null
-  | undefined
-  | string
-  | number
-  | boolean
-  | symbol
-  | bigint;
+export type Reference<X> = { __brand: "Reference"; __inner: X };
 
 export type Value<X> = Primitive | Reference<X>;
 
 export type RawReference = { __brand: "Reference"; __inner: RawValue };
 
 export type RawValue = Primitive | RawReference;
-
-export type DataDescriptor<X> = {
-  __proto__: null;
-  value: X;
-  configurable: boolean;
-  writable: boolean;
-  enumerable: boolean;
-};
-
-export type AccessorDescriptor<X> = {
-  __proto__: null;
-  get: Value<X> | undefined;
-  set: Value<X> | undefined;
-  configurable: boolean;
-  enumerable: boolean;
-};
-
-export type Descriptor<X> = DataDescriptor<X> | AccessorDescriptor<X>;
 
 export type Reflect = {
   get: <X>(target: Value<X>, key: RawValue, receiver: X) => X;

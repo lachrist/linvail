@@ -1,4 +1,5 @@
-import { Descriptor, Reference, Value } from "./reflect";
+import { Descriptor } from "./descriptor";
+import { Reference } from "./reflect";
 
 export type Proxy = new <I, O>(
   target: Reference<I>,

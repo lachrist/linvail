@@ -5,7 +5,7 @@ export type Advice<X> = {
   release: (value: X) => Value<X>;
   internalize: (reference: Value<RawValue>) => Value<X>;
   externalize: (reference: Value<X>) => Value<RawValue>;
-  apply: (callee: Value<X>, that: X, args: X[]) => X;
-  construct: (callee: Value<X>, args: X[], new_target: Value<X>) => Value<X>;
+  apply: (callee: X, that: X, args: X[]) => X;
+  construct: (callee: X, args: X[]) => X;
   sanitizeClosure: (closure: Function) => Value<X>;
 };

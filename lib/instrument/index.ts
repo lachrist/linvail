@@ -9,16 +9,6 @@ import {
   Expression as GenericExpression,
 } from "aran/lib/lang/syntax";
 
-export type Advice = {
-  "apply": Variable;
-  "construct": Variable;
-  "capture": Variable;
-  "release": Variable;
-  "internalize": Variable;
-  "externalize": Variable;
-  "sanitize-closure": Variable;
-};
-
 export type ClosureKind =
   | "arrow"
   | "arrow.async"

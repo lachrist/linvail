@@ -15,5 +15,5 @@
     "typeRoots": ["./node_modules/@types"],
     "exactOptionalPropertyTypes": true
   },
-  "include": ["./lib/", "./test/"]
+  "include": ["./bin/", "./lib/", "./test/"]
 }

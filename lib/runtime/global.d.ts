@@ -1,6 +1,6 @@
 import { Reflect, Reference, RawValue, RawReference, Value } from "./reflect";
 import { Membrane, Proxy } from "./membrane";
-import { Lifecycle } from "./lifecycle";
+import { Cage } from "./cage";
 import { Descriptor } from "./descriptor";
 import { Primitive } from "../primitive";
 

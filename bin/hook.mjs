@@ -11,6 +11,9 @@ import {
   INTRINSIC_VARIABLE,
 } from "./bridge.mjs";
 import { annotateModuleProgram, ROOT_PATH } from "estree-sentry";
+import { log, dir } from "./console.mjs";
+
+globalThis.console = { log, dir };
 
 const {
   Reflect: { apply },
@@ -57,7 +60,7 @@ export const load = async (url, context, nextLoad) => {
       },
     );
     result.source = generate(root2);
-    console.log(result.source);
+    log(result.source);
   }
   return result;
 };

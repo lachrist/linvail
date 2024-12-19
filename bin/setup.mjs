@@ -8,6 +8,9 @@ import {
   LIBRARY_VARIABLE,
 } from "./bridge.mjs";
 import { wrap, unwrap } from "./wrapper.mjs";
+import { log, dir } from "./console.mjs";
+
+globalThis.console = { log, dir };
 
 const { eval: globalEval } = globalThis;
 

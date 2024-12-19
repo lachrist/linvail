@@ -1,6 +1,8 @@
 import { inspect } from "node:util";
 import { writeSync } from "node:fs";
 
+export { inspect };
+
 /**
  * @type {(
  *   value: unknown,

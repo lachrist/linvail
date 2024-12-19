@@ -8,7 +8,7 @@ import {
   LIBRARY_VARIABLE,
 } from "./bridge.mjs";
 import { wrap, unwrap } from "./wrapper.mjs";
-import { log, dir } from "./console.mjs";
+import { inspect, log, dir } from "./console.mjs";
 
 globalThis.console = { log, dir };
 
@@ -41,6 +41,7 @@ const { advice, library } = createRuntime(intrinsics, cage);
  */
 const cage_library = {
   ...library,
+  _inspect: inspect,
   capture: wrap,
   release: unwrap,
 };

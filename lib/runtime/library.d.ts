@@ -88,6 +88,8 @@ export type LinvailMapConstructor = (new <X>() => LinvailMap<X>) & {
 
 export type Library = {
   same: <X>(x1: X, x2: X) => boolean;
+  _inspect: <X>(x: X) => string;
+  inspect: <X>(x: X) => string;
   WeakSet: LinvailWeakSetConstructor;
   WeakMap: LinvailWeakMapConstructor;
   Set: LinvailSetConstructor;

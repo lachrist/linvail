@@ -1,4 +1,3 @@
-throw new Promise((resolve) => {
-  console.log;
-  resolve(123);
+throw await new Promise((resolve) => {
+  console.log(123);
 });

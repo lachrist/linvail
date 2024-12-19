@@ -1,1 +1,1 @@
-console.log(Linvail.same(123, 123));
+throw await promise;

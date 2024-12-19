@@ -10,6 +10,7 @@ import {
   ESCAPE_PREFIX,
   INTRINSIC_VARIABLE,
 } from "./bridge.mjs";
+import { annotateModuleProgram, ROOT_PATH } from "estree-sentry";
 
 const {
   Reflect: { apply },
@@ -38,7 +39,9 @@ export const load = async (url, context, nextLoad) => {
       {
         kind: "module",
         situ: { type: "global" },
-        root: root1,
+        root: annotateModuleProgram(root1, ROOT_PATH, (_node, path, _kind) => ({
+          _hash: path,
+        })),
       },
       { global_declarative_record: "builtin" },
     );

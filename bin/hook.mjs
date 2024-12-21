@@ -12,6 +12,7 @@ import {
 } from "./bridge.mjs";
 import { annotateModuleProgram, ROOT_PATH } from "estree-sentry";
 import { log, dir } from "./console.mjs";
+import { writeFileSync } from "node:fs";
 
 globalThis.console = { log, dir };
 
@@ -60,7 +61,7 @@ export const load = async (url, context, nextLoad) => {
       },
     );
     result.source = generate(root2);
-    log(result.source);
+    writeFileSync("./yo.mjs", result.source, "utf8");
   }
   return result;
 };

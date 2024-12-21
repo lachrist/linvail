@@ -86,7 +86,7 @@ export type LinvailMapConstructor = (new <X>() => LinvailMap<X>) & {
 // Runtime //
 /////////////
 
-export type Library = {
+export type Linvail = {
   same: <X>(x1: X, x2: X) => boolean;
   _inspect: <X>(x: X) => string;
   inspect: <X>(this: RawValue, x: X) => string;

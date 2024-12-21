@@ -1,8 +1,8 @@
-import type { Library } from "./library";
+import type { Linvail } from "./library";
 import type { AranLibrary } from "./aran";
 import type { Cage } from "./cage";
 import type { Membrane } from "./membrane";
-import type { RawValue } from "./reflect";
+import type { RawValue, Reference } from "./reflect";
 import type { Global } from "./global";
 
 export function Apply<T, Y>(callee: (this: T) => Y, that: T, args: []): Y;
@@ -30,7 +30,7 @@ export function Apply<T, X1, X2, X3, X4, Y>(
 export type Context<X> = Cage<X> &
   Membrane<X, RawValue> & {
     aran: AranLibrary;
-    linvail: Library;
+    linvail: Linvail;
     global: Global;
   };
 

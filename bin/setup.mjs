@@ -35,7 +35,7 @@ const { advice, library } = createRuntime(intrinsics, cage);
 
 /**
  * @type {(
- *   & import("../lib/runtime/library").Library
+ *   & import("../lib/runtime/library").Linvail
  *   & import("./wrapper").WrapperCage
  * )}
  */

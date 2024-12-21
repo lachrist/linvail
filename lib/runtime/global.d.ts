@@ -10,6 +10,7 @@ import type { Descriptor } from "./descriptor";
 export type Global = {
   Reflect: Reflect;
   Object: {
+    setPrototypeOf: <X>(target: Value<X>, prototype: Value<X>) => Value<X>;
     prototype: RawReference;
     create: <X>(
       prototype: Value<X>,

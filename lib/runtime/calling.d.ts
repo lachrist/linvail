@@ -2,7 +2,7 @@ import type { Linvail } from "./library";
 import type { AranLibrary } from "./aran";
 import type { Cage } from "./cage";
 import type { Membrane } from "./membrane";
-import type { RawValue, Reference } from "./reflect";
+import type { RawValue } from "./reflect";
 import type { Global } from "./global";
 
 export function Apply<T, Y>(callee: (this: T) => Y, that: T, args: []): Y;
@@ -48,8 +48,3 @@ export type CompileConstruct<F> = <X>(
   callee: F,
   context: Context<X>,
 ) => (args: X[]) => X;
-
-export type InternalizeArray = <X>(
-  array: X[],
-  prototype: Reference<X>,
-) => Reference<X>;

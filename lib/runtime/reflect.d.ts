@@ -5,6 +5,8 @@ export type Reference<X> = { __brand: "Reference"; __inner: X };
 
 export type Value<X> = Primitive | Reference<X>;
 
+// TypeScript fails to handle this cyclic type definition
+// export type RawReference = Reference<RawValue>;
 export type RawReference = { __brand: "Reference"; __inner: RawValue };
 
 export type RawValue = Primitive | RawReference;
@@ -14,7 +16,7 @@ export type Reflect = {
   has: <X>(target: Value<X>, key: RawValue) => boolean;
   construct: <X>(
     target: Value<X>,
-    args: null | X[],
+    args: X[],
     new_target: Value<X>,
   ) => Reference<X>;
   apply: <X>(target: Value<X>, that: X, args: X[]) => X;

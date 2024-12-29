@@ -1,4 +1,14 @@
-import type { Value } from "./reflect";
+import type { Value } from "./domain";
+
+export type DefineDescriptor<X> = {
+  __proto__: null;
+  value?: X;
+  writable?: boolean;
+  get?: Value<X>;
+  set?: Value<X>;
+  configurable?: boolean;
+  enumerable?: boolean;
+};
 
 export type DataDescriptor<X> = {
   __proto__: null;

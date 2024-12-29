@@ -1,5 +1,9 @@
-import type { Descriptor } from "./descriptor";
-import type { Reference } from "./reflect";
+import type { Reference } from "./domain";
+import type {
+  ContextDefineDescriptor,
+  ContextDescriptor,
+  ContextHandle,
+} from "./reflect";
 
 export type Proxy = new <I, O>(
   target: Reference<I>,
@@ -16,22 +20,26 @@ export type ProxyHandler<I, O> = {
   getOwnPropertyDescriptor: (
     target: Reference<I>,
     key: PropertyKey,
-  ) => Descriptor<O> | undefined;
+  ) => ContextDescriptor<O> | undefined;
   defineProperty: (
     target: Reference<I>,
     key: PropertyKey,
-    descriptor: Descriptor<O>,
+    descriptor: ContextDefineDescriptor<O>,
   ) => boolean;
   getPrototypeOf: (target: Reference<I>) => Reference<O> | null;
   setPrototypeOf: (
     target: Reference<I>,
     prototype: Reference<O> | null,
   ) => boolean;
-  get: (target: Reference<I>, key: PropertyKey, receiver: O) => undefined | O;
+  get: (
+    target: Reference<I>,
+    key: PropertyKey,
+    receiver: O,
+  ) => undefined | ContextHandle<O>;
   set: (
     target: Reference<I>,
     key: PropertyKey,
-    value: O,
+    value: ContextHandle<O>,
     receiver: O,
   ) => boolean;
 };

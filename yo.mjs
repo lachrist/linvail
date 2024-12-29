@@ -1,10 +1,17 @@
-const p = new Proxy([], {
-  defineProperty: (target, key, descriptor) => {
-    console.log({ target, key, descriptor });
-    return Reflect.defineProperty(target, key, descriptor);
+const p = new Proxy(
+  {},
+  {
+    defineProperty: (target, key, descriptor) => {
+      console.log({ target, key, descriptor });
+      return Reflect.defineProperty(target, key, descriptor);
+    },
   },
+);
+
+Reflect.defineProperty(p, "foo", {
+  __proto__: null,
+  value: 123,
+  get: () => 123,
 });
 
-Reflect.defineProperty(p, 0, { __proto__: { get: () => {} } });
-
-console.log(Reflect.getOwnPropertyDescriptor(p, 0));
+console.log(Reflect.getOwnPropertyDescriptor(p, "foo"));

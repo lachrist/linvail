@@ -35,9 +35,9 @@ export type ProxyHandler<X> = {
     key: PropertyKey,
     descriptor: DefineDescriptor<ExternalValue, ExternalReference>,
   ) => boolean;
-  // deleteProperty: (target: InternalReference<X>, key: PropertyKey) => boolean;
-  // ownKeys: (target: InternalReference<X>) => (string | symbol)[];
-  // has: (target: InternalReference<X>, key: PropertyKey) => boolean;
+  // deleteProperty: (target: IntrinsicInternalReference<X>, key: PropertyKey) => boolean;
+  // ownKeys: (target: IntrinsicInternalReference<X>) => (string | symbol)[];
+  has: (target: IntrinsicInternalReference<X>, key: PropertyKey) => boolean;
   get: (
     target: IntrinsicInternalReference<X>,
     key: PropertyKey,

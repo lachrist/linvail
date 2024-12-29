@@ -43,7 +43,7 @@ export type construct = {
   ): ExternalValue;
   <X>(
     target: InternalTarget<X>,
-    args: X[],
+    args: InternalValue<X>[],
     new_target: InternalValue<X>,
   ): InternalReference<X>;
 };
@@ -78,23 +78,24 @@ export type deleteProperty = {
   <X>(target: InternalTarget<X>, key: ExternalValue): boolean;
 };
 
+export type NonLengthPropertyKey = PropertyKey & {
+  __brand: "NonLengthPropertyKey";
+};
+
 export type getOwnPropertyDescriptor = {
   (
     target: ExternalTarget,
     key: ExternalValue,
-  ): Descriptor<ExternalValue, ExternalValue> | undefined;
+  ): Descriptor<ExternalValue, ExternalReference> | undefined;
   <X>(
     target: Exclude<InternalTarget<X>, InternalArray<X>>,
     key: ExternalValue,
-  ): Descriptor<X, InternalValue<X>> | undefined;
+  ): Descriptor<InternalValue<X>, InternalReference<X>> | undefined;
   <X>(
     target: InternalArray<X>,
-    key: Exclude<PropertyKey, "length">,
-  ): Descriptor<X, InternalValue<X>> | undefined;
-  <X>(
-    target: InternalArray<X>,
-    key: "length",
-  ): DataDescriptor<number> | undefined;
+    key: NonLengthPropertyKey,
+  ): Descriptor<InternalValue<X>, InternalReference<X>> | undefined;
+  <X>(target: InternalArray<X>, key: "length"): DataDescriptor<number>;
 };
 
 export type defineProperty = {
@@ -110,7 +111,7 @@ export type defineProperty = {
   ): boolean;
   <X>(
     target: InternalArray<X>,
-    key: Exclude<PropertyKey, "length">,
+    key: NonLengthPropertyKey,
     descriptor: DefineDescriptor<X, InternalValue<X>>,
   ): boolean;
   <X>(

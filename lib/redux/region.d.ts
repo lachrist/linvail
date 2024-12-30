@@ -12,14 +12,8 @@ import type {
 
 export type PrimitiveRegion = {
   isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
-  toInternalPrimitive: (
-    primitive: ExternalPrimitive,
-    notify: boolean,
-  ) => InternalPrimitive;
-  toExternalPrimitive: (
-    primitive: InternalPrimitive,
-    notify: boolean,
-  ) => ExternalPrimitive;
+  toInternalPrimitive: (primitive: ExternalPrimitive) => InternalPrimitive;
+  toExternalPrimitive: (primitive: InternalPrimitive) => ExternalPrimitive;
 };
 
 export type InternalReferenceRegion = {

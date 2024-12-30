@@ -16,9 +16,9 @@ import type {
 
 export type ExternalTarget = PlainExternalReference | Primitive;
 
-export type InternalTarget<X> = PlainInternalReference<X> | Primitive;
+export type InternalTarget = PlainInternalReference | Primitive;
 
-export type InternalPrototype<X> = null | InternalReference<X>;
+export type InternalPrototype = null | InternalReference;
 
 export type ExternalPrototype = null | ExternalReference;
 
@@ -28,11 +28,11 @@ export type apply = {
     that: ExternalValue,
     args: ExternalValue[],
   ): ExternalValue;
-  <X>(
-    target: InternalTarget<X>,
-    that: InternalValue<X>,
-    args: InternalValue<X>[],
-  ): InternalValue<X>;
+  (
+    target: InternalTarget,
+    that: InternalValue,
+    args: InternalValue[],
+  ): InternalValue;
 };
 
 export type construct = {
@@ -41,41 +41,41 @@ export type construct = {
     args: ExternalValue[],
     new_target: ExternalValue,
   ): ExternalValue;
-  <X>(
-    target: InternalTarget<X>,
-    args: InternalValue<X>[],
-    new_target: InternalValue<X>,
-  ): InternalReference<X>;
+  (
+    target: InternalTarget,
+    args: InternalValue[],
+    new_target: InternalValue,
+  ): InternalReference;
 };
 
 export type preventExtensions = {
   (target: ExternalTarget): boolean;
-  <X>(target: InternalTarget<X>): boolean;
+  (target: InternalTarget): boolean;
 };
 
 export type isExtensible = {
   (target: ExternalTarget): boolean;
-  <X>(target: InternalTarget<X>): boolean;
+  (target: InternalTarget): boolean;
 };
 
 export type getPrototypeOf = {
   (target: ExternalTarget): ExternalPrototype;
-  <X>(target: InternalTarget<X>): InternalPrototype<X>;
+  (target: InternalTarget): InternalPrototype;
 };
 
 export type setPrototypeOf = {
   (target: ExternalTarget, prototype: ExternalPrototype): boolean;
-  <X>(target: InternalTarget<X>, prototype: InternalPrototype<X>): boolean;
+  (target: InternalTarget, prototype: InternalPrototype): boolean;
 };
 
 export type ownKeys = {
   (target: ExternalTarget): (string | symbol)[];
-  <X>(target: InternalTarget<X>): (string | symbol)[];
+  (target: InternalTarget): (string | symbol)[];
 };
 
 export type deleteProperty = {
   (target: ExternalTarget, key: ExternalValue): boolean;
-  <X>(target: InternalTarget<X>, key: ExternalValue): boolean;
+  (target: InternalTarget, key: ExternalValue): boolean;
 };
 
 export type NonLengthPropertyKey = PropertyKey & {
@@ -87,15 +87,15 @@ export type getOwnPropertyDescriptor = {
     target: ExternalTarget,
     key: ExternalValue,
   ): Descriptor<ExternalValue, ExternalReference> | undefined;
-  <X>(
-    target: Exclude<InternalTarget<X>, InternalArray<X>>,
+  (
+    target: Exclude<InternalTarget, InternalArray>,
     key: ExternalValue,
-  ): Descriptor<InternalValue<X>, InternalReference<X>> | undefined;
-  <X>(
-    target: InternalArray<X>,
+  ): Descriptor<InternalValue, InternalReference> | undefined;
+  (
+    target: InternalArray,
     key: NonLengthPropertyKey,
-  ): Descriptor<InternalValue<X>, InternalReference<X>> | undefined;
-  <X>(target: InternalArray<X>, key: "length"): DataDescriptor<number>;
+  ): Descriptor<InternalValue, InternalReference> | undefined;
+  (target: InternalArray, key: "length"): DataDescriptor<number>;
 };
 
 export type defineProperty = {
@@ -104,18 +104,18 @@ export type defineProperty = {
     key: ExternalValue,
     descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
   ): boolean;
-  <X>(
-    target: Exclude<InternalTarget<X>, InternalArray<X>>,
+  (
+    target: Exclude<InternalTarget, InternalArray>,
     key: ExternalValue,
-    descriptor: DefineDescriptor<InternalValue<X>, InternalValue<X>>,
+    descriptor: DefineDescriptor<InternalValue, InternalValue>,
   ): boolean;
-  <X>(
-    target: InternalArray<X>,
+  (
+    target: InternalArray,
     key: NonLengthPropertyKey,
-    descriptor: DefineDescriptor<InternalValue<X>, InternalValue<X>>,
+    descriptor: DefineDescriptor<InternalValue, InternalValue>,
   ): boolean;
-  <X>(
-    target: InternalArray<X>,
+  (
+    target: InternalArray,
     key: "length",
     descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
   ): boolean;
@@ -123,7 +123,7 @@ export type defineProperty = {
 
 export type has = {
   (target: ExternalTarget, key: ExternalValue): boolean;
-  <X>(target: InternalTarget<X>, key: ExternalValue): boolean;
+  (target: InternalTarget, key: ExternalValue): boolean;
 };
 
 export type get = (

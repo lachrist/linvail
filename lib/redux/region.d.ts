@@ -1,16 +1,42 @@
-import type { Cage } from "./cage";
 import type {
+  ExternalPrimitive,
   ExternalReference,
   GuestExternalReference,
   GuestInternalReference,
+  InternalPrimitive,
   InternalReference,
+  InternalValue,
   PlainExternalReference,
   PlainInternalReference,
 } from "./domain";
 
-export type Region<X> = Cage<X> & {
+export type PrimitiveRegion = {
+  isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
+  toInternalPrimitive: (
+    primitive: ExternalPrimitive,
+    notify: boolean,
+  ) => InternalPrimitive;
+  toExternalPrimitive: (
+    primitive: InternalPrimitive,
+    notify: boolean,
+  ) => ExternalPrimitive;
+};
+
+export type InternalReferenceRegion = {
+  isGuestExternalReference: (
+    reference: ExternalReference,
+  ) => reference is GuestExternalReference;
+  toPlainInternalReference: (
+    reference: GuestExternalReference,
+  ) => PlainInternalReference;
+  toGuestExternalReference: (
+    reference: PlainInternalReference,
+  ) => GuestExternalReference;
+};
+
+export type ExternalReferenceRegion = {
   isGuestInternalReference: (
-    reference: InternalReference<X>,
+    reference: InternalReference,
   ) => reference is GuestInternalReference;
   toPlainExternalReference: (
     reference: GuestInternalReference,
@@ -18,13 +44,8 @@ export type Region<X> = Cage<X> & {
   toGuestInternalReference: (
     reference: PlainExternalReference,
   ) => GuestInternalReference;
-  isGuestExternalReference: (
-    reference: ExternalReference,
-  ) => reference is GuestExternalReference;
-  toPlainInternalReference: (
-    reference: GuestExternalReference,
-  ) => PlainInternalReference<X>;
-  toGuestExternalReference: (
-    reference: PlainInternalReference<X>,
-  ) => GuestExternalReference;
 };
+
+export type ReferenceRegion = InternalReferenceRegion & ExternalReferenceRegion;
+
+export type Region = PrimitiveRegion & ReferenceRegion;

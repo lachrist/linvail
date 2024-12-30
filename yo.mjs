@@ -10,8 +10,9 @@ const p = new Proxy(
 
 Reflect.defineProperty(p, "foo", {
   __proto__: null,
-  value: 123,
-  get: () => 123,
+  // value: 123,
+  get: 456,
+  // get: () => 123,
 });
 
 console.log(Reflect.getOwnPropertyDescriptor(p, "foo"));

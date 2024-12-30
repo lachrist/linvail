@@ -1,4 +1,5 @@
 export type DefineDescriptor<D, A> = {
+  __proto__?: null;
   value?: D;
   writable?: boolean;
   get?: A;

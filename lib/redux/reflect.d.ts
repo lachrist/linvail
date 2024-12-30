@@ -5,18 +5,18 @@ import type {
   Descriptor,
 } from "./descriptor";
 import type {
-  IntrinsicExternalReference,
+  PlainExternalReference,
   ExternalValue,
   InternalArray,
   InternalReference,
   InternalValue,
   ExternalReference,
-  IntrinsicInternalReference,
+  PlainInternalReference,
 } from "./domain";
 
-export type ExternalTarget = IntrinsicExternalReference | Primitive;
+export type ExternalTarget = PlainExternalReference | Primitive;
 
-export type InternalTarget<X> = IntrinsicInternalReference<X> | Primitive;
+export type InternalTarget<X> = PlainInternalReference<X> | Primitive;
 
 export type InternalPrototype<X> = null | InternalReference<X>;
 
@@ -107,12 +107,12 @@ export type defineProperty = {
   <X>(
     target: Exclude<InternalTarget<X>, InternalArray<X>>,
     key: ExternalValue,
-    descriptor: DefineDescriptor<X, InternalValue<X>>,
+    descriptor: DefineDescriptor<InternalValue<X>, InternalValue<X>>,
   ): boolean;
   <X>(
     target: InternalArray<X>,
     key: NonLengthPropertyKey,
-    descriptor: DefineDescriptor<X, InternalValue<X>>,
+    descriptor: DefineDescriptor<InternalValue<X>, InternalValue<X>>,
   ): boolean;
   <X>(
     target: InternalArray<X>,

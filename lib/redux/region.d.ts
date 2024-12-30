@@ -1,30 +1,30 @@
 import type { Cage } from "./cage";
 import type {
   ExternalReference,
-  ExtrinsicExternalReference,
-  ExtrinsicInternalReference,
+  GuestExternalReference,
+  GuestInternalReference,
   InternalReference,
-  IntrinsicExternalReference,
-  IntrinsicInternalReference,
+  PlainExternalReference,
+  PlainInternalReference,
 } from "./domain";
 
 export type Region<X> = Cage<X> & {
-  isIntrinsicInternalReference: (
+  isGuestInternalReference: (
     reference: InternalReference<X>,
-  ) => reference is IntrinsicInternalReference<X>;
-  infiltrateExternalReference: (
-    value: IntrinsicExternalReference,
-  ) => ExtrinsicInternalReference;
-  exfiltrateExternalReference: (
-    value: ExtrinsicInternalReference,
-  ) => IntrinsicExternalReference;
-  isExtrinsicExternalReference: (
-    value: ExternalReference,
-  ) => value is ExtrinsicExternalReference;
-  infiltrateInternalReference: (
-    value: ExtrinsicExternalReference,
-  ) => IntrinsicInternalReference<X>;
-  exfiltrateInternalReference: (
-    value: IntrinsicInternalReference<X>,
-  ) => ExtrinsicExternalReference;
+  ) => reference is GuestInternalReference;
+  toPlainExternalReference: (
+    reference: GuestInternalReference,
+  ) => PlainExternalReference;
+  toGuestInternalReference: (
+    reference: PlainExternalReference,
+  ) => GuestInternalReference;
+  isGuestExternalReference: (
+    reference: ExternalReference,
+  ) => reference is GuestExternalReference;
+  toPlainInternalReference: (
+    reference: GuestExternalReference,
+  ) => PlainInternalReference<X>;
+  toGuestExternalReference: (
+    reference: PlainInternalReference<X>,
+  ) => GuestExternalReference;
 };

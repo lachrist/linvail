@@ -3,7 +3,7 @@ import type {
   ExternalReference,
   ExternalValue,
   InternalFunction,
-  IntrinsicInternalReference,
+  PlainInternalReference,
 } from "./domain";
 
 export type ProxyHandler<X> = {
@@ -20,31 +20,31 @@ export type ProxyHandler<X> = {
   // isExtensible: (target: InternalReference<X>) => boolean;
   // preventExtensions: (target: InternalReference<X>) => boolean;
   getPrototypeOf: (
-    target: IntrinsicInternalReference<X>,
+    target: PlainInternalReference<X>,
   ) => ExternalReference | null;
   setPrototypeOf: (
-    target: IntrinsicInternalReference<X>,
+    target: PlainInternalReference<X>,
     prototype: ExternalReference | null,
   ) => boolean;
   getOwnPropertyDescriptor: (
-    target: IntrinsicInternalReference<X>,
+    target: PlainInternalReference<X>,
     key: PropertyKey,
   ) => undefined | Descriptor<ExternalValue, ExternalValue>;
   defineProperty: (
-    target: IntrinsicInternalReference<X>,
+    target: PlainInternalReference<X>,
     key: PropertyKey,
     descriptor: DefineDescriptor<ExternalValue, ExternalReference>,
   ) => boolean;
   // deleteProperty: (target: IntrinsicInternalReference<X>, key: PropertyKey) => boolean;
   // ownKeys: (target: IntrinsicInternalReference<X>) => (string | symbol)[];
-  has: (target: IntrinsicInternalReference<X>, key: PropertyKey) => boolean;
+  has: (target: PlainInternalReference<X>, key: PropertyKey) => boolean;
   get: (
-    target: IntrinsicInternalReference<X>,
+    target: PlainInternalReference<X>,
     key: PropertyKey,
     receiver: ExternalValue,
   ) => ExternalValue;
   set: (
-    target: IntrinsicInternalReference<X>,
+    target: PlainInternalReference<X>,
     key: PropertyKey,
     value: ExternalValue,
     receiver: ExternalValue,

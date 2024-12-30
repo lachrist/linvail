@@ -1,11 +1,11 @@
 import type { Primitive } from "../primitive";
 
-export type IntrinsicExternalReference = {
-  __brand: "IntrinsicExternalReference";
+export type PlainExternalReference = {
+  __brand: "PlainExternalReference";
 };
 
-export type ExtrinsicExternalReference = {
-  __brand: "ExtrinsicExternalReference";
+export type GuestExternalReference = {
+  __brand: "GuestExternalReference";
 };
 
 export type InternalArray<X> = {
@@ -23,25 +23,23 @@ export type InternalFunction<X> = {
   __inner: X;
 };
 
-export type ExtrinsicInternalReference = {
-  __brand: "ExtrinsicInternalReference";
+export type GuestInternalReference = {
+  __brand: "GuestInternalReference";
 };
 
-export type IntrinsicInternalReference<X> =
+export type PlainInternalReference<X> =
   | InternalArray<X>
   | InternalObject<X>
   | InternalFunction<X>;
 
 export type InternalReference<X> =
-  | ExtrinsicInternalReference
-  | IntrinsicInternalReference<X>;
+  | GuestInternalReference
+  | PlainInternalReference<X>;
 
 export type InternalValue<X> = InternalReference<X> | X;
 
-export type ExternalReference =
-  | IntrinsicExternalReference
-  | ExtrinsicExternalReference;
+export type ExternalReference = PlainExternalReference | GuestExternalReference;
 
 export type ExternalValue = ExternalReference | Primitive;
 
-export type Registery<X> = WeakSet<IntrinsicInternalReference<X>>;
+export type Registery<X> = WeakSet<PlainInternalReference<X>>;

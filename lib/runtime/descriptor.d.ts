@@ -1,29 +1,25 @@
-import type { Value } from "./domain";
-
-export type DefineDescriptor<X> = {
-  __proto__: null;
-  value?: X;
+export type DefineDescriptor<D, A> = {
+  __proto__?: null;
+  value?: D;
   writable?: boolean;
-  get?: Value<X>;
-  set?: Value<X>;
+  get?: A | undefined;
+  set?: A | undefined;
   configurable?: boolean;
   enumerable?: boolean;
 };
 
-export type DataDescriptor<X> = {
-  __proto__: null;
-  value: X;
+export type DataDescriptor<D> = {
+  value: D;
   configurable: boolean;
   writable: boolean;
   enumerable: boolean;
 };
 
-export type AccessorDescriptor<X> = {
-  __proto__: null;
-  get: Value<X> | undefined;
-  set: Value<X> | undefined;
+export type AccessorDescriptor<A> = {
+  get: A | undefined;
+  set: A | undefined;
   configurable: boolean;
   enumerable: boolean;
 };
 
-export type Descriptor<X> = DataDescriptor<X> | AccessorDescriptor<X>;
+export type Descriptor<D, A> = DataDescriptor<D> | AccessorDescriptor<A>;

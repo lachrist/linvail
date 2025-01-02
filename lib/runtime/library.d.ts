@@ -1,21 +1,25 @@
-import type { RawValue, Value } from "./reflect";
+import type {
+  InternalPrimitive,
+  InternalReference,
+  InternalValue,
+} from "./domain";
+import type { Emitter } from "./emitter";
 
 /////////////
 // WeakSet //
 /////////////
 
-export type LinvailWeakSet<X> = {
+export type LinvailWeakSet = {
   __brand: "LinvailWeakSet";
-  __inner: X;
 };
 
 export type LinvailWeakSetPrototype = {
-  has: <X>(this: LinvailWeakSet<X>, key: X) => boolean;
-  delete: <X>(this: LinvailWeakSet<X>, key: X) => boolean;
-  add: <X>(this: LinvailWeakSet<X>, key: X) => void;
+  has: (this: LinvailWeakSet, key: InternalValue) => boolean;
+  delete: (this: LinvailWeakSet, key: InternalValue) => boolean;
+  add: (this: LinvailWeakSet, key: InternalValue) => LinvailWeakSet;
 };
 
-export type LinvailWeakSetConstructor = (new <X>() => LinvailWeakSet<X>) & {
+export type LinvailWeakSetConstructor = (new () => LinvailWeakSet) & {
   prototype: LinvailWeakSetPrototype;
 };
 
@@ -23,19 +27,22 @@ export type LinvailWeakSetConstructor = (new <X>() => LinvailWeakSet<X>) & {
 // WeakMap //
 /////////////
 
-export type LinvailWeakMap<X> = {
+export type LinvailWeakMap = {
   __brand: "LinvailWeakMap";
-  __inner: X;
 };
 
 export type LinvailWeakMapPrototype = {
-  has: <X>(this: LinvailWeakMap<X>, key: X) => boolean;
-  delete: <X>(this: LinvailWeakMap<X>, key: X) => boolean;
-  get: <X>(this: LinvailWeakMap<X>, key: X) => X | undefined;
-  set: <X>(this: LinvailWeakMap<X>, key: X, value: X) => void;
+  has: (this: LinvailWeakMap, key: InternalValue) => boolean;
+  delete: (this: LinvailWeakMap, key: InternalValue) => boolean;
+  get: (this: LinvailWeakMap, key: InternalValue) => InternalValue | undefined;
+  set: (
+    this: LinvailWeakMap,
+    key: InternalValue,
+    value: InternalValue,
+  ) => LinvailWeakMap;
 };
 
-export type LinvailWeakMapConstructor = (new <X>() => LinvailWeakMap<X>) & {
+export type LinvailWeakMapConstructor = (new () => LinvailWeakMap) & {
   prototype: LinvailWeakMapPrototype;
 };
 
@@ -43,20 +50,23 @@ export type LinvailWeakMapConstructor = (new <X>() => LinvailWeakMap<X>) & {
 // Set //
 /////////
 
-export type LinvailSet<X> = {
+export type LinvailSet = {
   __brand: "LinvailSet";
-  __inner: X;
 };
 
 export type LinvailSetPrototype = {
-  has: <X>(this: LinvailSet<X>, key: X) => boolean;
-  delete: <X>(this: LinvailSet<X>, key: X) => boolean;
-  add: <X>(this: LinvailSet<X>, key: X) => void;
-  clear: <X>(this: LinvailSet<X>) => void;
-  forEach: <X>(this: LinvailSet<X>, callback: Value<X>, this_arg: X) => void;
+  has: (this: LinvailSet, key: InternalValue) => boolean;
+  delete: (this: LinvailSet, key: InternalValue) => boolean;
+  add: (this: LinvailSet, key: InternalValue) => LinvailSet;
+  clear: (this: LinvailSet) => undefined;
+  forEach: (
+    this: LinvailSet,
+    callback: InternalReference,
+    this_arg: InternalValue,
+  ) => undefined;
 };
 
-export type LinvailSetConstructor = (new <X>() => LinvailSet<X>) & {
+export type LinvailSetConstructor = (new () => LinvailSet) & {
   prototype: LinvailSetPrototype;
 };
 
@@ -64,21 +74,28 @@ export type LinvailSetConstructor = (new <X>() => LinvailSet<X>) & {
 // Map //
 /////////
 
-export type LinvailMap<X> = {
+export type LinvailMap = {
   __brand: "LinvailMap";
-  __inner: X;
 };
 
 export type LinvailMapPrototype = {
-  has: <X>(this: LinvailMap<X>, key: X) => boolean;
-  delete: <X>(this: LinvailMap<X>, key: X) => boolean;
-  get: <X>(this: LinvailMap<X>, key: X) => X | undefined;
-  set: <X>(this: LinvailMap<X>, key: X, value: X) => void;
-  clear: <X>(this: LinvailMap<X>) => void;
-  forEach: <X>(this: LinvailMap<X>, callback: Value<X>, this_arg: X) => void;
+  has: (this: LinvailMap, key: InternalValue) => boolean;
+  delete: (this: LinvailMap, key: InternalValue) => boolean;
+  get: (this: LinvailMap, key: InternalValue) => InternalValue | undefined;
+  set: (
+    this: LinvailMap,
+    key: InternalValue,
+    value: InternalValue,
+  ) => LinvailMap;
+  clear: (this: LinvailMap) => undefined;
+  forEach: (
+    this: LinvailMap,
+    callback: InternalReference,
+    this_arg: InternalValue,
+  ) => undefined;
 };
 
-export type LinvailMapConstructor = (new <X>() => LinvailMap<X>) & {
+export type LinvailMapConstructor = (new () => LinvailMap) & {
   prototype: LinvailMapPrototype;
 };
 
@@ -86,12 +103,18 @@ export type LinvailMapConstructor = (new <X>() => LinvailMap<X>) & {
 // Runtime //
 /////////////
 
+export type Emission = {
+  emitCapture: (value: InternalPrimitive) => void;
+  emitRelease: (value: InternalPrimitive) => void;
+};
+
 export type Linvail = {
-  same: <X>(x1: X, x2: X) => boolean;
-  _inspect: <X>(x: X) => string;
-  inspect: <X>(this: RawValue, x: X) => string;
+  dir: (value: InternalValue) => undefined;
+  same: (value1: InternalValue, value2: InternalValue) => boolean;
   WeakSet: LinvailWeakSetConstructor;
   WeakMap: LinvailWeakMapConstructor;
   Set: LinvailSetConstructor;
   Map: LinvailMapConstructor;
+  captures: Emitter<InternalPrimitive>;
+  releases: Emitter<InternalPrimitive>;
 };

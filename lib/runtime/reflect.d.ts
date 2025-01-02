@@ -1,101 +1,180 @@
-import type { RawValue, Reference, Value } from "./domain";
+import type { Primitive } from "../primitive";
+import type {
+  DataDescriptor,
+  DefineDescriptor,
+  Descriptor,
+} from "./descriptor";
+import type {
+  ExternalValue,
+  InternalReference,
+  InternalValue,
+  ExternalReference,
+  ExternalPrototype,
+  InternalPrototype,
+  GenericPlainInternalReference,
+  PlainInternalReference,
+  PlainExternalReference,
+  NonLengthPropertyKey,
+} from "./domain";
 
-export type ContextHandle<X> = {
-  __brand: "ContextHandle";
-  __inner: X;
+export type apply = {
+  (target: Primitive, that: unknown, args: unknown): never;
+  (
+    target: PlainExternalReference,
+    that: ExternalValue,
+    args: ExternalValue[],
+  ): ExternalValue;
+  (
+    target: PlainInternalReference,
+    that: InternalValue,
+    args: InternalValue[],
+  ): InternalValue;
+  <T, Y>(target: () => Y, that: T, args: []): Y;
+  <T, X, Y>(target: (...args: X[]) => Y, that: T, args: X[]): Y;
 };
 
-type GenericDefineDescriptor<X, V> = {
-  __proto__: null;
-  value?: V;
-  writable?: boolean;
-  get?: Value<X>;
-  set?: Value<X>;
-  configurable?: boolean;
-  enumerable?: boolean;
+export type construct = {
+  (target: Primitive, args: unknown, new_target: unknown): never;
+  (
+    target: PlainExternalReference,
+    args: ExternalValue[],
+    new_target: ExternalValue,
+  ): ExternalReference;
+  (
+    target: PlainInternalReference,
+    args: InternalValue[],
+    new_target: InternalValue,
+  ): InternalReference;
 };
 
-type DefineDescriptor<X> = GenericDefineDescriptor<X, X>;
-
-type ContextDefineDescriptor<X> = GenericDefineDescriptor<X, ContextHandle<X>>;
-
-export type DataDescriptor<X> = {
-  __proto__: null;
-  value: X;
-  configurable: boolean;
-  writable: boolean;
-  enumerable: boolean;
+export type preventExtensions = {
+  (target: Primitive): never;
+  (target: PlainExternalReference): boolean;
+  (target: PlainInternalReference): boolean;
 };
 
-export type AccessorDescriptor<X> = {
-  __proto__: null;
-  get: Value<X> | undefined;
-  set: Value<X> | undefined;
-  configurable: boolean;
-  enumerable: boolean;
+export type isExtensible = {
+  (target: Primitive): never;
+  (target: PlainExternalReference): boolean;
+  (target: PlainInternalReference): boolean;
 };
 
-export type Descriptor<X> = DataDescriptor<X> | AccessorDescriptor<X>;
-
-export type ContextDescriptor<X> =
-  | DataDescriptor<ContextHandle<X>>
-  | AccessorDescriptor<X>;
-
-export type CoarseReflect = {
-  construct: <X>(
-    target: Value<X>,
-    args: X[],
-    new_target: Value<X>,
-  ) => Reference<X>;
-  apply: <X>(target: Value<X>, that: X, args: X[]) => X;
-  isExtensible: <X>(target: Value<X>) => boolean;
-  preventExtensions: <X>(target: Value<X>) => boolean;
-  getPrototypeOf: <X>(target: Value<X>) => null | Reference<X>;
-  setPrototypeOf: <X>(target: Value<X>, prototype: Value<X>) => boolean;
-  getOwnPropertyDescriptor: <X>(
-    target: Value<X>,
-    key: RawValue,
-  ) => ContextDescriptor<X> | undefined;
-  defineProperty: <X>(
-    target: Value<X>,
-    key: RawValue,
-    descriptor: ContextDefineDescriptor<X>,
-  ) => boolean;
-  deleteProperty: <X>(target: Value<X>, key: RawValue) => boolean;
-  ownKeys: <X>(target: Value<X>) => (string | symbol)[];
-  has: <X>(target: Value<X>, key: RawValue) => boolean;
-  get: <X>(target: Value<X>, key: RawValue, receiver: X) => ContextHandle<X>;
-  set: <X>(
-    target: Value<X>,
-    key: RawValue,
-    value: ContextHandle<X>,
-    receiver: X,
-  ) => boolean;
+export type getPrototypeOf = {
+  (target: Primitive): never;
+  (target: PlainExternalReference): ExternalPrototype;
+  (
+    target: GenericPlainInternalReference & { __prototype: "Internal" },
+  ): InternalPrototype;
+  (
+    target: GenericPlainInternalReference & { __prototype: "External" },
+  ): ExternalPrototype;
 };
 
-export type Reflect<X> = {
-  get: (target: Value<X>, key: RawValue, receiver: X) => X;
-  has: (target: Value<X>, key: RawValue) => boolean;
-  construct: (
-    target: Value<X>,
-    args: X[],
-    new_target: Value<X>,
-  ) => Reference<X>;
-  apply: (target: Value<X>, that: X, args: X[]) => X;
-  getPrototypeOf: (target: Value<X>) => null | Reference<X>;
-  ownKeys: (target: Value<X>) => (string | symbol)[];
-  isExtensible: (target: Value<X>) => boolean;
-  set: (target: Value<X>, key: RawValue, value: X, receiver: X) => boolean;
-  deleteProperty: (target: Value<X>, key: RawValue) => boolean;
-  setPrototypeOf: (target: Value<X>, prototype: Value<X>) => boolean;
-  getOwnPropertyDescriptor: (
-    target: Value<X>,
-    key: RawValue,
-  ) => Descriptor<X> | undefined;
-  preventExtensions: (target: Value<X>) => boolean;
-  defineProperty: (
-    target: Value<X>,
-    key: RawValue,
-    descriptor: DefineDescriptor<X>,
-  ) => boolean;
+export type setPrototypeOf = {
+  (target: Primitive, prototype: unknown): never;
+  (target: PlainExternalReference, prototype: ExternalPrototype): boolean;
+  (
+    target: GenericPlainInternalReference,
+    prototype: InternalPrototype,
+  ): target is GenericPlainInternalReference & { __prototype: "Internal" };
+  (
+    target: GenericPlainInternalReference,
+    prototype: ExternalPrototype,
+  ): target is GenericPlainInternalReference & { __prototype: "External" };
+};
+
+export type ownKeys = {
+  (target: Primitive): never;
+  (target: PlainExternalReference): (string | symbol)[];
+  (target: PlainInternalReference): (string | symbol)[];
+};
+
+export type deleteProperty = {
+  (target: Primitive): never;
+  (target: PlainExternalReference, key: ExternalValue): boolean;
+  (target: PlainInternalReference, key: ExternalValue): boolean;
+};
+
+export type getOwnPropertyDescriptor = {
+  (target: Primitive, key: unknown): never;
+  (
+    target: PlainExternalReference,
+    key: ExternalValue,
+  ): Descriptor<ExternalValue, ExternalReference> | undefined;
+  (
+    target: PlainInternalReference & { __type: "Function" | "Object" },
+    key: ExternalValue,
+  ): Descriptor<InternalValue, InternalReference> | undefined;
+  (
+    target: PlainInternalReference & { __type: "Array" },
+    key: NonLengthPropertyKey,
+  ): Descriptor<InternalValue, InternalReference> | undefined;
+  (
+    target: PlainInternalReference & { __type: "Array" },
+    key: "length",
+  ): DataDescriptor<number>;
+};
+
+export type defineProperty = {
+  (target: Primitive, key: unknown, descriptor: unknown): never;
+  (
+    target: PlainExternalReference,
+    key: ExternalValue,
+    descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
+  ): boolean;
+  (
+    target: PlainInternalReference & { __type: "Function" | "Object" },
+    key: ExternalValue,
+    descriptor: DefineDescriptor<InternalValue, InternalValue>,
+  ): boolean;
+  (
+    target: PlainInternalReference & { __type: "Array" },
+    key: NonLengthPropertyKey,
+    descriptor: DefineDescriptor<InternalValue, InternalValue>,
+  ): boolean;
+  (
+    target: PlainInternalReference & { __type: "Array" },
+    key: "length",
+    descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
+  ): boolean;
+};
+
+export type has = {
+  (target: Primitive, key: unknown): never;
+  (target: PlainExternalReference, key: ExternalValue): boolean;
+};
+
+export type get = {
+  (target: Primitive, key: unknown, receiver: unknown): never;
+  (
+    target: PlainExternalReference,
+    key: ExternalValue,
+    receiver: ExternalValue,
+  ): ExternalValue;
+};
+
+export type set = {
+  (target: Primitive, key: unknown, value: unknown, receiver: unknown): never;
+  (
+    target: PlainExternalReference,
+    key: ExternalValue,
+    value: ExternalValue,
+    receiver: ExternalValue,
+  ): boolean;
+};
+
+export type Reflect = {
+  apply: apply;
+  construct: construct;
+  isExtensible: isExtensible;
+  preventExtensions: preventExtensions;
+  getPrototypeOf: getPrototypeOf;
+  setPrototypeOf: setPrototypeOf;
+  getOwnPropertyDescriptor: getOwnPropertyDescriptor;
+  defineProperty: defineProperty;
+  deleteProperty: deleteProperty;
+  ownKeys: ownKeys;
+  has: has;
+  get: get;
+  set: set;
 };

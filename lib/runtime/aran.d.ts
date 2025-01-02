@@ -1,14 +1,39 @@
-import type { RawValue, Reference, Value } from "./reflect";
+import type {
+  ExternalPrototype,
+  ExternalReference,
+  ExternalValue,
+  GenericPlainInternalReference,
+  InternalPrototype,
+  InternalReference,
+  InternalValue,
+} from "./domain";
 
 export type AranLibrary = {
-  sliceObject: <X>(
-    object: Value<X>,
-    exclusion: { [key in PropertyKey]: null },
-  ) => { [key in PropertyKey]: X };
-  listForInKey: <X>(object: Reference<X>) => string[];
-  get: <X>(target: Value<X>, key: RawValue) => X;
-  createObject: <X>(
-    prototype: Value<X>,
-    ...properties: (RawValue | X)[]
-  ) => Reference<X>;
+  sliceObject: {
+    (
+      target: InternalValue,
+      exclusion: InternalValue,
+    ): GenericPlainInternalReference & {
+      __type: "Object";
+      __prototype: "External";
+    };
+    (target: ExternalValue, exclusion: ExternalValue): ExternalReference;
+  };
+  listForInKey: {
+    (target: ExternalValue): string[];
+    (target: InternalValue): string[];
+  };
+  get: {
+    (target: ExternalValue, key: ExternalValue): ExternalValue;
+  };
+  createObject: {
+    (
+      prototype: ExternalPrototype,
+      ...properties: ExternalValue[]
+    ): ExternalReference;
+    (
+      prototype: InternalPrototype,
+      ...properties: (InternalValue | ExternalValue)[]
+    ): InternalReference;
+  };
 };

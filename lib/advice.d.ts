@@ -1,12 +1,19 @@
+import type { Primitive } from "./primitive";
 import type {
   ExternalValue,
   InternalReference,
   InternalValue,
-} from "./redux/domain";
+  InternalPrimitive,
+  GenericPlainInternalReference,
+  GuestInternalReference,
+  PlainExternalReference,
+} from "./runtime/domain";
 
 export type Advice = {
-  enter: (value: ExternalValue) => InternalValue;
-  leave: (value: InternalValue) => ExternalValue;
+  enterPrimitive: (primitive: Primitive) => InternalPrimitive;
+  leaveBranch: (value: InternalValue) => boolean;
+  enterValue: (value: ExternalValue) => InternalValue;
+  leaveValue: (value: InternalValue) => ExternalValue;
   apply: (
     callee: InternalValue,
     that: InternalValue,
@@ -16,6 +23,16 @@ export type Advice = {
     callee: InternalValue,
     args: InternalValue[],
   ) => InternalReference;
-  sanitizeClosure: (closure: Function) => InternalReference;
-  sanitizeArray: (array: InternalValue[]) => InternalReference;
+  enterClosure: (closure: Function) => InternalReference;
+  enterArgumentList: (
+    reference: GenericPlainInternalReference & {
+      __prototype: "External";
+    },
+  ) => GenericPlainInternalReference & {
+    __prototype: "Internal";
+  };
+  enterNewTarget: (new_target: undefined | InternalPrimitive) => InternalValue;
+  enterPlainExternalReference: (
+    reference: PlainExternalReference,
+  ) => GuestInternalReference;
 };

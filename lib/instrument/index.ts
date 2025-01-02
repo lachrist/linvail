@@ -8,6 +8,9 @@ import {
   Effect as GenericEffect,
   Expression as GenericExpression,
 } from "aran/lib/lang/syntax";
+import { Advice } from "../advice";
+
+export type Convertion = Exclude<keyof Advice, "apply" | "construct">;
 
 export type ClosureKind =
   | "arrow"

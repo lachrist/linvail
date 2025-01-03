@@ -1,3 +1,4 @@
+import { DefineDescriptor } from "./descriptor";
 import type {
   ExternalPrimitive,
   ExternalReference,
@@ -59,6 +60,8 @@ export type UtilRegion = {
   atExternal: (args: InternalValue[], index: number) => ExternalValue;
   enterPrototype: (prototype: ExternalPrototype) => InternalPrototype;
   leavePrototype: (prototype: InternalPrototype) => ExternalPrototype;
+  toInternalPrototype: (value: InternalValue) => InternalPrototype;
+  toExternalPrototype: (value: ExternalValue) => ExternalPrototype;
   fromInternalPrototype: (prototype: InternalPrototype) => InternalValue;
   fromExternalPrototype: (prototype: ExternalPrototype) => InternalValue;
   enterAccessor: (accessor: ExternalAccessor) => InternalAccessor;
@@ -87,6 +90,14 @@ export type UtilRegion = {
     that: ExternalValue,
     args: ExternalValue[],
   ) => ExternalValue;
+  toInternalDefineDescriptor: (
+    value: InternalValue,
+  ) => DefineDescriptor<InternalValue, InternalReference>;
+  getOwnInternal: (
+    value: InternalValue,
+    key: ExternalValue,
+    receiver: InternalValue,
+  ) => InternalValue;
 };
 
 export type Region = CoreRegion & UtilRegion;

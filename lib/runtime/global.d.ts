@@ -14,6 +14,7 @@ import type {
 import type { Primitive } from "../primitive";
 
 export type Global = {
+  TypeError: new (message: string) => Error;
   undefined: undefined;
   Reflect: Reflect;
   Object: {
@@ -39,15 +40,6 @@ export type Global = {
     ) => never;
     create: {
       (
-        prototype: ExternalPrototype,
-        descriptors: {
-          [key in PropertyKey]: DefineDescriptor<
-            ExternalValue,
-            ExternalReference
-          >;
-        },
-      ): ExternalReference;
-      (
         prototype: InternalPrototype,
         descriptors: {
           [key in PropertyKey]: DefineDescriptor<
@@ -56,6 +48,7 @@ export type Global = {
           >;
         },
       ): InternalReference;
+      (prototype: InternalPrototype): InternalReference;
     };
   };
   Array: {

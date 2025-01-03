@@ -61,7 +61,12 @@ export const load = async (url, context, nextLoad) => {
       },
     );
     result.source = generate(root2);
-    writeFileSync("./yo.mjs", result.source, "utf8");
+    writeFileSync(
+      // eslint-disable-next-line local/no-method-call
+      `./test/codebase/${url.split("/").pop()}`,
+      result.source,
+      "utf8",
+    );
   }
   return result;
 };

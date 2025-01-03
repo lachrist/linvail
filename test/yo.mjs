@@ -1,4 +1,4 @@
-const f = function () {
-  return this;
-};
-Linvail.dir(f);
+{
+  const g = function* () {};
+  g().next();
+}

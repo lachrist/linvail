@@ -1,4 +1,4 @@
-import type { Primitive as ExternalPrimitive, Primitive } from "../primitive";
+import type { Primitive as ExternalPrimitive } from "../primitive";
 
 export { ExternalPrimitive };
 
@@ -55,10 +55,6 @@ export type InternalValue = InternalReference | InternalPrimitive;
 export type ExternalReference = PlainExternalReference | GuestExternalReference;
 
 export type ExternalValue = ExternalReference | ExternalPrimitive;
-
-export type ExternalTarget = PlainExternalReference | Primitive;
-
-export type InternalTarget = PlainInternalReference | Primitive;
 
 export type InternalAccessor = undefined | InternalReference;
 

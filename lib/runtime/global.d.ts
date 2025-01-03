@@ -2,7 +2,6 @@ import type { Reflect } from "./reflect";
 import type { DefineDescriptor } from "./descriptor";
 import type {
   ExternalPrototype,
-  ExternalReference,
   ExternalValue,
   GenericPlainInternalReference,
   InternalPrototype,
@@ -14,6 +13,7 @@ import type {
 import type { Primitive } from "../primitive";
 
 export type Global = {
+  Error: new (message: string) => Error;
   TypeError: new (message: string) => Error;
   undefined: undefined;
   Reflect: Reflect;
@@ -29,9 +29,16 @@ export type Global = {
     getPrototypeOf: {
       (target: Primitive): PlainExternalReference;
       (target: PlainExternalReference): ExternalPrototype;
-      (target: PlainInternalReference): InternalPrototype;
+      (
+        target: GenericPlainInternalReference & { __prototype: "External" },
+      ): ExternalPrototype;
+      (
+        target: GenericPlainInternalReference & { __prototype: "Internal" },
+      ): InternalPrototype;
     };
-    setPrototypeOf: (target: unknown, prototype: unknown) => never;
+    setPrototypeOf: {
+      (target: unknown, prototype: unknown): never;
+    };
     getOwnPropertyDescriptor: (target: unknown, key: unknown) => never;
     defineProperty: (
       target: unknown,

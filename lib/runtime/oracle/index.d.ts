@@ -3,6 +3,8 @@ import type { InternalReference, InternalValue } from "../domain";
 import type { Linvail } from "../library";
 import type { Region } from "../region";
 import type { Global } from "../global";
+import type { Convert } from "./convert";
+import type { Reflect } from "./reflect";
 
 export type Config = {
   region: Region;
@@ -11,32 +13,7 @@ export type Config = {
   global: Global;
 };
 
-export type Reflect = {
-  has: (target: InternalReference, key: PropertyKey) => boolean;
-  get: (
-    target: InternalReference,
-    key: PropertyKey,
-    receiver: InternalValue,
-  ) => InternalValue;
-  set: (
-    target: InternalReference,
-    key: PropertyKey,
-    value: InternalValue,
-    receiver: InternalValue,
-  ) => boolean;
-  apply: (
-    target: InternalValue,
-    that: InternalValue,
-    args: InternalValue[],
-  ) => InternalValue;
-  construct: (
-    target: InternalReference,
-    args: InternalValue[],
-    new_target: InternalReference,
-  ) => InternalReference;
-};
-
-export type Context = Config & { reflect: Reflect };
+export type Context = Config & { reflect: Reflect; convert: Convert };
 
 export type Oracle = {
   apply: null | ((that: InternalValue, args: InternalValue[]) => InternalValue);

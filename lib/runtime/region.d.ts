@@ -1,4 +1,3 @@
-import { DefineDescriptor } from "./descriptor";
 import type {
   ExternalPrimitive,
   ExternalReference,
@@ -12,7 +11,6 @@ import type {
   PlainInternalReference,
   ExternalPrototype,
   InternalPrototype,
-  GenericPlainInternalReference,
   ExternalAccessor,
   InternalAccessor,
 } from "./domain";
@@ -56,48 +54,10 @@ export type UtilRegion = {
   leaveReference: (value: InternalReference) => ExternalReference;
   enterValue: (value: ExternalValue) => InternalValue;
   leaveValue: (value: InternalValue) => ExternalValue;
-  atInternal: (args: InternalValue[], index: number) => InternalValue;
-  atExternal: (args: InternalValue[], index: number) => ExternalValue;
   enterPrototype: (prototype: ExternalPrototype) => InternalPrototype;
   leavePrototype: (prototype: InternalPrototype) => ExternalPrototype;
-  toInternalPrototype: (value: InternalValue) => InternalPrototype;
-  toExternalPrototype: (value: ExternalValue) => ExternalPrototype;
-  fromInternalPrototype: (prototype: InternalPrototype) => InternalValue;
-  fromExternalPrototype: (prototype: ExternalPrototype) => InternalValue;
   enterAccessor: (accessor: ExternalAccessor) => InternalAccessor;
   leaveAccessor: (accessor: InternalAccessor) => ExternalAccessor;
-  harmonizePrototype: (
-    value: GenericPlainInternalReference & { __prototype: "External" },
-  ) => GenericPlainInternalReference & { __prototype: "Internal" };
-  toInternalReference: (value: InternalValue) => InternalReference;
-  applyInternalInternal: (
-    target: InternalReference,
-    that: InternalValue,
-    args: InternalValue[],
-  ) => InternalValue;
-  applyExternalInternal: (
-    target: ExternalReference,
-    that: InternalValue,
-    args: InternalValue[],
-  ) => InternalValue;
-  applyInternalExternal: (
-    target: InternalReference,
-    that: ExternalValue,
-    args: ExternalValue[],
-  ) => ExternalValue;
-  applyExternalExternal: (
-    target: ExternalReference,
-    that: ExternalValue,
-    args: ExternalValue[],
-  ) => ExternalValue;
-  toInternalDefineDescriptor: (
-    value: InternalValue,
-  ) => DefineDescriptor<InternalValue, InternalReference>;
-  getOwnInternal: (
-    value: InternalValue,
-    key: ExternalValue,
-    receiver: InternalValue,
-  ) => InternalValue;
 };
 
 export type Region = CoreRegion & UtilRegion;

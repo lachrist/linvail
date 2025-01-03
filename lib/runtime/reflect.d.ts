@@ -90,7 +90,7 @@ export type ownKeys = {
 };
 
 export type deleteProperty = {
-  (target: Primitive): never;
+  (target: Primitive, key: unknown): never;
   (target: PlainExternalReference, key: ExternalValue): boolean;
   (target: PlainInternalReference, key: ExternalValue): boolean;
 };

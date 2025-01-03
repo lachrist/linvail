@@ -26,9 +26,11 @@ export type Advice = {
   enterClosure: (closure: Function) => InternalReference;
   enterArgumentList: (
     reference: GenericPlainInternalReference & {
+      __type: "Array";
       __prototype: "External";
     },
   ) => GenericPlainInternalReference & {
+    __type: "Array";
     __prototype: "Internal";
   };
   enterNewTarget: (new_target: undefined | InternalPrimitive) => InternalValue;

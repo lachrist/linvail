@@ -1,3 +1,4 @@
+import type { ClosureKind } from "../instrument";
 import type {
   ExternalPrimitive,
   ExternalReference,
@@ -13,6 +14,7 @@ import type {
   InternalPrototype,
   ExternalAccessor,
   InternalAccessor,
+  PlainInternalClosure,
 } from "./domain";
 
 export type PrimitiveRegion = {
@@ -47,7 +49,19 @@ export type ExternalReferenceRegion = {
 
 export type ReferenceRegion = InternalReferenceRegion & ExternalReferenceRegion;
 
-export type CoreRegion = PrimitiveRegion & ReferenceRegion;
+export type ClosureRegion = {
+  enterPlainInternalClosure: (
+    reference: Function,
+    kind: ClosureKind,
+  ) => PlainInternalClosure;
+  applyPlainInternalClosure: (
+    closure: PlainInternalClosure,
+    that: InternalValue,
+    args: InternalValue[],
+  ) => InternalValue;
+};
+
+export type CoreRegion = PrimitiveRegion & ReferenceRegion & ClosureRegion;
 
 export type UtilRegion = {
   enterReference: (value: ExternalReference) => InternalReference;

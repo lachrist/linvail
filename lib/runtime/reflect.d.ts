@@ -24,11 +24,6 @@ export type apply = {
     that: ExternalValue,
     args: ExternalValue[],
   ): ExternalValue;
-  (
-    target: PlainInternalReference,
-    that: InternalValue,
-    args: InternalValue[],
-  ): InternalValue;
   <T, Y>(target: () => Y, that: T, args: []): Y;
   <T, X, Y>(target: (...args: X[]) => Y, that: T, args: X[]): Y;
 };
@@ -102,7 +97,7 @@ export type getOwnPropertyDescriptor = {
     key: ExternalValue,
   ): Descriptor<ExternalValue, ExternalReference> | undefined;
   (
-    target: PlainInternalReference & { __type: "Function" | "Object" },
+    target: PlainInternalReference & { __type: "Closure" | "Object" },
     key: ExternalValue,
   ): Descriptor<InternalValue, InternalReference> | undefined;
   (
@@ -123,7 +118,7 @@ export type defineProperty = {
     descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
   ): boolean;
   (
-    target: PlainInternalReference & { __type: "Function" | "Object" },
+    target: PlainInternalReference & { __type: "Closure" | "Object" },
     key: ExternalValue,
     descriptor: DefineDescriptor<InternalValue, InternalValue>,
   ): boolean;

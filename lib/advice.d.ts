@@ -1,3 +1,4 @@
+import type { ClosureKind } from "./instrument";
 import type { Primitive } from "./primitive";
 import type {
   ExternalValue,
@@ -23,7 +24,7 @@ export type Advice = {
     callee: InternalValue,
     args: InternalValue[],
   ) => InternalReference;
-  enterClosure: (closure: Function) => InternalReference;
+  enterClosure: (closure: Function, kind: ClosureKind) => InternalReference;
   enterArgumentList: (
     reference: GenericPlainInternalReference & {
       __type: "Array";

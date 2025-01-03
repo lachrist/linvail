@@ -24,7 +24,7 @@ export type GuestInternalReference = {
 
 export type GenericPlainInternalReference = {
   __brand: "PlainInternalReference";
-  __type: "Array" | "Function" | "Object";
+  __type: "Array" | "Closure" | "Object";
   __prototype: "Internal" | "External";
 };
 
@@ -33,8 +33,8 @@ export type PlainInternalArray = GenericPlainInternalReference & {
   __prototype: "Internal";
 };
 
-export type PlainInternalFunction = GenericPlainInternalReference & {
-  __type: "Function";
+export type PlainInternalClosure = GenericPlainInternalReference & {
+  __type: "Closure";
   __prototype: "Internal";
 };
 
@@ -45,7 +45,7 @@ export type PlainInternalObject = GenericPlainInternalReference & {
 
 export type PlainInternalReference =
   | PlainInternalArray
-  | PlainInternalFunction
+  | PlainInternalClosure
   | PlainInternalObject;
 
 export type InternalReference = PlainInternalReference | GuestInternalReference;

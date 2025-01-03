@@ -7,12 +7,12 @@ import type {
 
 export type ProxyHandler = {
   apply: (
-    target: PlainInternalReference & { __type: "Function" },
+    target: PlainInternalReference & { __type: "Closure" },
     that: ExternalValue,
     args: ExternalValue[],
   ) => ExternalValue;
   construct: (
-    target: PlainInternalReference & { __type: "Function" },
+    target: PlainInternalReference & { __type: "Closure" },
     args: ExternalValue[],
     new_target: ExternalReference,
   ) => ExternalValue;

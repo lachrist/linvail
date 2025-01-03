@@ -10,7 +10,10 @@ import {
 } from "aran/lib/lang/syntax";
 import { Advice } from "../advice";
 
-export type Convertion = Exclude<keyof Advice, "apply" | "construct">;
+export type Convertion = Exclude<
+  keyof Advice,
+  "apply" | "construct" | "enterClosure"
+>;
 
 export type ClosureKind =
   | "arrow"

@@ -5,9 +5,12 @@ import type {
   InternalReference,
   InternalValue,
   InternalPrimitive,
-  GenericPlainInternalReference,
   GuestInternalReference,
   PlainExternalReference,
+  PlainInternalClosure,
+  PlainInternalArray,
+  RawPlainInternalClosure,
+  PlainInternalArrayWithExternalPrototype,
 } from "./runtime/domain";
 
 export type Advice = {
@@ -24,16 +27,13 @@ export type Advice = {
     callee: InternalValue,
     args: InternalValue[],
   ) => InternalReference;
-  enterClosure: (closure: Function, kind: ClosureKind) => InternalReference;
+  enterClosure: (
+    closure: RawPlainInternalClosure,
+    kind: ClosureKind,
+  ) => PlainInternalClosure;
   enterArgumentList: (
-    reference: GenericPlainInternalReference & {
-      __type: "Array";
-      __prototype: "External";
-    },
-  ) => GenericPlainInternalReference & {
-    __type: "Array";
-    __prototype: "Internal";
-  };
+    reference: PlainInternalArrayWithExternalPrototype,
+  ) => PlainInternalArray;
   enterNewTarget: (new_target: undefined | InternalPrimitive) => InternalValue;
   enterPlainExternalReference: (
     reference: PlainExternalReference,

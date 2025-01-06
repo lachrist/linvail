@@ -1,18 +1,20 @@
-import type { DefineDescriptor, Descriptor } from "./descriptor";
 import type {
+  DefineDescriptor,
+  Descriptor,
   ExternalReference,
   ExternalValue,
+  PlainInternalClosure,
   PlainInternalReference,
 } from "./domain";
 
 export type ProxyHandler = {
   apply: (
-    target: PlainInternalReference & { __type: "Closure" },
+    target: PlainInternalClosure,
     that: ExternalValue,
     args: ExternalValue[],
   ) => ExternalValue;
   construct: (
-    target: PlainInternalReference & { __type: "Closure" },
+    target: PlainInternalClosure,
     args: ExternalValue[],
     new_target: ExternalReference,
   ) => ExternalValue;

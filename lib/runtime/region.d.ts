@@ -15,6 +15,7 @@ import type {
   ExternalAccessor,
   InternalAccessor,
   PlainInternalClosure,
+  RawPlainInternalClosure,
 } from "./domain";
 
 export type PrimitiveRegion = {
@@ -51,7 +52,7 @@ export type ReferenceRegion = InternalReferenceRegion & ExternalReferenceRegion;
 
 export type ClosureRegion = {
   enterPlainInternalClosure: (
-    reference: Function,
+    reference: RawPlainInternalClosure,
     kind: ClosureKind,
   ) => PlainInternalClosure;
   applyPlainInternalClosure: (

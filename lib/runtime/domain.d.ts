@@ -2,6 +2,32 @@ import type { Primitive as ExternalPrimitive } from "../primitive";
 
 export { ExternalPrimitive };
 
+export type DefineDescriptor<D, A> = {
+  __proto__?: null;
+  value?: D;
+  writable?: boolean;
+  get?: A | undefined;
+  set?: A | undefined;
+  configurable?: boolean;
+  enumerable?: boolean;
+};
+
+export type DataDescriptor<D> = {
+  value: D;
+  configurable: boolean;
+  writable: boolean;
+  enumerable: boolean;
+};
+
+export type AccessorDescriptor<A> = {
+  get: A | undefined;
+  set: A | undefined;
+  configurable: boolean;
+  enumerable: boolean;
+};
+
+export type Descriptor<D, A> = DataDescriptor<D> | AccessorDescriptor<A>;
+
 export type NonLengthPropertyKey = PropertyKey & {
   __brand: "NonLengthPropertyKey";
 };
@@ -22,25 +48,28 @@ export type GuestInternalReference = {
   __brand: "GuestInternalReference";
 };
 
-export type GenericPlainInternalReference = {
-  __brand: "PlainInternalReference";
-  __type: "Array" | "Closure" | "Object";
-  __prototype: "Internal" | "External";
+export type PlainInternalArrayWithExternalPrototype = {
+  __brand: "PlainInternalArrayWithExternalPrototype";
 };
 
-export type PlainInternalArray = GenericPlainInternalReference & {
-  __type: "Array";
-  __prototype: "Internal";
+export type PlainInternalObjectWithExternalPrototype = {
+  __brand: "PlainInternalObjectWithExternalPrototype";
 };
 
-export type PlainInternalClosure = GenericPlainInternalReference & {
-  __type: "Closure";
-  __prototype: "Internal";
+export type RawPlainInternalClosure = {
+  __brand: "RawPlainClosure";
 };
 
-export type PlainInternalObject = GenericPlainInternalReference & {
-  __type: "Object";
-  __prototype: "Internal";
+export type PlainInternalArray = {
+  __brand: "PlainInternalArray";
+};
+
+export type PlainInternalClosure = {
+  __brand: "PlainInternalClosure";
+};
+
+export type PlainInternalObject = {
+  __brand: "PlainInternalObject";
 };
 
 export type PlainInternalReference =

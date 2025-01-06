@@ -1,5 +1,6 @@
-import type { DefineDescriptor, Descriptor } from "../descriptor";
 import type {
+  DefineDescriptor,
+  Descriptor,
   InternalPrototype,
   InternalReference,
   InternalValue,

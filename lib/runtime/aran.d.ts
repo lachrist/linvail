@@ -2,10 +2,10 @@ import type {
   ExternalPrototype,
   ExternalReference,
   ExternalValue,
-  GenericPlainInternalReference,
   InternalPrototype,
   InternalReference,
   InternalValue,
+  PlainInternalObjectWithExternalPrototype,
 } from "./domain";
 
 export type AranLibrary = {
@@ -13,10 +13,7 @@ export type AranLibrary = {
     (
       target: InternalValue,
       exclusion: InternalValue,
-    ): GenericPlainInternalReference & {
-      __type: "Object";
-      __prototype: "External";
-    };
+    ): PlainInternalObjectWithExternalPrototype;
     (target: ExternalValue, exclusion: ExternalValue): ExternalReference;
   };
   listForInKey: {

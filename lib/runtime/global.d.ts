@@ -5,6 +5,7 @@ import type {
   ExternalPrototype,
   ExternalReference,
   ExternalValue,
+  GuestExternalReference,
   InternalPrototype,
   InternalReference,
   InternalValue,
@@ -19,8 +20,48 @@ import type {
   RawPlainInternalClosure,
 } from "./domain";
 import type { Primitive } from "../primitive";
+import type { GuestExternalReferenceHandler } from "./region/proxy";
+import type { Linvail } from "./library";
 
 export type Global = {
+  __Aran: {
+    sliceObject: {
+      (
+        target: InternalValue,
+        exclusion: InternalValue,
+      ): PlainInternalObjectWithExternalPrototype;
+      (target: ExternalValue, exclusion: ExternalValue): ExternalReference;
+    };
+    listForInKey: {
+      (target: ExternalValue): string[];
+      (target: InternalValue): string[];
+    };
+    get: {
+      (target: ExternalValue, key: ExternalValue): ExternalValue;
+    };
+    createObject: {
+      (
+        prototype: ExternalPrototype,
+        ...properties: ExternalValue[]
+      ): ExternalReference;
+      (
+        prototype: InternalPrototype,
+        ...properties: (InternalValue | ExternalValue)[]
+      ): InternalReference;
+    };
+  };
+  __Linvail: {
+    same: Linvail["same"];
+    WeakMap: {
+      __self: Linvail["WeakMap"],
+      
+  };
+  Proxy: {
+    __self: new (
+      target: PlainInternalReference,
+      handler: GuestExternalReferenceHandler,
+    ) => GuestExternalReference;
+  };
   Error: new (message: string) => Error;
   TypeError: new (message: string) => Error;
   undefined: undefined;

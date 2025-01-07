@@ -9,9 +9,10 @@ import type {
   PlainInternalObject,
   PlainInternalObjectWithExternalPrototype,
 } from "../domain";
-import type { Region } from "../region";
+import type { Region } from "../region/region";
 import type { Global } from "../global";
 import type { Reflect } from "./reflect";
+import type { Primitive } from "../../primitive";
 
 export type Config = {
   global: Global;
@@ -22,7 +23,9 @@ export type Config = {
 export type Convert = {
   atInternal: (array: InternalValue[], index: number) => InternalValue;
   atExternal: (array: InternalValue[], index: number) => ExternalValue;
-  toTarget: (value: InternalValue) => InternalReference;
+  fromPrimitiveArray: (array: Primitive[]) => PlainInternalArray;
+  toStrictTarget: (value: InternalValue) => InternalReference;
+  toSloppyTarget: (value: InternalValue) => InternalReference;
   internalizeArrayPrototype: (
     value: PlainInternalArrayWithExternalPrototype,
   ) => PlainInternalArray;

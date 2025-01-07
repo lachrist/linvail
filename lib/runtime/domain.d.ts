@@ -92,3 +92,17 @@ export type ExternalAccessor = undefined | ExternalReference;
 export type InternalPrototype = null | InternalReference;
 
 export type ExternalPrototype = null | ExternalReference;
+
+export type InternalDescriptor = Descriptor<InternalValue, InternalAccessor>;
+
+export type ExternalDescriptor = Descriptor<ExternalValue, ExternalAccessor>;
+
+export type InternalDefineDescriptor = DefineDescriptor<
+  InternalValue,
+  InternalAccessor
+>;
+
+export type ExternalDefineDescriptor = DefineDescriptor<
+  ExternalValue,
+  ExternalAccessor
+>;

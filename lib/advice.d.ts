@@ -34,7 +34,7 @@ export type Advice = {
   enterArgumentList: (
     reference: PlainInternalArrayWithExternalPrototype,
   ) => PlainInternalArray;
-  enterNewTarget: (new_target: undefined | InternalPrimitive) => InternalValue;
+  enterNewTarget: (new_target: undefined | InternalReference) => InternalValue;
   enterPlainExternalReference: (
     reference: PlainExternalReference,
   ) => GuestInternalReference;

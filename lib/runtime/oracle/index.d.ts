@@ -1,7 +1,7 @@
 import type { AranLibrary } from "../aran";
 import type { InternalReference, InternalValue } from "../domain";
 import type { Linvail } from "../library";
-import type { Region } from "../region";
+import type { Region } from "../region/region";
 import type { Global } from "../global";
 import type { Convert } from "./convert";
 import type { Reflect } from "./reflect";
@@ -28,3 +28,5 @@ export type Oracle = {
 export type OracleEntry = [Function, Oracle];
 
 export type CompileOracleEntry = (context: Context) => OracleEntry;
+
+export type CompileOracle = (context: Context) => Oracle;

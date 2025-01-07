@@ -3,18 +3,17 @@ import type {
   Descriptor,
   ExternalReference,
   ExternalValue,
-  PlainInternalClosure,
   PlainInternalReference,
-} from "./domain";
+} from "../domain";
 
-export type ProxyHandler = {
+export type GuestExternalReferenceHandler = {
   apply: (
-    target: PlainInternalClosure,
+    target: PlainInternalReference,
     that: ExternalValue,
     args: ExternalValue[],
   ) => ExternalValue;
   construct: (
-    target: PlainInternalClosure,
+    target: PlainInternalReference,
     args: ExternalValue[],
     new_target: ExternalReference,
   ) => ExternalValue;

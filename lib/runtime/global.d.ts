@@ -167,9 +167,13 @@ export type Global = {
     };
   };
   Object: {
-    (): PlainInternalReference & { __type: "Object"; __prototype: "External" };
-    (value: Primitive): PlainExternalReference;
-  } & {
+    __self: {
+      (): PlainInternalReference & {
+        __type: "Object";
+        __prototype: "External";
+      };
+      (value: Primitive): PlainExternalReference;
+    };
     hasOwn: {
       (target: Primitive, key: unknown): never;
       (target: PlainExternalReference, key: ExternalValue): boolean;
@@ -211,8 +215,18 @@ export type Global = {
     };
   };
   Array: {
+    __self: {
+      (length: number): PlainInternalArrayWithExternalPrototype;
+      (...elements: InternalValue[]): PlainInternalArrayWithExternalPrototype;
+    };
     of: (
       ...elements: InternalValue[]
     ) => PlainInternalArrayWithExternalPrototype;
   };
 };
+
+export type Skeleton<X> = X extends Function
+  ? unknown
+  : X extends object
+    ? { [key in keyof X]: Skeleton<X[key]> }
+    : X;

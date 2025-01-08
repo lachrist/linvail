@@ -8,10 +8,18 @@ import type {
 } from "../domain";
 import type { Global } from "../global";
 import type { GuestExternalReferenceHandler } from "./proxy";
+import type { WeakSet, WeakMap, Set } from "../../collection";
+
+type Listener<E> = (event: E) => void;
+
+type ListenerRegistery<E> = Set<Listener<E>>;
 
 export type Region = {
-  emitCapture: (primitive: InternalPrimitive) => void;
-  emitRelease: (primitive: InternalPrimitive) => void;
+  listeners: {
+    active: boolean;
+    capture: null | ListenerRegistery<InternalPrimitive>;
+    release: null | ListenerRegistery<InternalPrimitive>;
+  };
   global: Global;
   guest_internal_reference_registery: WeakSet<GuestInternalReference>;
   internal_primitive_registery: WeakSet<InternalPrimitive>;

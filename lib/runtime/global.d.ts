@@ -21,7 +21,6 @@ import type {
 } from "./domain";
 import type { Primitive } from "../primitive";
 import type { GuestExternalReferenceHandler } from "./region/proxy";
-import type { Linvail } from "./library";
 
 export type Global = {
   __Aran: {
@@ -50,17 +49,12 @@ export type Global = {
       ): InternalReference;
     };
   };
-  __Linvail: {
-    same: Linvail["same"];
-    WeakMap: {
-      __self: Linvail["WeakMap"],
-      
-  };
-  Proxy: {
-    __self: new (
-      target: PlainInternalReference,
-      handler: GuestExternalReferenceHandler,
-    ) => GuestExternalReference;
+  Proxy: new (
+    target: PlainInternalReference,
+    handler: GuestExternalReferenceHandler,
+  ) => GuestExternalReference;
+  console: {
+    dir: (value: InternalValue) => void;
   };
   Error: new (message: string) => Error;
   TypeError: new (message: string) => Error;
@@ -68,6 +62,11 @@ export type Global = {
   Reflect: {
     apply: {
       (target: Primitive, that: unknown, args: unknown): never;
+      (
+        target: PlainInternalReference,
+        that: InternalValue,
+        args: InternalValue[],
+      ): unknown;
       (
         target: PlainExternalReference,
         that: ExternalValue,
@@ -119,7 +118,6 @@ export type Global = {
         target: PlainInternalObjectWithExternalPrototype,
         prototype: InternalPrototype,
       ): boolean;
-      (target: RawPlainInternalClosure, prototype: InternalPrototype): boolean;
     };
     ownKeys: {
       (target: Primitive): never;
@@ -130,7 +128,6 @@ export type Global = {
       (target: Primitive, key: unknown): never;
       (target: PlainExternalReference, key: ExternalValue): boolean;
       (target: PlainInternalReference, key: ExternalValue): boolean;
-      (target: RawPlainInternalClosure, key: "length" | "name"): boolean;
     };
     getOwnPropertyDescriptor: {
       (target: Primitive, key: unknown): never;
@@ -147,10 +144,6 @@ export type Global = {
         key: NonLengthPropertyKey,
       ): Descriptor<InternalValue, InternalReference> | undefined;
       (target: PlainInternalArray, key: "length"): DataDescriptor<number>;
-      (
-        target: RawPlainInternalClosure,
-        key: "prototype",
-      ): undefined | DataDescriptor<unknown>;
     };
     defineProperty: {
       (target: Primitive, key: unknown, descriptor: unknown): never;
@@ -173,11 +166,6 @@ export type Global = {
         target: PlainInternalArray,
         key: "length",
         descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
-      ): boolean;
-      (
-        target: RawPlainInternalClosure,
-        key: "prototype",
-        descriptor: DataDescriptor<InternalValue>,
       ): boolean;
     };
     has: {
@@ -207,6 +195,11 @@ export type Global = {
       ): boolean;
     };
   };
+  Function: {
+    prototype: {
+      __self: PlainExternalReference;
+    };
+  };
   Object: {
     __self: {
       (): PlainInternalReference & {
@@ -214,6 +207,9 @@ export type Global = {
         __prototype: "External";
       };
       (value: Primitive): PlainExternalReference;
+    };
+    prototype: {
+      __self: PlainExternalReference;
     };
     hasOwn: {
       (target: Primitive, key: unknown): never;
@@ -263,11 +259,14 @@ export type Global = {
     of: (
       ...elements: InternalValue[]
     ) => PlainInternalArrayWithExternalPrototype;
+    prototype: {
+      __self: PlainExternalReference;
+    };
   };
 };
 
-export type Skeleton<X> = X extends Function
-  ? unknown
-  : X extends object
-    ? { [key in keyof X]: Skeleton<X[key]> }
+export type Skeleton<G, X> = G extends Function
+  ? X
+  : G extends object
+    ? { [key in keyof G]: key extends "__self" ? unknown : Skeleton<G[key], X> }
     : X;

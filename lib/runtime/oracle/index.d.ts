@@ -1,32 +1,38 @@
-import type { AranLibrary } from "../aran";
-import type { InternalReference, InternalValue } from "../domain";
-import type { Linvail } from "../library";
-import type { Region } from "../region/region";
-import type { Global } from "../global";
-import type { Convert } from "./convert";
-import type { Reflect } from "./reflect";
-
-export type Config = {
-  region: Region;
-  aran: AranLibrary;
-  linvail: Linvail;
-  global: Global;
-};
-
-export type Context = Config & { reflect: Reflect; convert: Convert };
+import type {
+  InternalReference,
+  InternalValue,
+  PlainExternalReference,
+} from "../domain";
+import type { Region } from "../region";
+import type { Map } from "../../collection";
 
 export type Oracle = {
-  apply: null | ((that: InternalValue, args: InternalValue[]) => InternalValue);
+  apply:
+    | null
+    | ((
+        region: Region,
+        registery: OracleRegistery,
+        that: InternalValue,
+        args: InternalValue[],
+      ) => InternalValue);
   construct:
     | null
     | ((
+        region: Region,
+        registery: OracleRegistery,
         args: InternalValue[],
         new_target: InternalReference,
       ) => InternalReference);
 };
 
-export type OracleEntry = [Function, Oracle];
+export type OracleEntry = [string, Oracle];
 
-export type CompileOracleEntry = (context: Context) => OracleEntry;
+export type OracleRegistery = Map<PlainExternalReference, Oracle>;
 
-export type CompileOracle = (context: Context) => Oracle;
+export type OracleMapping = {
+  [key in string]: Oracle;
+};
+
+export type DeepExternalReference = PlainExternalReference & {
+  [key in string]: DeepExternalReference;
+};

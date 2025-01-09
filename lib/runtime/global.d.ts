@@ -5,7 +5,6 @@ import type {
   ExternalPrototype,
   ExternalReference,
   ExternalValue,
-  GuestExternalReference,
   InternalPrototype,
   InternalReference,
   InternalValue,
@@ -20,7 +19,6 @@ import type {
   RawPlainInternalClosure,
 } from "./domain";
 import type { Primitive } from "../util/primitive";
-import type { GuestExternalReferenceHandler } from "./region/proxy";
 
 export type Global = {
   __Aran: {
@@ -49,10 +47,6 @@ export type Global = {
       ): InternalReference;
     };
   };
-  Proxy: new (
-    target: PlainInternalReference,
-    handler: GuestExternalReferenceHandler,
-  ) => GuestExternalReference;
   console: {
     dir: (value: InternalValue) => void;
   };
@@ -261,6 +255,12 @@ export type Global = {
     ) => PlainInternalArrayWithExternalPrototype;
     prototype: {
       __self: PlainExternalReference;
+    };
+  };
+  Number: {
+    __self: {
+      (value: ExternalValue): number;
+      new (value: ExternalValue): PlainExternalReference;
     };
   };
 };

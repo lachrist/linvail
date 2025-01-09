@@ -7,20 +7,21 @@ import type {
   PlainInternalReference,
 } from "../domain";
 import type { Global } from "../global";
-import type { GuestExternalReferenceHandler } from "./proxy";
 import type { WeakSet, WeakMap, Set } from "../../util/collection";
+import type { Naming } from "../naming";
 
 type Listener<E> = (event: E) => void;
 
 type ListenerRegistery<E> = Set<Listener<E>>;
 
 export type Region = {
+  global: Global;
+  naming: Naming;
   listeners: {
     active: boolean;
     capture: null | ListenerRegistery<InternalPrimitive>;
     release: null | ListenerRegistery<InternalPrimitive>;
   };
-  global: Global;
   guest_internal_reference_registery: WeakSet<GuestInternalReference>;
   internal_primitive_registery: WeakSet<InternalPrimitive>;
   plain_internal_closure_kind_mapping: WeakMap<
@@ -35,5 +36,4 @@ export type Region = {
     GuestExternalReference,
     PlainInternalReference
   >;
-  guest_external_reference_handler: GuestExternalReferenceHandler;
 };

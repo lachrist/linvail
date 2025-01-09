@@ -13,7 +13,8 @@
   "repository": "lachrist/linvail",
   "scripts": {
     "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs' 'bin/**/*.d.ts'",
-    "format": "npx prettier -w '**/*.(mjs|d.ts)'"
+    "format": "npx prettier -w '**/*.(mjs|d.ts)'",
+    "test:util": "npx c8 -- node lib/util/_.test.mjs"
   },
   "homepage": "http://github.com/lachrist/linvail",
   "license": "MIT",

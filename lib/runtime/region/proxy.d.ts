@@ -1,3 +1,4 @@
+import type { Region } from "./region";
 import type {
   DefineDescriptor,
   Descriptor,
@@ -6,43 +7,48 @@ import type {
   PlainInternalReference,
 } from "../domain";
 
-export type GuestExternalReferenceHandler = {
+export type Target = {
+  target: PlainInternalReference;
+  region: Region;
+};
+
+export type GuestProxyHandler = {
   apply: (
-    target: PlainInternalReference,
+    target: Target,
     that: ExternalValue,
     args: ExternalValue[],
   ) => ExternalValue;
   construct: (
-    target: PlainInternalReference,
+    target: Target,
     args: ExternalValue[],
     new_target: ExternalReference,
   ) => ExternalValue;
-  // isExtensible: (target: InternalReference) => boolean;
-  // preventExtensions: (target: InternalReference) => boolean;
-  getPrototypeOf: (target: PlainInternalReference) => ExternalReference | null;
+  getPrototypeOf: (target: Target) => ExternalReference | null;
   setPrototypeOf: (
-    target: PlainInternalReference,
+    target: Target,
     prototype: ExternalReference | null,
   ) => boolean;
+  isExtensible: (target: Target) => boolean;
+  preventExtensions: (target: Target) => boolean;
   getOwnPropertyDescriptor: (
-    target: PlainInternalReference,
+    target: Target,
     key: PropertyKey,
   ) => undefined | Descriptor<ExternalValue, ExternalValue>;
   defineProperty: (
-    target: PlainInternalReference,
+    target: Target,
     key: PropertyKey,
     descriptor: DefineDescriptor<ExternalValue, ExternalReference>,
   ) => boolean;
-  // deleteProperty: (target: IntrinsicInternalReference, key: PropertyKey) => boolean;
-  // ownKeys: (target: IntrinsicInternalReference) => (string | symbol)[];
-  has: (target: PlainInternalReference, key: PropertyKey) => boolean;
+  deleteProperty: (target: Target, key: PropertyKey) => boolean;
+  ownKeys: (target: Target) => (string | symbol)[];
+  has: (target: Target, key: PropertyKey) => boolean;
   get: (
-    target: PlainInternalReference,
+    target: Target,
     key: PropertyKey,
     receiver: ExternalValue,
   ) => ExternalValue;
   set: (
-    target: PlainInternalReference,
+    target: Target,
     key: PropertyKey,
     value: ExternalValue,
     receiver: ExternalValue,

@@ -4,7 +4,7 @@ import { generate } from "astring";
 import { unbuild } from "aran/lib/unbuild/index.mjs";
 // @ts-ignore
 import { rebuild } from "aran/lib/rebuild/index.mjs";
-import { instrument } from "../lib/instrument/index.mjs";
+import { instrument } from "../lib/instrument/_.mjs";
 import {
   ADVICE_VARIABLE,
   ESCAPE_PREFIX,

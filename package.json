@@ -12,9 +12,11 @@
   "main": "lib/main.js",
   "repository": "lachrist/linvail",
   "scripts": {
-    "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs' 'bin/**/*.d.ts'",
+    "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs'",
     "format": "npx prettier -w '**/*.(mjs|d.ts)'",
-    "test:util": "npx c8 -- node lib/util/_.test.mjs"
+    "test:util": "npx c8 -- node lib/util/_.test.mjs",
+    "test:instrument": "npx c8 --include lib/instrument -- node --import ./bin/setup.mjs lib/instrument/_.test.mjs",
+    "test:instrument:html": "npx c8 --reporter html --include lib/instrument -- node --import ./bin/setup.mjs lib/instrument/_.test.mjs && open coverage/index.html"
   },
   "homepage": "http://github.com/lachrist/linvail",
   "license": "MIT",

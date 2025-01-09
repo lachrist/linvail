@@ -21,7 +21,7 @@ import type {
 import type { Primitive } from "../util/primitive";
 
 export type Global = {
-  __Aran: {
+  Aran: {
     sliceObject: {
       (
         target: InternalValue,

@@ -1,4 +1,4 @@
-import { createRuntime } from "../lib/runtime/index.mjs";
+import { createRuntime } from "../lib/runtime/_.mjs";
 import { register } from "node:module";
 import { generateSetup } from "aran";
 import { generate } from "astring";

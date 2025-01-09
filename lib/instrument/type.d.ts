@@ -1,4 +1,4 @@
-import {
+import type {
   Intrinsic,
   Parameter,
   Program as GenericProgram,
@@ -8,7 +8,7 @@ import {
   Effect as GenericEffect,
   Expression as GenericExpression,
 } from "aran/lib/lang/syntax";
-import { Advice } from "../advice";
+import type { Advice } from "../advice";
 
 export type Convertion = Exclude<
   keyof Advice,

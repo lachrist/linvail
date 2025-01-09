@@ -1,4 +1,4 @@
-import type { ClosureKind } from "./instrument";
+import type { ClosureKind } from "./instrument/type";
 import type { Primitive } from "./util/primitive";
 import type {
   ExternalValue,

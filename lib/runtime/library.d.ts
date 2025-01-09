@@ -1,4 +1,4 @@
-import type { Primitive } from "../primitive";
+import type { Primitive } from "../util/primitive";
 
 /////////////
 // WeakSet //

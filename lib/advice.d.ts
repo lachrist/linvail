@@ -1,5 +1,5 @@
 import type { ClosureKind } from "./instrument";
-import type { Primitive } from "./primitive";
+import type { Primitive } from "./util/primitive";
 import type {
   ExternalValue,
   InternalReference,
@@ -15,7 +15,7 @@ import type {
 
 export type Advice = {
   enterPrimitive: (primitive: Primitive) => InternalPrimitive;
-  leaveBranch: (value: InternalValue) => boolean;
+  leaveBoolean: (value: InternalValue) => boolean;
   enterValue: (value: ExternalValue) => InternalValue;
   leaveValue: (value: InternalValue) => ExternalValue;
   apply: (

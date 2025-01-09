@@ -19,7 +19,7 @@ import type {
   PlainInternalReference,
   RawPlainInternalClosure,
 } from "./domain";
-import type { Primitive } from "../primitive";
+import type { Primitive } from "../util/primitive";
 import type { GuestExternalReferenceHandler } from "./region/proxy";
 
 export type Global = {

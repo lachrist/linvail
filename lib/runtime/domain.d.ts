@@ -1,4 +1,4 @@
-import type { Primitive as ExternalPrimitive } from "../primitive";
+import type { Primitive as ExternalPrimitive } from "../util/primitive";
 
 export { ExternalPrimitive };
 

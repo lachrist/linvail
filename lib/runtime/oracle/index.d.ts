@@ -4,7 +4,7 @@ import type {
   PlainExternalReference,
 } from "../domain";
 import type { Region } from "../region";
-import type { Map } from "../../collection";
+import type { Map } from "../../util/collection";
 
 export type Oracle = {
   apply:

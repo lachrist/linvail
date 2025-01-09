@@ -8,7 +8,7 @@ import type {
 } from "../domain";
 import type { Global } from "../global";
 import type { GuestExternalReferenceHandler } from "./proxy";
-import type { WeakSet, WeakMap, Set } from "../../collection";
+import type { WeakSet, WeakMap, Set } from "../../util/collection";
 
 type Listener<E> = (event: E) => void;
 

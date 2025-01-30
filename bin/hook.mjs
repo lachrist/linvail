@@ -1,18 +1,14 @@
 import { parse } from "acorn";
 import { generate } from "astring";
-// @ts-ignore
-import { unbuild } from "aran/lib/unbuild/index.mjs";
-// @ts-ignore
-import { rebuild } from "aran/lib/rebuild/index.mjs";
 import { instrument } from "../lib/instrument/_.mjs";
 import {
   ADVICE_VARIABLE,
   ESCAPE_PREFIX,
   INTRINSIC_VARIABLE,
 } from "./bridge.mjs";
-import { annotateModuleProgram, ROOT_PATH } from "estree-sentry";
 import { log, dir } from "./console.mjs";
 import { writeFileSync } from "node:fs";
+import { retropile, transpile } from "aran";
 
 globalThis.console = { log, dir };
 
@@ -27,6 +23,17 @@ const {
 const decoder = new TextDecoder("utf-8");
 
 /**
+ * @type {import("aran").Digest<{
+ *   FilePath: import("./digest").FilePath,
+ *   NodeHash: import("./digest").NodeHash,
+ * }>}
+ */
+const digest = (_node, node_path, _file_path, _node_kind) =>
+  /** @type {import("./digest").NodeHash} */ (
+    /** @type {string} */ (node_path)
+  );
+
+/**
  * @type {import("node:module").LoadHook}
  */
 export const load = async (url, context, nextLoad) => {
@@ -39,27 +46,27 @@ export const load = async (url, context, nextLoad) => {
       sourceType: "module",
       ecmaVersion: "latest",
     });
-    const { root: aran1 } = unbuild(
+    /**
+     * @type {import("../lib/instrument/type").Program<
+     *   import("./digest").NodeHash
+     * >}
+     */
+    const aran1 = transpile(
       {
         kind: "module",
+        path: /** @type {import("./digest").FilePath} */ (url),
         situ: { type: "global" },
-        root: annotateModuleProgram(root1, ROOT_PATH, (_node, path, _kind) => ({
-          _hash: path,
-        })),
+        root: root1,
       },
-      { global_declarative_record: "builtin" },
+      { global_declarative_record: "builtin", digest },
     );
     const aran2 = instrument(aran1, ADVICE_VARIABLE);
-    const { root: root2 } = rebuild(
-      { root: aran2 },
-      {
-        mode: "normal",
-        global_variable: "globalThis",
-        advice_variable: ADVICE_VARIABLE,
-        intrinsic_variable: INTRINSIC_VARIABLE,
-        escape_prefix: ESCAPE_PREFIX,
-      },
-    );
+    const root2 = retropile(aran2, {
+      mode: "normal",
+      global_object_variable: "globalThis",
+      intrinsic_global_variable: INTRINSIC_VARIABLE,
+      escape_prefix: ESCAPE_PREFIX,
+    });
     result.source = generate(root2);
     writeFileSync(
       // eslint-disable-next-line local/no-method-call

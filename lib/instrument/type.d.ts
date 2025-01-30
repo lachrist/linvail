@@ -7,7 +7,7 @@ import type {
   Statement as GenericStatement,
   Effect as GenericEffect,
   Expression as GenericExpression,
-} from "aran/lib/lang/syntax";
+} from "aran";
 import type { Advice } from "../advice";
 
 export type Convertion = Exclude<

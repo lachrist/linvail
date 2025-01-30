@@ -1,6 +1,6 @@
 import { createRuntime } from "../lib/runtime/_.mjs";
 import { register } from "node:module";
-import { generateSetup } from "aran";
+import { setupile } from "aran";
 import { generate } from "astring";
 import {
   ADVICE_VARIABLE,
@@ -15,9 +15,9 @@ const { eval: globalEval } = globalThis;
 
 const intrinsics = globalEval(
   generate(
-    generateSetup({
-      global_variable: "globalThis",
-      intrinsic_variable: INTRINSIC_VARIABLE,
+    setupile({
+      global_object_variable: "globalThis",
+      intrinsic_global_variable: INTRINSIC_VARIABLE,
     }),
   ),
 );

@@ -1,7 +1,7 @@
 import type { Map } from "../util/collection";
 
 export type AranName =
-  | "aran.get"
+  | "aran.getValueProperty"
   | "aran.createObject"
   | "aran.sliceObject"
   | "aran.listForInKey";

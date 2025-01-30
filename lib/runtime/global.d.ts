@@ -33,7 +33,7 @@ export type Global = {
       (target: ExternalValue): string[];
       (target: InternalValue): string[];
     };
-    get: {
+    getValueProperty: {
       (target: ExternalValue, key: ExternalValue): ExternalValue;
     };
     createObject: {

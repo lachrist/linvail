@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "acorn": "^8.14.0",
-    "aran": "^4.1.2",
+    "aran": "^5.0.0",
     "astring": "^1.9.0",
     "estree-sentry": "^0.4.1",
     "virtual-proxy": "^0.1.3"

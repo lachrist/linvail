@@ -15,8 +15,8 @@
     "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs'",
     "format": "npx prettier -w '**/*.(mjs|d.ts)'",
     "test:util": "npx c8 -- node lib/util/_.test.mjs",
-    "test:proxy": "npx c8 --include lib/runtime/region/proxy.mjs -- node --import ./bin/setup.mjs lib/runtime/region/proxy.test.mjs",
-    "test:proxy:html": "npx c8 --reporter html --include lib/runtime/region/proxy.mjs -- node --import ./bin/setup.mjs lib/runtime/region/proxy.test.mjs && open coverage/index.html",
+    "test:region": "npx c8 --include lib/runtime/region -- node --import ./bin/setup.mjs lib/runtime/region/_.test.mjs",
+    "test:region:html": "npx c8 --reporter html --include lib/runtime/region -- node --import ./bin/setup.mjs lib/runtime/region/_.test.mjs && open coverage/index.html",
     "test:instrument": "npx c8 --include lib/instrument -- node --import ./bin/setup.mjs lib/instrument/_.test.mjs",
     "test:library": "npx c8 --include lib/runtime/library.mjs -- node --import ./bin/setup.mjs lib/runtime/library.test.mjs",
     "test:instrument:html": "npx c8 --reporter html --include lib/instrument -- node --import ./bin/setup.mjs lib/instrument/_.test.mjs && open coverage/index.html"

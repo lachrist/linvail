@@ -15,5 +15,6 @@
     "typeRoots": ["./node_modules/@types"],
     "exactOptionalPropertyTypes": true
   },
-  "include": ["./bin/", "./lib/", "./lint/", "graveyard/_old_intrinsic.mjs"]
+  "include": ["./bin/", "./lib/", "./lint/", "graveyard/_old_intrinsic.mjs"],
+  "exclude": ["./lib/**/*.test.inst.mjs"]
 }

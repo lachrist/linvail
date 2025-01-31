@@ -62,7 +62,7 @@ export type LinvailSetPrototype = {
   forEach: <T, K>(
     this: LinvailSet<K>,
     callback: (this: T, key: K, val: K, set: LinvailSet<K>) => void,
-    this_arg: T,
+    this_arg?: T,
   ) => undefined;
 };
 
@@ -81,7 +81,7 @@ export type LinvailSetConstructor = {
 /////////
 
 export type LinvailMapPrototype = {
-  getSize: <K>(this: LinvailSet<K>) => number;
+  getSize: <K, V>(this: LinvailMap<K, V>) => number;
   has: <K, V>(this: LinvailMap<K, V>, key: K) => boolean;
   delete: <K, V>(this: LinvailMap<K, V>, key: K) => boolean;
   get: <K, V>(this: LinvailMap<K, V>, key: K) => V | undefined;

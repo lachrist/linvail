@@ -59,8 +59,6 @@ export default [
       "no-empty": "error",
       "no-eval": "error",
       "no-lone-blocks": "error",
-      // "no-param-reassign": "error",
-      // "no-plusplus": "error",
       "no-warning-comments": ["warn", { terms: ["todo"] }],
       "object-shorthand": ["error"],
       "prefer-const": ["error", { destructuring: "all" }],
@@ -70,6 +68,12 @@ export default [
       "local/curly": "error",
       "local/no-global": ["error", "globalThis", "console"],
       "local/no-method-call": "error",
+    },
+  },
+  {
+    files: ["lib/**/*.test.mjs"],
+    rules: {
+      "local/no-method-call": "off",
     },
   },
   {

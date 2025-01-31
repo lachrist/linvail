@@ -24,14 +24,11 @@ const decoder = new TextDecoder("utf-8");
 
 /**
  * @type {import("aran").Digest<{
- *   FilePath: import("./digest").FilePath,
- *   NodeHash: import("./digest").NodeHash,
+ *   FilePath: string,
+ *   NodeHash: import("aran").EstreeNodePath,
  * }>}
  */
-const digest = (_node, node_path, _file_path, _node_kind) =>
-  /** @type {import("./digest").NodeHash} */ (
-    /** @type {string} */ (node_path)
-  );
+const digest = (_node, node_path, _file_path, _node_kind) => node_path;
 
 /**
  * @type {import("node:module").LoadHook}
@@ -48,13 +45,13 @@ export const load = async (url, context, nextLoad) => {
     });
     /**
      * @type {import("../lib/instrument/type").Program<
-     *   import("./digest").NodeHash
+     *   import("aran").EstreeNodePath
      * >}
      */
     const aran1 = transpile(
       {
         kind: "module",
-        path: /** @type {import("./digest").FilePath} */ (url),
+        path: url,
         situ: { type: "global" },
         root: root1,
       },
@@ -68,12 +65,10 @@ export const load = async (url, context, nextLoad) => {
       escape_prefix: ESCAPE_PREFIX,
     });
     result.source = generate(root2);
-    writeFileSync(
-      // eslint-disable-next-line local/no-method-call
-      `./test/codebase/${url.split("/").pop()}`,
-      result.source,
-      "utf8",
-    );
+    // eslint-disable-next-line local/no-method-call
+    const path = `./test/codebase/${url.split("/").pop()}`;
+    log(`SOURCE MAPPING >> ${path}`);
+    writeFileSync(path, result.source, "utf8");
   }
   return result;
 };

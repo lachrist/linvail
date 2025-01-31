@@ -14,12 +14,10 @@
   "scripts": {
     "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs'",
     "format": "npx prettier -w '**/*.(mjs|d.ts)'",
-    "test:util": "npx c8 -- node lib/util/_.test.mjs",
-    "test:region": "npx c8 --include lib/runtime/region -- node --import ./bin/setup.mjs lib/runtime/region/_.test.mjs",
-    "test:region:html": "npx c8 --reporter html --include lib/runtime/region -- node --import ./bin/setup.mjs lib/runtime/region/_.test.mjs && open coverage/index.html",
-    "test:instrument": "npx c8 --include lib/instrument -- node --import ./bin/setup.mjs lib/instrument/_.test.mjs",
-    "test:library": "npx c8 --include lib/runtime/library.mjs -- node --import ./bin/setup.mjs lib/runtime/library.test.mjs",
-    "test:instrument:html": "npx c8 --reporter html --include lib/instrument -- node --import ./bin/setup.mjs lib/instrument/_.test.mjs && open coverage/index.html"
+    "test:all": "sh test/exec.sh",
+    "test:one": "node test/deploy.mjs",
+    "test:one:cov": "npx c8 -- node test/deploy.mjs",
+    "test:one:cov:html": "npx c8 --reporter=html -- node test/deploy.mjs"
   },
   "homepage": "http://github.com/lachrist/linvail",
   "license": "MIT",
@@ -42,6 +40,7 @@
     "c8": "^10.1.3",
     "eslint": "^9.16.0",
     "glob": "^11.0.0",
+    "minimist": "^1.2.8",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1"

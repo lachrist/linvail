@@ -15,25 +15,6 @@ export type Convertion = Exclude<
   "apply" | "construct" | "enterClosure"
 >;
 
-export type ClosureKind =
-  | "arrow"
-  | "arrow.async"
-  | "method"
-  | "method.async"
-  | "function"
-  | "function.async"
-  | "generator"
-  | "generator.async";
-
-export type ProgramKind =
-  | "module.global"
-  | "script.global"
-  | "eval.global"
-  | "eval.local.root"
-  | "eval.local.deep";
-
-export type RoutineKind = ClosureKind | ProgramKind;
-
 export { Intrinsic, Parameter };
 export type Variable = { __brand: "Variable" } & string;
 export type Label = { __brand: "Label" } & string;

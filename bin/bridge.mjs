@@ -1,4 +1,4 @@
-export const ADVICE_VARIABLE = "__LINVAIL_ADVICE__";
-export const LIBRARY_VARIABLE = "Linvail";
-export const INTRINSIC_VARIABLE = "__LINVAIL_INTRINSIC__";
-export const ESCAPE_PREFIX = "__ARAN_";
+export const advice_global_variable = "__LINVAIL_ADVICE__";
+export const library_global_variable = "Linvail";
+export const intrinsic_global_variable = "__LINVAIL_INTRINSIC__";
+export const escape_prefix = "__ARAN_";

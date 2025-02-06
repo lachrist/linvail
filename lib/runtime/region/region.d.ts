@@ -1,4 +1,4 @@
-import type { ClosureKind } from "../../instrument/type";
+import type { ClosureKind } from "aran";
 import type {
   GuestExternalReference,
   GuestInternalReference,

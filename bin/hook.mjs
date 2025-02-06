@@ -1,10 +1,10 @@
 import { parse } from "acorn";
 import { generate } from "astring";
-import { instrument } from "../lib/instrument/_.mjs";
+import { weave } from "../lib/instrument/_.mjs";
 import {
-  ADVICE_VARIABLE,
-  ESCAPE_PREFIX,
-  INTRINSIC_VARIABLE,
+  advice_global_variable,
+  escape_prefix,
+  intrinsic_global_variable,
 } from "./bridge.mjs";
 import { log, dir } from "./console.mjs";
 import { writeFileSync } from "node:fs";
@@ -57,12 +57,12 @@ export const load = async (url, context, nextLoad) => {
       },
       { global_declarative_record: "builtin", digest },
     );
-    const aran2 = instrument(aran1, ADVICE_VARIABLE);
+    const aran2 = weave(aran1, { advice_global_variable });
     const root2 = retropile(aran2, {
       mode: "normal",
       global_object_variable: "globalThis",
-      intrinsic_global_variable: INTRINSIC_VARIABLE,
-      escape_prefix: ESCAPE_PREFIX,
+      intrinsic_global_variable,
+      escape_prefix,
     });
     result.source = generate(root2);
     // eslint-disable-next-line local/no-method-call

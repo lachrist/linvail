@@ -3,9 +3,9 @@ import { register } from "node:module";
 import { setupile } from "aran";
 import { generate } from "astring";
 import {
-  ADVICE_VARIABLE,
-  INTRINSIC_VARIABLE,
-  LIBRARY_VARIABLE,
+  advice_global_variable,
+  intrinsic_global_variable,
+  library_global_variable,
 } from "./bridge.mjs";
 import { log, dir } from "./console.mjs";
 
@@ -17,14 +17,14 @@ const intrinsics = globalEval(
   generate(
     setupile({
       global_object_variable: "globalThis",
-      intrinsic_global_variable: INTRINSIC_VARIABLE,
+      intrinsic_global_variable,
     }),
   ),
 );
 
 const { advice, library } = createRuntime(intrinsics);
 
-/** @type {any} */ (globalThis)[LIBRARY_VARIABLE] = library;
-/** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
+/** @type {any} */ (globalThis)[library_global_variable] = library;
+/** @type {any} */ (globalThis)[advice_global_variable] = advice;
 
 register("./hook.mjs", import.meta.url);

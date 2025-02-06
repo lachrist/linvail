@@ -1,5 +1,3 @@
-import type { ClosureKind } from "./instrument/type";
-import type { Primitive } from "./util/primitive";
 import type {
   ExternalValue,
   InternalReference,
@@ -11,10 +9,14 @@ import type {
   PlainInternalArray,
   RawPlainInternalClosure,
   PlainInternalArrayWithExternalPrototype,
+  ExternalPrimitive,
 } from "./runtime/domain";
+import type { ClosureKind } from "aran";
 
 export type Advice = {
-  enterPrimitive: (primitive: Primitive) => InternalPrimitive;
+  isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
+  enterPrimitive: (primitive: ExternalPrimitive) => InternalPrimitive;
+  leavePrimitive: (primitive: InternalPrimitive) => ExternalPrimitive;
   leaveBoolean: (value: InternalValue) => boolean;
   enterValue: (value: ExternalValue) => InternalValue;
   leaveValue: (value: InternalValue) => ExternalValue;

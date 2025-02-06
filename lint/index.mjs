@@ -20,6 +20,7 @@ export default [
       },
     },
     files: ["**/*.mjs"],
+    ignores: ["**/*.inst.mjs"],
     rules: {
       // problems //
       "no-const-assign": "error",

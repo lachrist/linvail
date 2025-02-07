@@ -50,6 +50,7 @@ export type Global = {
   console: {
     dir: (value: InternalValue) => void;
   };
+  String: (value: ExternalValue) => string;
   Error: new (message: string) => Error;
   TypeError: new (message: string) => Error;
   undefined: undefined;

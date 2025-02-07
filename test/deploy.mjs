@@ -1,15 +1,15 @@
 /* eslint-disable local/no-method-call */
 
+import { argv } from "node:process";
 import { parse } from "acorn";
 import { generate } from "astring";
-import { instrument } from "../lib/instrument/_.mjs";
+import { weave } from "../lib/instrument/_.mjs";
 import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
-import { argv } from "node:process";
 import { createRuntime } from "../lib/runtime/_.mjs";
 import { log, dir } from "./console.mjs";
 
-const { eval: evalGlobal } = globalThis;
+const { eval: evalGlobal, Error } = globalThis;
 
 const LIBRARY_VARIABLE = "Linvail";
 const ADVICE_VARIABLE = "_LINVAIL_ADVICE_";
@@ -32,6 +32,9 @@ const digest = (_node, node_path, _file_path, _node_kind) => node_path;
 const toInstPath = (path) => {
   const parts = path.split(".");
   const extension = parts.pop();
+  if (extension == null) {
+    throw new Error("Invalid path", { cause: { path } });
+  }
   parts.push("inst");
   parts.push(extension);
   return parts.join(".");
@@ -40,7 +43,7 @@ const toInstPath = (path) => {
 /**
  * @type {(
  *   path: string
- * ) => string}
+ * ) => Promise<string>}
  */
 const instrumentTarget = async (path1) => {
   const code1 = await readFile(path1, "utf8");
@@ -57,11 +60,10 @@ const instrumentTarget = async (path1) => {
     },
     {
       global_declarative_record: "builtin",
-      intrinsic_global_variable: INTRINSIC_VARIABLE,
       digest,
     },
   );
-  const aran2 = instrument(aran1, ADVICE_VARIABLE);
+  const aran2 = weave(aran1, { advice_global_variable: ADVICE_VARIABLE });
   const root2 = retropile(aran2, {
     mode: "normal",
     intrinsic_global_variable: INTRINSIC_VARIABLE,
@@ -96,8 +98,8 @@ const main = async (argv) => {
     ),
   );
   const { advice, library } = createRuntime(intrinsics);
-  globalThis[ADVICE_VARIABLE] = advice;
-  globalThis[LIBRARY_VARIABLE] = library;
+  /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
+  /** @type {any} */ (globalThis)[LIBRARY_VARIABLE] = library;
   globalThis.console = { log, dir };
   await import(toModuleSpecifier(await instrumentTarget(target)));
 };

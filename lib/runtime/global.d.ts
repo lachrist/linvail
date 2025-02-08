@@ -174,6 +174,7 @@ export type Global = {
         key: ExternalValue,
         receiver: ExternalValue,
       ): ExternalValue;
+      (target: PlainInternalArray, key: "length"): number;
     };
     set: {
       (

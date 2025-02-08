@@ -1,8 +1,13 @@
-const o = {};
-Reflect.defineProperty(o, "foo", {
+const d = {
   value: 123,
   writable: true,
-  configurable: true,
   enumerable: true,
-});
-console.log(Reflect.set({}, "foo", 123, o));
+  configurable: true,
+};
+const p = new Proxy(
+  {},
+  {
+    getOwnPropertyDescriptor: (target, key, descriptor) => d,
+  },
+);
+console.log(Object.getOwnPropertyDescriptor(p, "foo") === d);

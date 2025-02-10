@@ -7,7 +7,7 @@ import { weave } from "../lib/instrument/_.mjs";
 import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRuntime } from "../lib/runtime/_.mjs";
-import { log, dir } from "./console.mjs";
+import { dir } from "./console.mjs";
 
 const { eval: evalGlobal, Error } = globalThis;
 
@@ -97,10 +97,9 @@ const main = async (argv) => {
       }),
     ),
   );
-  const { advice, library } = createRuntime(intrinsics);
+  const { advice, library } = createRuntime(intrinsics, { dir });
   /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
   /** @type {any} */ (globalThis)[LIBRARY_VARIABLE] = library;
-  globalThis.console = { log, dir };
   await import(toModuleSpecifier(await instrumentTarget(target)));
 };
 

@@ -7,9 +7,7 @@ import {
   intrinsic_global_variable,
   library_global_variable,
 } from "./bridge.mjs";
-import { log, dir } from "./console.mjs";
-
-globalThis.console = { log, dir };
+import { dir } from "./console.mjs";
 
 const { eval: globalEval } = globalThis;
 
@@ -22,7 +20,7 @@ const intrinsics = globalEval(
   ),
 );
 
-const { advice, library } = createRuntime(intrinsics);
+const { advice, library } = createRuntime(intrinsics, { dir });
 
 /** @type {any} */ (globalThis)[library_global_variable] = library;
 /** @type {any} */ (globalThis)[advice_global_variable] = advice;

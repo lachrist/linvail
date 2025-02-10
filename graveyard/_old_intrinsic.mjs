@@ -123,7 +123,7 @@ const internalizeReferenceDescriptor = (
 };
 
 /**
- * @type {import("../lib/runtime/global").ApplyIntrinsicRecord}
+ * @type {import("../lib/runtime/intrinsic").ApplyIntrinsicRecord}
  */
 export const apply_intrinsic_record = {
   // Aran //

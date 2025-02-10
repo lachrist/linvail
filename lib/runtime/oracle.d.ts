@@ -1,6 +1,6 @@
 import type { InternalReference, InternalValue } from "./domain";
 import type { Region } from "./region/region";
-import type { Name } from "./naming";
+import type { IntrinsicRecord } from "./intrinsic";
 
 export type ApplyOracle = (
   region: Region,
@@ -15,11 +15,13 @@ export type ConstructOracle = (
 ) => InternalReference;
 
 export type ApplyOracleMapping = {
-  [key in Name | "__proto__"]?: key extends "__proto__" ? null : ApplyOracle;
+  [key in keyof IntrinsicRecord | "__proto__"]?: key extends "__proto__"
+    ? null
+    : ApplyOracle;
 };
 
 export type ConstructOracleMapping = {
-  [key in Name | "__proto__"]?: key extends "__proto__"
+  [key in keyof IntrinsicRecord | "__proto__"]?: key extends "__proto__"
     ? null
     : ConstructOracle;
 };

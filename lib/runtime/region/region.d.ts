@@ -6,16 +6,14 @@ import type {
   PlainInternalClosure,
   PlainInternalReference,
 } from "../domain";
-import type { Global } from "../global";
+import type { IntrinsicRecord, Naming } from "../intrinsic";
 import type { WeakSet, WeakMap, Set } from "../../util/collection";
-import type { Naming } from "../naming";
 
 type Listener<E> = (event: E) => void;
 
 type ListenerRegistery<E> = Set<Listener<E>>;
 
-export type Region = {
-  global: Global;
+export type Region = IntrinsicRecord & {
   naming: Naming;
   listeners: {
     active: boolean;

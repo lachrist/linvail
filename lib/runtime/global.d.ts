@@ -5,6 +5,7 @@ import type {
   ExternalPrototype,
   ExternalReference,
   ExternalValue,
+  GuestExternalReference,
   InternalPrototype,
   InternalReference,
   InternalValue,
@@ -50,6 +51,7 @@ export type Global = {
   console: {
     dir: (value: InternalValue) => void;
   };
+  Proxy: new (target: any, handler: any) => GuestExternalReference;
   String: (value: ExternalValue) => string;
   Error: new (message: string) => Error;
   TypeError: new (message: string) => Error;
@@ -192,6 +194,7 @@ export type Global = {
     };
   };
   Function: {
+    __self: new (...source: string[]) => Function;
     prototype: {
       __self: PlainExternalReference;
     };

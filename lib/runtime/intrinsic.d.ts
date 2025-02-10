@@ -23,6 +23,8 @@ import type { Primitive } from "../util/primitive";
 import type { Map } from "../util/collection";
 
 export type AranIntrinsicRecord = {
+  "aran.GeneratorFunction.prototype.prototype": PlainExternalReference;
+  "aran.AsyncGeneratorFunction.prototype.prototype": PlainExternalReference;
   "aran.sliceObject": {
     (
       target: InternalValue,

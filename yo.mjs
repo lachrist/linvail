@@ -1,5 +1,6 @@
-var o = { foo: 123 };
-Reflect.defineProperty(o, "foo", {
-  enumerable: false,
-});
-console.log(Reflect.getOwnPropertyDescriptor(o, "foo"));
+{
+  const f = async function* f() {
+    console.log({ this: this });
+  };
+  Reflect.apply(f, "foo", []).next();
+}

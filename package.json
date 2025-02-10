@@ -10,7 +10,10 @@
     "lib"
   ],
   "main": "lib/main.js",
-  "repository": "lachrist/linvail",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lachrist/linvail.git"
+  },
   "scripts": {
     "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs'",
     "format": "npx prettier -w '**/*.(mjs|d.ts)'",
@@ -19,7 +22,7 @@
     "test:one:cov": "npx c8 -- node test/deploy.mjs",
     "test:one:cov:html": "npx c8 --reporter=html -- node test/deploy.mjs"
   },
-  "homepage": "http://github.com/lachrist/linvail",
+  "homepage": "https://github.com/lachrist/linvail",
   "license": "MIT",
   "keywords": [
     "Membrane",

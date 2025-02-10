@@ -15,6 +15,8 @@ type ListenerRegistery<E> = Set<Listener<E>>;
 
 export type Region = IntrinsicRecord & {
   naming: Naming;
+  createIntegrityFunction: () => Function;
+  createIntegrityArrow: () => Function;
   listeners: {
     active: boolean;
     capture: null | ListenerRegistery<InternalPrimitive>;

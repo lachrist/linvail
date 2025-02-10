@@ -195,6 +195,7 @@ export type GlobalIntrinsicRecord = {
     (value: Primitive): PlainExternalReference;
   };
   "global.Object.prototype": PlainExternalReference;
+  "global.Object.is": (value1: ExternalValue, value2: ExternalValue) => boolean;
   "global.Object.hasOwn": {
     (target: Primitive, key: unknown): never;
     (target: PlainExternalReference, key: ExternalValue): boolean;

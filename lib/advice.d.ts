@@ -10,6 +10,8 @@ import type {
   RawPlainInternalClosure,
   PlainInternalArrayWithExternalPrototype,
   ExternalPrimitive,
+  PlainInternalReference,
+  GuestExternalReference,
 } from "./runtime/domain";
 import type { Program, ClosureKind } from "aran";
 
@@ -37,6 +39,9 @@ export type Advice = {
   enterArgumentList: (
     reference: PlainInternalArrayWithExternalPrototype,
   ) => PlainInternalArray;
+  leavePlainInternalReference: (
+    reference: PlainInternalReference,
+  ) => GuestExternalReference;
   enterPlainExternalReference: (
     reference: PlainExternalReference,
   ) => GuestInternalReference;

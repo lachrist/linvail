@@ -11,10 +11,10 @@ import type {
   PlainInternalArrayWithExternalPrototype,
   ExternalPrimitive,
 } from "./runtime/domain";
-import type { Program, Atom, ClosureKind } from "aran";
+import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
-  weaveEvalProgram: <atom extends Atom>(root: Program<atom>) => Program<atom>;
+  weaveEvalProgram: (root: Program) => Program;
   isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
   enterPrimitive: (primitive: ExternalPrimitive) => InternalPrimitive;
   leavePrimitive: (primitive: InternalPrimitive) => ExternalPrimitive;
@@ -37,7 +37,6 @@ export type Advice = {
   enterArgumentList: (
     reference: PlainInternalArrayWithExternalPrototype,
   ) => PlainInternalArray;
-  enterNewTarget: (new_target: undefined | InternalReference) => InternalValue;
   enterPlainExternalReference: (
     reference: PlainExternalReference,
   ) => GuestInternalReference;

@@ -63,7 +63,7 @@ export type GlobalIntrinsicRecord = {
       target: PlainInternalReference,
       that: InternalValue,
       args: InternalValue[],
-    ): unknown;
+    ): InternalValue | PlainExternalReference;
     (
       target: PlainExternalReference,
       that: ExternalValue,

@@ -10,6 +10,7 @@
     "lib"
   ],
   "main": "lib/_.mjs",
+  "types": "lib/_.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lachrist/linvail.git"

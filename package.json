@@ -35,6 +35,7 @@
     "acorn": "^8.14.0",
     "aran": "^5.0.0",
     "astring": "^1.9.0",
+    "minimatch": "^10.0.1",
     "virtual-proxy": "^0.3.1"
   },
   "devDependencies": {

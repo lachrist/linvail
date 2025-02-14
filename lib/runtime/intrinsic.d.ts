@@ -52,11 +52,23 @@ export type AranIntrinsicRecord = {
 };
 
 export type GlobalIntrinsicRecord = {
+  // Other //
   "global.Proxy": new (target: any, handler: any) => GuestExternalReference;
-  "global.String": (value: ExternalValue) => string;
+  "global.String": {
+    (value: ExternalValue): string;
+    new (value: ExternalValue): PlainExternalReference;
+  };
   "global.Error": new (message: string) => Error;
   "global.TypeError": new (message: string) => Error;
   "global.undefined": undefined;
+  "global.Number": {
+    (value: ExternalValue): number;
+    new (value: ExternalValue): PlainExternalReference;
+  };
+  "global.Symbol.iterator": symbol;
+  "global.Function": new (...source: string[]) => Function;
+  "global.Function.prototype": PlainExternalReference;
+  // Reflect //
   "global.Reflect.apply": {
     (target: Primitive, that: unknown, args: unknown): never;
     (
@@ -161,6 +173,11 @@ export type GlobalIntrinsicRecord = {
     ): boolean;
     (
       target: PlainInternalArray,
+      key: number | symbol,
+      descriptor: DefineDescriptor<InternalValue, InternalValue>,
+    ): boolean;
+    (
+      target: PlainInternalArray,
       key: "length",
       descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
     ): boolean;
@@ -187,8 +204,7 @@ export type GlobalIntrinsicRecord = {
       receiver: ExternalValue,
     ): boolean;
   };
-  "global.Function": new (...source: string[]) => Function;
-  "global.Function.prototype": PlainExternalReference;
+  // Object //
   "global.Object": {
     (): PlainInternalReference & {
       __type: "Object";
@@ -196,38 +212,7 @@ export type GlobalIntrinsicRecord = {
     };
     (value: Primitive): PlainExternalReference;
   };
-  "global.Object.prototype": PlainExternalReference;
-  "global.Object.is": (value1: ExternalValue, value2: ExternalValue) => boolean;
-  "global.Object.hasOwn": {
-    (target: Primitive, key: unknown): never;
-    (target: PlainExternalReference, key: ExternalValue): boolean;
-    (target: PlainInternalReference, key: ExternalValue): boolean;
-  };
-  "global.Object.getPrototypeOf": {
-    (target: Primitive): PlainExternalReference;
-    (target: PlainExternalReference): ExternalPrototype;
-    (target: PlainInternalReference): InternalPrototype;
-  };
-  "global.Object.setPrototypeOf": {
-    (target: Primitive, prototype: unknown): Primitive;
-    (
-      target: PlainExternalReference,
-      prototype: ExternalPrototype,
-    ): PlainExternalReference;
-    (
-      target: PlainInternalReference,
-      prototype: InternalPrototype,
-    ): PlainInternalReference;
-  };
-  "global.Object.getOwnPropertyDescriptor": (
-    target: unknown,
-    key: unknown,
-  ) => never;
-  "global.Object.defineProperty": (
-    target: unknown,
-    key: unknown,
-    descriptor: unknown,
-  ) => never;
+  "global.Object.assign": unknown;
   "global.Object.create": {
     (
       prototype: InternalPrototype,
@@ -240,18 +225,83 @@ export type GlobalIntrinsicRecord = {
     ): InternalReference;
     (prototype: InternalPrototype): InternalReference;
   };
+  "global.Object.defineProperties": unknown;
+  "global.Object.defineProperty": unknown;
+  "global.Object.entries": unknown;
+  "global.Object.freeze": unknown;
+  "global.Object.fromEntries": unknown;
+  "global.Object.getOwnPropertyDescriptor": unknown;
+  "global.Object.getOwnPropertyDescriptors": unknown;
+  "global.Object.getOwnPropertyNames": unknown;
+  "global.Object.getOwnPropertySymbols": unknown;
+  "global.Object.getPrototypeOf": unknown;
+  "global.Object.groupBy": unknown;
+  "global.Object.hasOwn": {
+    (target: Primitive, key: unknown): never;
+    (target: PlainExternalReference, key: ExternalValue): boolean;
+    (target: PlainInternalReference, key: ExternalValue): boolean;
+  };
+  "global.Object.is": (value1: ExternalValue, value2: ExternalValue) => boolean;
+  "global.Object.isExtensible": unknown;
+  "global.Object.isFrozen": unknown;
+  "global.Object.isSealed": unknown;
+  "global.Object.keys": unknown;
+  "global.Object.preventExtensions": unknown;
+  "global.Object.seal": unknown;
+  "global.Object.setPrototypeOf": unknown;
+  "global.Object.values": unknown;
+  // Object.prototype //
+  "global.Object.prototype": PlainExternalReference;
+  // Array //
   "global.Array": {
     (length: number): PlainInternalArrayWithExternalPrototype;
     (...elements: InternalValue[]): PlainInternalArrayWithExternalPrototype;
   };
-  "global.Array.prototype": PlainExternalReference;
   "global.Array.of": (
     ...elements: InternalValue[]
   ) => PlainInternalArrayWithExternalPrototype;
-  "global.Number": {
-    (value: ExternalValue): number;
-    new (value: ExternalValue): PlainExternalReference;
-  };
+  "global.Array.from": unknown;
+  // Array.prototype //
+  "global.Array.prototype": PlainExternalReference;
+  "global.Array.prototype.at": unknown;
+  "global.Array.prototype.concat": unknown;
+  "global.Array.prototype.copyWithin": unknown;
+  "global.Array.prototype.fill": unknown;
+  "global.Array.prototype.find": unknown;
+  "global.Array.prototype.findIndex": unknown;
+  "global.Array.prototype.findLast": unknown;
+  "global.Array.prototype.findLastIndex": unknown;
+  "global.Array.prototype.lastIndexOf": unknown;
+  "global.Array.prototype.pop": unknown;
+  "global.Array.prototype.push": unknown;
+  "global.Array.prototype.reverse": unknown;
+  "global.Array.prototype.shift": unknown;
+  "global.Array.prototype.unshift": unknown;
+  "global.Array.prototype.slice": unknown;
+  "global.Array.prototype.sort": unknown;
+  "global.Array.prototype.splice": unknown;
+  "global.Array.prototype.includes": unknown;
+  "global.Array.prototype.indexOf": unknown;
+  "global.Array.prototype.join": unknown;
+  "global.Array.prototype.keys": unknown;
+  "global.Array.prototype.entries": unknown;
+  "global.Array.prototype.values": unknown;
+  "global.Array.prototype.forEach": unknown;
+  "global.Array.prototype.filter": unknown;
+  "global.Array.prototype.flat": unknown;
+  "global.Array.prototype.flatMap": unknown;
+  "global.Array.prototype.map": unknown;
+  "global.Array.prototype.every": unknown;
+  "global.Array.prototype.some": unknown;
+  "global.Array.prototype.reduce": unknown;
+  "global.Array.prototype.reduceRight": unknown;
+  "global.Array.prototype.toReversed": unknown;
+  "global.Array.prototype.toSorted": unknown;
+  "global.Array.prototype.toSpliced": unknown;
+  "global.Array.prototype.with": unknown;
+  "global.Array.prototype.toLocaleString": unknown;
+  "global.Array.prototype.toString": unknown;
+  "global.Array.prototype[@@iterator]": unknown;
 };
 
 export type IntrinsicRecord = AranIntrinsicRecord & GlobalIntrinsicRecord;

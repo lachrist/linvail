@@ -53,6 +53,7 @@ export type AranIntrinsicRecord = {
 
 export type GlobalIntrinsicRecord = {
   // Other //
+  "global.isNaN": (value: ExternalValue) => boolean;
   "global.Proxy": new (target: any, handler: any) => GuestExternalReference;
   "global.String": {
     (value: ExternalValue): string;

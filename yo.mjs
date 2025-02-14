@@ -1,11 +1,19 @@
-const array = {
-  _length: 0,
-  set length(val) {
-    console.log("length", { val });
-  },
-  set 0(val) {
-    console.log(0, { val });
-  },
-};
+// const arr = {
+//   __proto__: {
+//     __proto__: null,
+//     0: undefined,
+//   },
+//   length: 3,
+//   1: "bar",
+// };
 
-Array.prototype.push.call(array, "foo", "bar");
+// console.log(Array.prototype.map.call(arr, (...args) => args));
+
+const array = [1, 2, 3, 4, 5, 6];
+
+console.log(
+  array.map((...args) => {
+    array.pop();
+    return args;
+  }).length,
+);

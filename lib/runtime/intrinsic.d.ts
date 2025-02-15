@@ -43,11 +43,11 @@ export type AranIntrinsicRecord = {
     (
       prototype: ExternalPrototype,
       ...properties: ExternalValue[]
-    ): ExternalReference;
+    ): PlainExternalReference;
     (
       prototype: InternalPrototype,
       ...properties: (InternalValue | ExternalValue)[]
-    ): InternalReference;
+    ): PlainInternalObject;
   };
 };
 
@@ -226,8 +226,8 @@ export type GlobalIntrinsicRecord = {
           InternalReference
         >;
       },
-    ): InternalReference;
-    (prototype: InternalPrototype): InternalReference;
+    ): PlainInternalObject;
+    (prototype: InternalPrototype): PlainInternalObject;
   };
   "global.Object.defineProperties": unknown;
   "global.Object.defineProperty": unknown;

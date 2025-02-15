@@ -67,6 +67,7 @@ export type GlobalIntrinsicRecord = {
     new (value: ExternalValue): PlainExternalReference;
   };
   "global.Symbol.iterator": symbol;
+  "global.Symbol.species": symbol;
   "global.Function": new (...source: string[]) => Function;
   "global.Function.prototype": PlainExternalReference;
   // Reflect //
@@ -238,7 +239,6 @@ export type GlobalIntrinsicRecord = {
   "global.Object.getPrototypeOf": unknown;
   "global.Object.groupBy": unknown;
   "global.Object.hasOwn": {
-    (target: Primitive, key: unknown): never;
     (target: PlainExternalReference, key: ExternalValue): boolean;
     (target: PlainInternalReference, key: ExternalValue): boolean;
   };
@@ -255,13 +255,17 @@ export type GlobalIntrinsicRecord = {
   "global.Object.prototype": PlainExternalReference;
   // Array //
   "global.Array": {
-    (length: number): PlainInternalArrayWithExternalPrototype;
-    (...elements: InternalValue[]): PlainInternalArrayWithExternalPrototype;
+    new (length: number): PlainInternalArrayWithExternalPrototype;
+    new (...elements: InternalValue[]): PlainInternalArrayWithExternalPrototype;
   };
   "global.Array.of": (
     ...elements: InternalValue[]
   ) => PlainInternalArrayWithExternalPrototype;
   "global.Array.from": unknown;
+  "global.Array.isArray": {
+    (value: PlainInternalReference): boolean;
+    (value: PlainExternalReference): boolean;
+  };
   // Array.prototype //
   "global.Array.prototype": PlainExternalReference;
   "global.Array.prototype.at": unknown;

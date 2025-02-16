@@ -62,16 +62,19 @@ export type GlobalIntrinsicRecord = {
   "global.Error": new (message: string) => Error;
   "global.TypeError": new (message: string) => Error;
   "global.undefined": undefined;
+  "global.Function": new (...source: string[]) => Function;
+  "global.Function.prototype": PlainExternalReference;
+  // Number //
   "global.Number": {
     (value: ExternalValue): number;
     new (value: ExternalValue): PlainExternalReference;
   };
   "global.Number.MAX_SAFE_INTEGER": number;
   "global.Number.MIN_SAFE_INTEGER": number;
+  // Symbol //
   "global.Symbol.iterator": symbol;
   "global.Symbol.species": symbol;
-  "global.Function": new (...source: string[]) => Function;
-  "global.Function.prototype": PlainExternalReference;
+  "global.Symbol.isConcatSpreadable": symbol;
   // Reflect //
   "global.Reflect.apply": {
     (target: Primitive, that: unknown, args: unknown): never;

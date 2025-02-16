@@ -67,6 +67,7 @@ export type GlobalIntrinsicRecord = {
     new (value: ExternalValue): PlainExternalReference;
   };
   "global.Math.trunc": (value: number) => number;
+  "global.Math.floor": (value: number) => number;
   "global.Number.MAX_SAFE_INTEGER": number;
   "global.Number.MIN_SAFE_INTEGER": number;
   "global.Symbol.iterator": symbol;

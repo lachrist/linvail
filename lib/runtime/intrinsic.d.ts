@@ -297,7 +297,7 @@ export type GlobalIntrinsicRecord = {
   "global.Array.prototype.with": unknown;
   "global.Array.prototype.toLocaleString": unknown;
   "global.Array.prototype.toString": unknown;
-  "global.Array.prototype[@@iterator]": unknown;
+  "global.Array.prototype[@@iterator]": PlainExternalReference;
 };
 
 export type IntrinsicRecord = AranIntrinsicRecord & GlobalIntrinsicRecord;

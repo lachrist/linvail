@@ -258,11 +258,6 @@ export type GlobalIntrinsicRecord = {
   "global.Object.values": unknown;
   // Object.prototype //
   "global.Object.prototype": PlainExternalReference;
-  // Math //
-  "global.Math.trunc": (value: number) => number;
-  "global.Math.floor": (value: number) => number;
-  "global.Math.min": (value1: number, value2: number) => number;
-  "global.Math.max": (value1: number, value2: number) => number;
   // Array //
   "global.Array": {
     new (length: number): PlainInternalArrayWithExternalPrototype;

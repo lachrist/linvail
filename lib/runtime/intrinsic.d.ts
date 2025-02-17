@@ -25,30 +25,12 @@ import type { Map } from "../util/collection";
 export type AranIntrinsicRecord = {
   "aran.GeneratorFunction.prototype.prototype": PlainExternalReference;
   "aran.AsyncGeneratorFunction.prototype.prototype": PlainExternalReference;
-  "aran.sliceObject": {
-    (
-      target: InternalValue,
-      exclusion: InternalValue,
-    ): PlainInternalObjectWithExternalPrototype;
-    (target: ExternalValue, exclusion: ExternalValue): ExternalReference;
-  };
-  "aran.listForInKey": {
-    (target: ExternalValue): string[];
-    (target: InternalValue): string[];
-  };
-  "aran.getValueProperty": {
-    (target: ExternalValue, key: ExternalValue): ExternalValue;
-  };
-  "aran.createObject": {
-    (
-      prototype: ExternalPrototype,
-      ...properties: ExternalValue[]
-    ): PlainExternalReference;
-    (
-      prototype: InternalPrototype,
-      ...properties: (InternalValue | ExternalValue)[]
-    ): PlainInternalObject;
-  };
+  "aran.toArgumentList": PlainExternalReference;
+  "aran.sliceObject": unknown;
+  "aran.listForInKey": unknown;
+  "aran.getValueProperty": unknown;
+  "aran.createObject": unknown;
+  "aran.listIteratorRest": unknown;
 };
 
 export type GlobalIntrinsicRecord = {
@@ -62,8 +44,11 @@ export type GlobalIntrinsicRecord = {
   "global.Error": new (message: string) => Error;
   "global.TypeError": new (message: string) => Error;
   "global.undefined": undefined;
+  // Function //
   "global.Function": new (...source: string[]) => Function;
   "global.Function.prototype": PlainExternalReference;
+  "global.Function.prototype.arguments@get": PlainExternalReference;
+  "global.Function.prototype.arguments@set": PlainExternalReference;
   // Number //
   "global.Number": {
     (value: ExternalValue): number;
@@ -75,6 +60,7 @@ export type GlobalIntrinsicRecord = {
   "global.Symbol.iterator": symbol;
   "global.Symbol.species": symbol;
   "global.Symbol.isConcatSpreadable": symbol;
+  "global.Symbol.toStringTag": symbol;
   // Reflect //
   "global.Reflect.apply": {
     (target: Primitive, that: unknown, args: unknown): never;

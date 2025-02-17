@@ -43,6 +43,7 @@ export type GlobalIntrinsicRecord = {
   };
   "global.Error": new (message: string) => Error;
   "global.TypeError": new (message: string) => Error;
+  "global.RangeError": new (message: string) => Error;
   "global.undefined": undefined;
   // Function //
   "global.Function": new (...source: string[]) => Function;

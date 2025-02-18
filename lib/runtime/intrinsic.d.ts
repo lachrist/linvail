@@ -199,7 +199,7 @@ export type GlobalIntrinsicRecord = {
     ): boolean;
   };
   // Object //
-  "global.Object": {
+  "global.Object": PlainExternalReference & {
     (): PlainInternalReference & {
       __type: "Object";
       __prototype: "External";

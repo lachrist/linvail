@@ -1,26 +1,28 @@
 import type { ClosureKind } from "aran";
 import type {
+  ExternalValue,
   GuestExternalReference,
   GuestInternalReference,
   InternalPrimitive,
+  InternalReference,
+  InternalValue,
+  PlainExternalReference,
   PlainInternalClosure,
   PlainInternalReference,
 } from "../domain";
-import type { IntrinsicRecord, Naming } from "../intrinsic";
-import type { WeakSet, WeakMap, Set } from "../../util/collection";
-
-type Listener<E> = (event: E) => void;
-
-type ListenerRegistery<E> = Set<Listener<E>>;
+import type { IntrinsicRecord } from "../intrinsic";
+import type { WeakSet, WeakMap, Map, Set } from "../../util/collection";
 
 export type Region = IntrinsicRecord & {
-  naming: Naming;
+  naming: Map<ExternalValue, string>;
   createIntegrityFunction: () => Function;
   createIntegrityArrow: () => Function;
-  listeners: {
+  generator_prototype_prototype: PlainExternalReference;
+  async_generator_prototype_prototype: PlainExternalReference;
+  listening: {
     active: boolean;
-    capture: null | ListenerRegistery<InternalPrimitive>;
-    release: null | ListenerRegistery<InternalPrimitive>;
+    capture: null | Set<InternalReference>;
+    release: null | Set<InternalReference>;
   };
   guest_internal_reference_registery: WeakSet<GuestInternalReference>;
   internal_primitive_registery: WeakSet<InternalPrimitive>;
@@ -36,4 +38,12 @@ export type Region = IntrinsicRecord & {
     GuestExternalReference,
     PlainInternalReference
   >;
+  map_registery: WeakMap<InternalValue, Map<InternalValue, InternalValue>>;
+  set_registery: WeakMap<InternalValue, Set<InternalValue>>;
+  weak_map_registery: WeakMap<
+    InternalValue,
+    WeakMap<InternalValue, InternalValue>
+  >;
+  weak_set_registery: WeakMap<InternalValue, WeakSet<InternalValue>>;
+  dir: (value: InternalValue) => void;
 };

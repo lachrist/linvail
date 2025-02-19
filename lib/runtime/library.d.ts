@@ -54,7 +54,6 @@ export type LinvailWeakMapConstructor = {
 /////////
 
 export type LinvailSetPrototype = {
-  getSize: <K>(this: LinvailSet<K>) => number;
   has: <K>(this: LinvailSet<K>, key: K) => boolean;
   delete: <K>(this: LinvailSet<K>, key: K) => boolean;
   add: <K1, K2 extends K1>(this: LinvailSet<K1>, key: K2) => LinvailSet<K1>;
@@ -64,6 +63,7 @@ export type LinvailSetPrototype = {
     callback: (this: T, key: K, val: K, set: LinvailSet<K>) => void,
     this_arg?: T,
   ) => undefined;
+  getSize: <K>(this: LinvailSet<K>) => number;
 };
 
 export type LinvailSet<K> = {

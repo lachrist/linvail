@@ -1,13 +1,11 @@
 import { parse } from "acorn";
 import { generate } from "astring";
-import { weave as weaveCustom } from "../lib/instrument/_.mjs";
+import { weave as weaveCustom } from "../lib/instrument.mjs";
 import { retropile, transpile } from "aran";
 
 const { Error } = globalThis;
 
 export const advice_global_variable = "__LINVAIL_ADVICE__";
-
-export const library_global_variable = "Linvail";
 
 export const intrinsic_global_variable = "__LINVAIL_INTRINSIC__";
 

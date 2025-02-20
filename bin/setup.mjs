@@ -1,4 +1,4 @@
-import { createRuntime } from "../lib/runtime/_.mjs";
+import { createRuntime } from "../lib/runtime.mjs";
 import { register } from "node:module";
 import { setupile } from "aran";
 import { generate } from "astring";
@@ -7,16 +7,15 @@ import {
   advice_global_variable,
   compile,
   intrinsic_global_variable,
-  library_global_variable,
 } from "./common.mjs";
+import { library_hidden_variable } from "../lib/library-variable.mjs";
 import { env, stderr } from "node:process";
 import { listConfigWarning, toConfig } from "./config.mjs";
 import { runInThisContext } from "node:vm";
-import { defineProperty } from "../lib/runtime/oracle/helper.mjs";
 
 const {
   String,
-  Reflect: { apply },
+  Reflect: { apply, defineProperty },
   JSON: { parse },
   Array: {
     from: toArray,
@@ -162,7 +161,7 @@ const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
     enumerable: false,
     configurable: true,
   };
-  defineProperty(intrinsics.globalThis, library_global_variable, descriptor);
+  defineProperty(intrinsics.globalThis, library_hidden_variable, descriptor);
   advice.weaveEvalProgram = weave;
   intrinsics["aran.transpileEvalCode"] = (code, situ, hash) =>
     trans(`dynamic://eval/local/${hash}`, "eval", parse(situ), code);
@@ -170,7 +169,7 @@ const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
   if (global === "internal") {
     const { internalize, leavePlainInternalReference } = advice;
     {
-      /** @type {import("../lib/_").PlainExternalReference} */
+      /** @type {import("linvail").PlainExternalReference} */
       const external1 = /** @type {any} */ (
         intrinsics["aran.global_declarative_record"]
       );
@@ -181,7 +180,7 @@ const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
       intrinsics["aran.global_declarative_record"] = external2;
     }
     {
-      /** @type {import("../lib/_").PlainExternalReference} */
+      /** @type {import("linvail").PlainExternalReference} */
       const external1 = /** @type {any} */ (intrinsics.globalThis);
       const internal = internalize(external1, {
         prototype: "global.Object.prototype",

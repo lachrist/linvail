@@ -3,6 +3,7 @@
 import { ok as assert } from "node:assert";
 import { identity } from "./identity.mjs";
 import { env } from "node:process";
+import * as Linvail from "../../lib/linvail.mjs";
 
 const {
   globalThis: global,
@@ -10,9 +11,6 @@ const {
   Reflect: { get, set },
   Object: { hasOwn },
 } = globalThis;
-
-/** @type {import("../../lib/_").Linvail} */
-const Linvail = /** @type {any} */ (global).Linvail;
 
 /////////////////
 // Environment //

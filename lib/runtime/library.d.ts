@@ -109,6 +109,10 @@ export type LinvailMapConstructor = {
   readonly prototype: LinvailMapPrototype;
 };
 
+/////////////
+// Library //
+/////////////
+
 export type Linvail = {
   dir: (value: unknown) => undefined;
   is: (value1: unknown, value2: unknown) => boolean;

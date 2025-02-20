@@ -6,10 +6,10 @@ import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRuntime } from "../../lib/runtime/_.mjs";
 import { dir } from "./console.mjs";
+import { library_hidden_variable } from "../../lib/library-variable.mjs";
 
 const { eval: evalGlobal, Error } = globalThis;
 
-const LIBRARY_VARIABLE = "Linvail";
 const ADVICE_VARIABLE = "_LINVAIL_ADVICE_";
 const INTRINSIC_VARIABLE = "_ARAN_INTRINSIC_";
 const ESCAPE_PREFIX = "_aran_";
@@ -96,7 +96,7 @@ const main = async (argv) => {
   );
   const { advice, library } = createRuntime(intrinsics, { dir });
   /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
-  /** @type {any} */ (globalThis)[LIBRARY_VARIABLE] = library;
+  /** @type {any} */ (globalThis)[library_hidden_variable] = library;
   await import(toModuleSpecifier(await instrumentTarget(target)));
 };
 

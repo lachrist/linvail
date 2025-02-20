@@ -69,7 +69,7 @@ export const compile = ({ global_declarative_record }) => ({
         kind,
         situ,
         root: parse(code, {
-          sourceType: "module",
+          sourceType: kind === "eval" ? "script" : kind,
           ecmaVersion: "latest",
         }),
       },

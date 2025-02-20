@@ -16,7 +16,12 @@ import type {
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
-  internalize: (reference: PlainExternalReference) => PlainInternalReference;
+  internalize: (
+    reference: PlainExternalReference,
+    config: {
+      prototype: null | "global.Object.prototype" | "global.Array.prototype";
+    },
+  ) => PlainInternalReference;
   weaveEvalProgram: (root: Program<any>) => Program;
   isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
   enterPrimitive: (primitive: ExternalPrimitive) => InternalPrimitive;

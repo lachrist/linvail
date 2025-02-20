@@ -1,6 +1,10 @@
 import { compile } from "./common.mjs";
 import { toConfig } from "./config.mjs";
-import { env } from "node:process";
+import { env, cwd } from "node:process";
+import { pathToFileURL } from "node:url";
+import { toSpecifier } from "./specifier.mjs";
+
+const base = pathToFileURL(cwd()).href;
 
 const {
   Reflect: { apply },
@@ -10,23 +14,26 @@ const {
   },
 } = globalThis;
 
-const { selection, global_declarative_record } = toConfig(env);
+const { selection, global } = toConfig(env);
 
-const { trans, weave, retro } = compile({ global_declarative_record });
+const { trans, weave, retro } = compile({ global });
 
 const decoder = new TextDecoder("utf-8");
 
 /**
  * @type {import("node:module").LoadHook}
  */
-export const load = async (url, context, nextLoad) => {
-  const result = await nextLoad(url, context);
-  if (result.format === "module" && selection(url)) {
+export const load = async (location, context, nextLoad) => {
+  const result = await nextLoad(location, context);
+  if (
+    result.format === "module" &&
+    (!selection || selection(toSpecifier(location, base)))
+  ) {
     if (typeof result.source !== "string") {
       result.source = apply(decode, decoder, [result.source]);
     }
     result.source = retro(
-      weave(trans(url, "module", { type: "global" }, result.source)),
+      weave(trans(location, "module", { type: "global" }, result.source)),
     );
   }
   return result;

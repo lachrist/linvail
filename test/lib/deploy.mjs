@@ -3,10 +3,10 @@
 import { argv } from "node:process";
 import { parse } from "acorn";
 import { generate } from "astring";
-import { weave } from "../lib/instrument/_.mjs";
+import { weave } from "../../lib/instrument/_.mjs";
 import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
-import { createRuntime } from "../lib/runtime/_.mjs";
+import { createRuntime } from "../../lib/runtime/_.mjs";
 import { dir } from "./console.mjs";
 
 const { eval: evalGlobal, Error } = globalThis;
@@ -80,8 +80,7 @@ const instrumentTarget = async (path1) => {
  *   path: string
  * ) => string}
  */
-const toModuleSpecifier = (path) =>
-  path.startsWith("./") ? `.${path}` : `../${path}`;
+const toModuleSpecifier = (path) => `../../${path}`;
 
 /**
  * @type {(

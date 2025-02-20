@@ -26,7 +26,7 @@ const digest = (_node, node_path, _file_path, _node_kind) => node_path;
  *   region: "internal" | "external",
  * ) => "emulate" | "builtin"}
  */
-const getGlobalDeclarativeRecord = (region) => {
+const toGlobalDeclarativeRecord = (region) => {
   switch (region) {
     case "internal": {
       return "emulate";
@@ -43,7 +43,7 @@ const getGlobalDeclarativeRecord = (region) => {
 /**
  * @type {(
  *   config: {
- *     global_declarative_record: "internal" | "external",
+ *     global: "internal" | "external",
  *   },
  * ) => {
  *   trans: (
@@ -60,7 +60,7 @@ const getGlobalDeclarativeRecord = (region) => {
  *   ) => string,
  * }}
  */
-export const compile = ({ global_declarative_record }) => ({
+export const compile = ({ global }) => ({
   weave: (root) => weaveCustom(root, { advice_global_variable }),
   trans: (path, kind, situ, code) =>
     transpile(
@@ -74,9 +74,7 @@ export const compile = ({ global_declarative_record }) => ({
         }),
       },
       {
-        global_declarative_record: getGlobalDeclarativeRecord(
-          global_declarative_record,
-        ),
+        global_declarative_record: toGlobalDeclarativeRecord(global),
         digest,
       },
     ),

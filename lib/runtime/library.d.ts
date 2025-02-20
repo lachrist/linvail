@@ -19,7 +19,7 @@ export type LinvailWeakSet<K> = {
 } & LinvailWeakSetPrototype;
 
 export type LinvailWeakSetConstructor = {
-  new <K>(): LinvailWeakSet<K>;
+  new <K>(keys?: K[]): LinvailWeakSet<K>;
   readonly prototype: LinvailWeakSetPrototype;
 };
 
@@ -45,7 +45,7 @@ export type LinvailWeakMap<K, V> = {
 } & LinvailWeakMapPrototype;
 
 export type LinvailWeakMapConstructor = {
-  new <K, V>(): LinvailWeakMap<K, V>;
+  new <K, V>(entries?: [K, V][]): LinvailWeakMap<K, V>;
   readonly prototype: LinvailWeakMapPrototype;
 };
 
@@ -72,7 +72,7 @@ export type LinvailSet<K> = {
 } & LinvailSetPrototype;
 
 export type LinvailSetConstructor = {
-  new <K>(): LinvailSet<K>;
+  new <K>(keys?: K[]): LinvailSet<K>;
   readonly prototype: LinvailSetPrototype;
 };
 
@@ -105,7 +105,7 @@ export type LinvailMap<K, V> = {
 } & LinvailMapPrototype;
 
 export type LinvailMapConstructor = {
-  new <K, V>(): LinvailMap<K, V>;
+  new <K, V>(entries?: [K, V][]): LinvailMap<K, V>;
   readonly prototype: LinvailMapPrototype;
 };
 

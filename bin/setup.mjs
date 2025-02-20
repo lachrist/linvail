@@ -9,13 +9,14 @@ import {
   intrinsic_global_variable,
   library_global_variable,
 } from "./common.mjs";
-import { env } from "node:process";
-import { toConfig } from "./config.mjs";
+import { env, stderr } from "node:process";
+import { listConfigWarning, toConfig } from "./config.mjs";
+import { runInThisContext } from "node:vm";
+import { defineProperty } from "../lib/runtime/oracle/helper.mjs";
 
 const {
   String,
   Reflect: { apply },
-  eval: globalEval,
   JSON: { parse },
   Array: {
     from: toArray,
@@ -47,22 +48,16 @@ const compileFunctionCode = (parts) => {
 
 /**
  * @type {(
+ *   evalScript: (code: string) => any,
  *   config: import("./config").Config,
- * ) => {
- *   library: import("../lib/_").Linvail,
- *   advice: import("../lib/_").Advice,
- * }}
+ * ) => void}
  */
-const setup = ({
-  instrument_dynamic_code,
-  global_declarative_record,
-  global_object,
-}) => {
-  const { trans, weave, retro } = compile({ global_declarative_record });
+const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
+  const { trans, weave, retro } = compile({ global });
   /**
    * @type {import("aran").IntrinsicRecord}
    */
-  const intrinsics = globalEval(
+  const intrinsics = evalScript(
     generate(
       setupile({
         global_object_variable: "globalThis",
@@ -70,7 +65,7 @@ const setup = ({
       }),
     ),
   );
-  if (instrument_dynamic_code) {
+  if (instrument_global_dynamic_code) {
     const {
       Reflect: { apply: applyIntrinsic, construct: constructIntrinsic },
       eval: evalIntrinsic,
@@ -154,39 +149,59 @@ const setup = ({
     intrinsics.globalThis.Reflect.construct = /** @type {any} */ (construct);
   }
   const { advice, library } = createRuntime(intrinsics, { dir });
-  if (instrument_dynamic_code) {
-    advice.weaveEvalProgram = weave;
-    intrinsics["aran.transpileEvalCode"] = (code, situ, hash) =>
-      trans(`dynamic://eval/local/${hash}`, "eval", parse(situ), code);
-    intrinsics["aran.retropileEvalCode"] = retro;
-  }
-  if (global_declarative_record === "internal") {
-    const { internalize } = advice;
-    /** @type {import("../lib/_").PlainExternalReference} */
-    const external = /** @type {any} */ (
-      intrinsics["aran.global_declarative_record"]
-    );
-    const internal = internalize(external);
-    intrinsics["aran.global_declarative_record"] = internal;
-  }
-  if (global_object === "internal") {
-    const { internalize } = advice;
-    /** @type {import("../lib/_").PlainExternalReference} */
-    const external = /** @type {any} */ (intrinsics.globalThis);
-    const internal = internalize(external);
-    intrinsics.globalThis = /** @type {any} */ (internal);
-    intrinsics["aran.global_object"] = /** @type {any} */ (internal);
-  }
-  return {
-    advice,
-    // eslint-disable-next-line object-shorthand
-    library: /** @type {any} */ (library),
+  evalScript(
+    `
+      let ${advice_global_variable};
+      (advice) => { ${advice_global_variable} = advice; };
+    `,
+  )(advice);
+  const descriptor = {
+    __proto__: null,
+    value: library,
+    writable: true,
+    enumerable: false,
+    configurable: true,
   };
+  defineProperty(intrinsics.globalThis, library_global_variable, descriptor);
+  advice.weaveEvalProgram = weave;
+  intrinsics["aran.transpileEvalCode"] = (code, situ, hash) =>
+    trans(`dynamic://eval/local/${hash}`, "eval", parse(situ), code);
+  intrinsics["aran.retropileEvalCode"] = retro;
+  if (global === "internal") {
+    const { internalize, leavePlainInternalReference } = advice;
+    {
+      /** @type {import("../lib/_").PlainExternalReference} */
+      const external1 = /** @type {any} */ (
+        intrinsics["aran.global_declarative_record"]
+      );
+      const internal = internalize(external1, {
+        prototype: null,
+      });
+      const external2 = leavePlainInternalReference(internal);
+      intrinsics["aran.global_declarative_record"] = external2;
+    }
+    {
+      /** @type {import("../lib/_").PlainExternalReference} */
+      const external1 = /** @type {any} */ (intrinsics.globalThis);
+      const internal = internalize(external1, {
+        prototype: "global.Object.prototype",
+      });
+      /** @type {typeof globalThis} */
+      const external2 = /** @type {any} */ (
+        leavePlainInternalReference(internal)
+      );
+      intrinsics.globalThis = external2;
+      intrinsics["aran.global_object"] = external2;
+    }
+  }
 };
 
 {
-  const { advice, library } = setup(toConfig(env));
-  /** @type {any} */ (globalThis)[library_global_variable] = library;
-  /** @type {any} */ (globalThis)[advice_global_variable] = advice;
+  const config = toConfig(env);
+  for (const warning of listConfigWarning(config)) {
+    // eslint-disable-next-line local/no-method-call
+    stderr.write(`Warning: ${warning}\n`);
+  }
+  setup(runInThisContext, config);
   register("./hook.mjs", import.meta.url);
 }

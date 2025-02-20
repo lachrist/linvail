@@ -4,7 +4,7 @@
  * @type {(
  *   location: string,
  *   base: string,
- * ) => null | string}
+ * ) => import("./config").Specifier}
  */
 export const toSpecifier = (location, base) => {
   const parts1 = location.split("/");
@@ -26,5 +26,5 @@ export const toSpecifier = (location, base) => {
   } else {
     parts1.unshift(".");
   }
-  return parts1.join("/");
+  return /** @type {import("./config").Specifier} */ (parts1.join("/"));
 };

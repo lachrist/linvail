@@ -2,7 +2,10 @@
 
 import { makeRe } from "minimatch";
 
-const { Error } = globalThis;
+const {
+  Error,
+  Object: { hasOwn, getOwnPropertyNames },
+} = globalThis;
 
 /**
  * @type {(
@@ -77,46 +80,84 @@ const regions = ["internal", "external"];
 
 /**
  * @type {(
+ *   config: import("./config").Config,
+ * ) => string[]}
+ */
+export const listConfigWarning = ({
+  global,
+  selection,
+  instrument_global_dynamic_code,
+}) => {
+  /** @type {string[]} */
+  const warnings = [];
+  if (global === "internal") {
+    if (selection !== null) {
+      warnings.push(
+        "Internalizing the global object (and the global declarative record) requires to instrument every single files, " +
+          "thus selecting them is unsafe and both LINVAIL_INCLUDE and LINVAIL_EXCLUDE should be left empty.",
+      );
+    }
+    if (!instrument_global_dynamic_code) {
+      warnings.push(
+        "Internalizing the global object (and the global declarative record) requires to instrument global dynamic code.",
+      );
+    }
+  }
+  return warnings;
+};
+
+const default_config = {
+  LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE: "1",
+  LINVAIL_GLOBAL: "external",
+  LINVAIL_INCLUDE: "**/*",
+  LINVAIL_EXCLUDE: "",
+};
+
+/**
+ * @type {(
  *   env: {[k in string]?: string},
  * ) => import("./config").Config}
  */
 export const toConfig = (env) => {
+  for (const key of getOwnPropertyNames(env)) {
+    if (key.startsWith("LINVAIL_") && !hasOwn(default_config, key)) {
+      throw new Error(`Unknown linvail configuration key: ${key}`);
+    }
+  }
   const config = {
-    LINVAIL_INSTRUMENT_DYNAMIC_CODE: "1",
-    LINVAIL_GLOBAL_DECLARATIVE_RECORD: "emulate",
-    LINVAIL_INCLUDE: "**/*",
-    LINVAIL_EXCLUDE: "",
+    ...default_config,
     ...env,
   };
   const inclusions = compileGlobRegExpArray(config.LINVAIL_INCLUDE);
   const exclusions = compileGlobRegExpArray(config.LINVAIL_EXCLUDE);
   return {
-    instrument_dynamic_code: getBoolean(
-      config.LINVAIL_INSTRUMENT_DYNAMIC_CODE,
-      "LINVAIL_INSTRUMENT_DYNAMIC_CODE",
+    instrument_global_dynamic_code: getBoolean(
+      config.LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE,
+      "LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE",
     ),
-    global_declarative_record: getEnumeration(
-      config.LINVAIL_GLOBAL_DECLARATIVE_RECORD,
-      regions,
-      "LINVAIL_GLOBAL_DECLARATIVE_RECORD",
-    ),
-    global_object: getEnumeration(
-      config.LINVAIL_GLOBAL_DECLARATIVE_RECORD,
+    global: getEnumeration(
+      config.LINVAIL_GLOBAL,
       regions,
       "LINVAIL_GLOBAL_OBJECT",
     ),
-    selection: (specifier) => {
-      for (const inclusion of inclusions) {
-        if (inclusion.test(specifier)) {
-          for (const exclusion of exclusions) {
-            if (exclusion.test(specifier)) {
-              return false;
+    selection:
+      config.LINVAIL_INCLUDE === "**/*" && config.LINVAIL_EXCLUDE === ""
+        ? null
+        : (specifier) => {
+            const normal = specifier.startsWith("./")
+              ? specifier.slice(2)
+              : specifier;
+            for (const inclusion of inclusions) {
+              if (inclusion.test(normal)) {
+                for (const exclusion of exclusions) {
+                  if (exclusion.test(normal)) {
+                    return false;
+                  }
+                }
+                return true;
+              }
             }
-          }
-          return true;
-        }
-      }
-      return false;
-    },
+            return false;
+          },
   };
 };

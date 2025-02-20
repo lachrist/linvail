@@ -39,23 +39,6 @@ const compileGlobRegExpArray = (globs) => {
 };
 
 /**
- * @type {(
- *   value: string,
- *   name: string,
- * ) => boolean}
- */
-const getBoolean = (value, location) => {
-  value = value.toLowerCase();
-  if (value === "true" || value === "1" || value === "on" || value === "yes") {
-    return true;
-  }
-  if (value === "false" || value === "0" || value === "off" || value === "no") {
-    return false;
-  }
-  throw new Error(`Invalid boolean value for ${location}, got: ${value}`);
-};
-
-/**
  * @type {<X extends string>(
  *   value: string,
  *   valids: X[],
@@ -82,20 +65,20 @@ const regions = ["internal", "external"];
  * ) => string[]}
  */
 export const listConfigWarning = ({
-  global,
+  global_object,
   selection,
-  instrument_global_dynamic_code,
+  global_dynamic_code,
 }) => {
   /** @type {string[]} */
   const warnings = [];
-  if (global === "internal") {
+  if (global_object === "internal") {
     if (selection !== null) {
       warnings.push(
         "Internalizing the global object (and the global declarative record) requires to instrument every single files, " +
           "thus selecting them is unsafe and both LINVAIL_INCLUDE and LINVAIL_EXCLUDE should be left empty.",
       );
     }
-    if (!instrument_global_dynamic_code) {
+    if (global_dynamic_code !== "internal") {
       warnings.push(
         "Internalizing the global object (and the global declarative record) requires to instrument global dynamic code.",
       );
@@ -105,8 +88,8 @@ export const listConfigWarning = ({
 };
 
 const default_config = {
-  LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE: "1",
-  LINVAIL_GLOBAL: "external",
+  LINVAIL_GLOBAL_DYNAMIC_CODE: "internal",
+  LINVAIL_GLOBAL_OBJECT: "external",
   LINVAIL_INCLUDE: "**/*",
   LINVAIL_EXCLUDE: "",
 };
@@ -129,12 +112,13 @@ export const toConfig = (env) => {
   const inclusions = compileGlobRegExpArray(config.LINVAIL_INCLUDE);
   const exclusions = compileGlobRegExpArray(config.LINVAIL_EXCLUDE);
   return {
-    instrument_global_dynamic_code: getBoolean(
-      config.LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE,
-      "LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE",
+    global_dynamic_code: getEnumeration(
+      config.LINVAIL_GLOBAL_DYNAMIC_CODE,
+      regions,
+      "LINVAIL_GLOBAL_DYNAMIC_CODE",
     ),
-    global: getEnumeration(
-      config.LINVAIL_GLOBAL,
+    global_object: getEnumeration(
+      config.LINVAIL_GLOBAL_OBJECT,
       regions,
       "LINVAIL_GLOBAL_OBJECT",
     ),

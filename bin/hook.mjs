@@ -14,9 +14,9 @@ const {
   },
 } = globalThis;
 
-const { selection, global } = toConfig(env);
+const { selection, global_object } = toConfig(env);
 
-const { trans, weave, retro } = compile({ global });
+const { trans, weave, retro } = compile({ global_object });
 
 const decoder = new TextDecoder("utf-8");
 

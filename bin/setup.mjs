@@ -51,8 +51,8 @@ const compileFunctionCode = (parts) => {
  *   config: import("./config").Config,
  * ) => void}
  */
-const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
-  const { trans, weave, retro } = compile({ global });
+const setup = (evalScript, { global_dynamic_code, global_object }) => {
+  const { trans, weave, retro } = compile({ global_object });
   /**
    * @type {import("aran").IntrinsicRecord}
    */
@@ -64,7 +64,7 @@ const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
       }),
     ),
   );
-  if (instrument_global_dynamic_code) {
+  if (global_dynamic_code === "internal") {
     const {
       Reflect: { apply: applyIntrinsic, construct: constructIntrinsic },
       eval: evalIntrinsic,
@@ -166,7 +166,7 @@ const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
   intrinsics["aran.transpileEvalCode"] = (code, situ, hash) =>
     trans(`dynamic://eval/local/${hash}`, "eval", parse(situ), code);
   intrinsics["aran.retropileEvalCode"] = retro;
-  if (global === "internal") {
+  if (global_object === "internal") {
     const { internalize, leavePlainInternalReference } = advice;
     {
       /** @type {import("linvail").PlainExternalReference} */

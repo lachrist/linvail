@@ -6,8 +6,8 @@ node --import ./bin/setup.mjs ./test/bin/main.mjs
 echo "With identity module exclusion..."
 LINVAIL_EXCLUDE='**/identity.mjs' node --import ./bin/setup.mjs ./test/bin/main.mjs
 
-echo "With global dynamic code instrumentation..."
-LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE=0 node --import ./bin/setup.mjs ./test/bin/main.mjs
+echo "Without global dynamic code instrumentation..."
+LINVAIL_GLOBAL_DYNAMIC_CODE=external node --import ./bin/setup.mjs ./test/bin/main.mjs
 
 echo "With global object internalization..."
-LINVAIL_GLOBAL=internal node --import ./bin/setup.mjs ./test/bin/main.mjs
+LINVAIL_GLOBAL_OBJECT=internal node --import ./bin/setup.mjs ./test/bin/main.mjs

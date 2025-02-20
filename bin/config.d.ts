@@ -1,7 +1,7 @@
 export type Specifier = string & { __brand: "Specifier" };
 
 export type Config = {
-  instrument_global_dynamic_code: boolean;
-  global: "internal" | "external";
+  global_dynamic_code: "internal" | "external";
+  global_object: "internal" | "external";
   selection: null | ((specifier: Specifier) => boolean);
 };

@@ -41,7 +41,7 @@ const toGlobalDeclarativeRecord = (region) => {
 /**
  * @type {(
  *   config: {
- *     global: "internal" | "external",
+ *     global_object: "internal" | "external",
  *   },
  * ) => {
  *   trans: (
@@ -58,7 +58,7 @@ const toGlobalDeclarativeRecord = (region) => {
  *   ) => string,
  * }}
  */
-export const compile = ({ global }) => ({
+export const compile = ({ global_object }) => ({
   weave: (root) => weaveCustom(root, { advice_global_variable }),
   trans: (path, kind, situ, code) =>
     transpile(
@@ -72,7 +72,7 @@ export const compile = ({ global }) => ({
         }),
       },
       {
-        global_declarative_record: toGlobalDeclarativeRecord(global),
+        global_declarative_record: toGlobalDeclarativeRecord(global_object),
         digest,
       },
     ),

@@ -199,7 +199,6 @@ const setup = (evalScript, { instrument_global_dynamic_code, global }) => {
 {
   const config = toConfig(env);
   for (const warning of listConfigWarning(config)) {
-    // eslint-disable-next-line local/no-method-call
     stderr.write(`Warning: ${warning}\n`);
   }
   setup(runInThisContext, config);

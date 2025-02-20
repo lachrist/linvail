@@ -1,5 +1,3 @@
-/* eslint-disable local/no-method-call */
-
 /**
  * @type {import("eslint").Rule.RuleModule}
  */

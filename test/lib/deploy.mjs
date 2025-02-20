@@ -1,5 +1,3 @@
-/* eslint-disable local/no-method-call */
-
 import { argv } from "node:process";
 import { parse } from "acorn";
 import { generate } from "astring";

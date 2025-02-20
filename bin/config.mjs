@@ -1,5 +1,3 @@
-/* eslint-disable local/no-method-call */
-
 import { makeRe } from "minimatch";
 
 const {

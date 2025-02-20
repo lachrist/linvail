@@ -1,5 +1,3 @@
-/* eslint-disable local/no-method-call */
-
 /** @type {(node: import("estree").Expression | import("estree").Super) => boolean} */
 const isConsole = (node) =>
   node.type === "Identifier" && node.name === "console";

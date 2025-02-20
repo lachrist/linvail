@@ -1,4 +1,14 @@
-.DS_Store
-/demo/
+
+/bin/**/*.test.mjs
+/coverage/
 /img/
+/lib/**/*.test.mjs
+/lib/**/*.test.inst.mjs
+/lint/
+/node_modules/
 /test/
+
+/*
+!LICENSE
+!README
+!package.json

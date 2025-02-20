@@ -1,14 +1,14 @@
 {
   "name": "linvail",
-  "description": "Access Control System",
-  "version": "6.0.12",
+  "description": "Provenancial Equality for JavaScript",
+  "version": "7.0.0",
   "author": {
     "name": "Laurent Christophe",
     "email": "laurent.christophe.terken@gmail.com"
   },
-  "files": [
-    "lib"
-  ],
+  "bin": {
+    "linvail": "bin/linvail.mjs"
+  },
   "main": "lib/_.mjs",
   "types": "lib/_.d.ts",
   "repository": {
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/lachrist/linvail.git"
   },
   "scripts": {
-    "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint 'lint/**/*.mjs' 'lib/**/*.mjs' 'lib/**/*.d.ts' 'bin/**/*.mjs'",
+    "lint": "npx tsc && npx prettier -c '**/*.(mjs|d.ts)' && npx eslint",
     "format": "npx prettier -w '**/*.(mjs|d.ts)'",
     "test:lib": "sh test/lib/exec.sh",
     "test:bin": "sh test/bin/exec.sh",
@@ -28,6 +28,10 @@
   "homepage": "https://github.com/lachrist/linvail",
   "license": "MIT",
   "keywords": [
+    "Data Provenance",
+    "Instrumentation",
+    "Taint Analysis",
+    "Dynamic Program Analsysis",
     "Membrane",
     "Control Access System",
     "Proxy",

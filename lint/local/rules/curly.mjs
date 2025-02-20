@@ -1,5 +1,3 @@
-/* eslint-disable local/no-method-call */
-
 // builtin curly does not support switch cases
 
 /**

@@ -21,7 +21,7 @@ const Linvail = /** @type {any} */ (global).Linvail;
 {
   const foo1 = 123;
   const foo2 = foo1;
-  assert(Linvail.same(foo1, foo2));
+  assert(Linvail.is(foo1, foo2));
 }
 
 ///////////////
@@ -31,7 +31,7 @@ const Linvail = /** @type {any} */ (global).Linvail;
 {
   const foo1 = 123;
   const foo2 = identity(foo1);
-  assert(Linvail.same(foo1, foo2) === !hasOwn(env, "LINVAIL_EXCLUDE"));
+  assert(Linvail.is(foo1, foo2) === !hasOwn(env, "LINVAIL_EXCLUDE"));
 }
 
 ///////////
@@ -42,7 +42,7 @@ const Linvail = /** @type {any} */ (global).Linvail;
   const foo1 = 123;
   const object = { foo: foo1 };
   const foo2 = get(object, "foo");
-  assert(Linvail.same(foo1, foo2));
+  assert(Linvail.is(foo1, foo2));
 }
 
 {
@@ -50,7 +50,7 @@ const Linvail = /** @type {any} */ (global).Linvail;
   const object = {};
   assert(set(object, "foo", foo1, object));
   const foo2 = get(object, "foo");
-  assert(Linvail.same(foo1, foo2));
+  assert(Linvail.is(foo1, foo2));
 }
 
 ///////////////////
@@ -63,7 +63,7 @@ assert(evalGlobal("this;") === global);
   const foo1 = 123;
   assert(set(global, "foo", foo1, global));
   const foo2 = get(global, "foo");
-  assert(Linvail.same(foo1, foo2) === hasOwn(env, "LINVAIL_GLOBAL"));
+  assert(Linvail.is(foo1, foo2) === hasOwn(env, "LINVAIL_GLOBAL"));
 }
 
 //////////////////
@@ -73,7 +73,7 @@ assert(evalGlobal("this;") === global);
 {
   const foo1 = 123;
   const foo2 = eval("foo1;");
-  assert(Linvail.same(foo1, foo2));
+  assert(Linvail.is(foo1, foo2));
 }
 
 {
@@ -81,7 +81,7 @@ assert(evalGlobal("this;") === global);
   const identity = evalGlobal("((arg) => arg);");
   const foo2 = identity(foo1);
   assert(
-    Linvail.same(foo1, foo2) ===
+    Linvail.is(foo1, foo2) ===
       !hasOwn(env, "LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE"),
   );
 }
@@ -91,7 +91,7 @@ assert(evalGlobal("this;") === global);
   const identity = new Function("arg", "return arg;");
   const foo2 = identity(foo1);
   assert(
-    Linvail.same(foo1, foo2) ===
+    Linvail.is(foo1, foo2) ===
       !hasOwn(env, "LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE"),
   );
 }
@@ -101,7 +101,7 @@ assert(evalGlobal("this;") === global);
   const identity = Function("arg", "return arg;");
   const foo2 = identity(foo1);
   assert(
-    Linvail.same(foo1, foo2) ===
+    Linvail.is(foo1, foo2) ===
       !hasOwn(env, "LINVAIL_INSTRUMENT_GLOBAL_DYNAMIC_CODE"),
   );
 }
@@ -118,13 +118,13 @@ assert(evalGlobal("this;") === global);
   const map = new Linvail.WeakMap([[key1, val1]]);
   assert(map.has(key1));
   assert(!map.has(key2));
-  assert(Linvail.same(map.get(key1), val1));
-  assert(!Linvail.same(map.get(key2), val2));
+  assert(Linvail.is(map.get(key1), val1));
+  assert(!Linvail.is(map.get(key2), val2));
   assert(map.get(key2) === undefined);
   assert(map.delete(key2) === false);
   assert(map.delete(key1) === true);
   assert(!map.has(key1));
   assert(map.set(key2, val2) === map);
   assert(map.has(key2));
-  assert(Linvail.same(map.get(key2), val2));
+  assert(Linvail.is(map.get(key2), val2));
 }

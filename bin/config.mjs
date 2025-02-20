@@ -75,7 +75,7 @@ export const listConfigWarning = ({
     if (selection !== null) {
       warnings.push(
         "Internalizing the global object (and the global declarative record) requires to instrument every single files, " +
-          "thus selecting them is unsafe and both LINVAIL_INCLUDE and LINVAIL_EXCLUDE should be left empty.",
+          "thus selecting them is unsafe and LINVAIL_INCLUDE and LINVAIL_EXCLUDE should respectively be set to '**/*' and ''.",
       );
     }
     if (global_dynamic_code !== "internal") {
@@ -91,7 +91,7 @@ const default_config = {
   LINVAIL_GLOBAL_DYNAMIC_CODE: "internal",
   LINVAIL_GLOBAL_OBJECT: "external",
   LINVAIL_INCLUDE: "**/*",
-  LINVAIL_EXCLUDE: "",
+  LINVAIL_EXCLUDE: "node_modules/**/*",
 };
 
 /**

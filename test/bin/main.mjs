@@ -9,7 +9,6 @@ const {
   globalThis: global,
   eval: evalGlobal,
   Reflect: { get, set },
-  Object: { hasOwn },
 } = globalThis;
 
 /////////////////
@@ -29,7 +28,9 @@ const {
 {
   const foo1 = 123;
   const foo2 = identity(foo1);
-  assert(Linvail.is(foo1, foo2) === !hasOwn(env, "LINVAIL_EXCLUDE"));
+  assert(
+    Linvail.is(foo1, foo2) === (env.LINVAIL_EXCLUDE !== "**/identity.mjs"),
+  );
 }
 
 ///////////
@@ -61,7 +62,7 @@ assert(evalGlobal("this;") === global);
   const foo1 = 123;
   assert(set(global, "foo", foo1, global));
   const foo2 = get(global, "foo");
-  assert(Linvail.is(foo1, foo2) === hasOwn(env, "LINVAIL_GLOBAL_OBJECT"));
+  assert(Linvail.is(foo1, foo2) === (env.LINVAIL_GLOBAL_OBJECT === "internal"));
 }
 
 //////////////////
@@ -79,7 +80,7 @@ assert(evalGlobal("this;") === global);
   const identity = evalGlobal("((arg) => arg);");
   const foo2 = identity(foo1);
   assert(
-    Linvail.is(foo1, foo2) === !hasOwn(env, "LINVAIL_GLOBAL_DYNAMIC_CODE"),
+    Linvail.is(foo1, foo2) === (env.LINVAIL_GLOBAL_DYNAMIC_CODE !== "external"),
   );
 }
 
@@ -88,7 +89,7 @@ assert(evalGlobal("this;") === global);
   const identity = new Function("arg", "return arg;");
   const foo2 = identity(foo1);
   assert(
-    Linvail.is(foo1, foo2) === !hasOwn(env, "LINVAIL_GLOBAL_DYNAMIC_CODE"),
+    Linvail.is(foo1, foo2) === (env.LINVAIL_GLOBAL_DYNAMIC_CODE !== "external"),
   );
 }
 
@@ -97,7 +98,7 @@ assert(evalGlobal("this;") === global);
   const identity = Function("arg", "return arg;");
   const foo2 = identity(foo1);
   assert(
-    Linvail.is(foo1, foo2) === !hasOwn(env, "LINVAIL_GLOBAL_DYNAMIC_CODE"),
+    Linvail.is(foo1, foo2) === (env.LINVAIL_GLOBAL_DYNAMIC_CODE !== "external"),
   );
 }
 

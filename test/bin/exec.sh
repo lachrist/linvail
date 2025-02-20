@@ -10,4 +10,4 @@ echo "Without global dynamic code instrumentation..."
 LINVAIL_GLOBAL_DYNAMIC_CODE=external node --import ./bin/setup.mjs ./test/bin/main.mjs
 
 echo "With global object internalization..."
-LINVAIL_GLOBAL_OBJECT=internal node --import ./bin/setup.mjs ./test/bin/main.mjs
+LINVAIL_GLOBAL_OBJECT=internal LINVAIL_EXCLUDE='' node --import ./bin/setup.mjs ./test/bin/main.mjs

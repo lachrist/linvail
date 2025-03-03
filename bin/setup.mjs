@@ -169,7 +169,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
   if (global_object === "internal") {
     const { internalize, leavePlainInternalReference } = advice;
     {
-      /** @type {import("linvail").PlainExternalReference} */
+      /** @type {import("../lib/types").PlainExternalReference} */
       const external1 = /** @type {any} */ (
         intrinsics["aran.global_declarative_record"]
       );
@@ -180,7 +180,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
       intrinsics["aran.global_declarative_record"] = external2;
     }
     {
-      /** @type {import("linvail").PlainExternalReference} */
+      /** @type {import("../lib/types").PlainExternalReference} */
       const external1 = /** @type {any} */ (intrinsics.globalThis);
       const internal = internalize(external1, {
         prototype: "global.Object.prototype",

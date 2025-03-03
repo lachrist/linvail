@@ -9,6 +9,7 @@ export const createRuntime: (
   intrinsics: IntrinsicRecord,
   config: {
     dir: (value: unknown) => void;
+    count: boolean;
   },
 ) => {
   library: Library;

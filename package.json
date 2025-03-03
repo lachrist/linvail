@@ -1,7 +1,7 @@
 {
   "name": "linvail",
   "description": "Provenancial Equality for JavaScript",
-  "version": "7.0.1",
+  "version": "7.1.1",
   "author": {
     "name": "Laurent Christophe",
     "email": "laurent.christophe.terken@gmail.com"
@@ -9,13 +9,16 @@
   "bin": {
     "linvail": "./bin/linvail.mjs"
   },
+  "main": "./lib/linvail.mjs",
+  "types": "./lib/linvail.d.ts",
   "exports": {
     ".": {
       "import": "./lib/linvail.mjs",
       "types": "./lib/linvail.d.ts"
     },
-    "./types": {
-      "types": "./lib/types.d.ts"
+    "./library": {
+      "import": "./lib/library.mjs",
+      "types": "./lib/library.d.ts"
     },
     "./runtime": {
       "import": "./lib/runtime.mjs",

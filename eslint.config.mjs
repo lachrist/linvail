@@ -1,1 +1,1 @@
-export { default } from "./lint/index.mjs";
+export { default } from "./lint/config.mjs";

@@ -8,7 +8,7 @@ import {
   compile,
   intrinsic_global_variable,
 } from "./common.mjs";
-import { library_hidden_variable } from "../lib/library-variable.mjs";
+import { library_hidden_variable } from "../lib/library/library-variable.mjs";
 import { env, stderr } from "node:process";
 import { listConfigWarning, toConfig } from "./config.mjs";
 import { runInThisContext } from "node:vm";
@@ -169,7 +169,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
   if (global_object === "internal") {
     const { internalize, leavePlainInternalReference } = advice;
     {
-      /** @type {import("../lib/types").PlainExternalReference} */
+      /** @type {import("../lib/linvail").PlainExternalReference} */
       const external1 = /** @type {any} */ (
         intrinsics["aran.global_declarative_record"]
       );
@@ -180,7 +180,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
       intrinsics["aran.global_declarative_record"] = external2;
     }
     {
-      /** @type {import("../lib/types").PlainExternalReference} */
+      /** @type {import("../lib/linvail").PlainExternalReference} */
       const external1 = /** @type {any} */ (intrinsics.globalThis);
       const internal = internalize(external1, {
         prototype: "global.Object.prototype",

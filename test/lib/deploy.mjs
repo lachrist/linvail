@@ -1,12 +1,12 @@
 import { argv } from "node:process";
 import { parse } from "acorn";
 import { generate } from "astring";
-import { weave } from "../../lib/instrument/_.mjs";
+import { weave } from "../../lib/instrument.mjs";
 import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
-import { createRuntime } from "../../lib/runtime/_.mjs";
+import { createRuntime } from "../../lib/runtime/runtime.mjs";
 import { dir } from "./console.mjs";
-import { library_hidden_variable } from "../../lib/library-variable.mjs";
+import { library_hidden_variable } from "../../lib/library/library-variable.mjs";
 
 const { eval: evalGlobal, Error } = globalThis;
 

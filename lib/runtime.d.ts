@@ -1,7 +1,7 @@
 import type { IntrinsicRecord } from "aran";
 import type { StandardAdvice, StandardAspectKind } from "./runtime/standard";
 import type { Advice } from "./advice";
-import type { Linvail } from "./runtime/library";
+import type { Library } from "./library/library";
 
 export const toStandardAdvice: <T>(advice: Advice) => StandardAdvice<T>;
 
@@ -11,7 +11,7 @@ export const createRuntime: (
     dir: (value: unknown) => void;
   },
 ) => {
-  library: Linvail;
+  library: Library;
   advice: Advice;
 };
 

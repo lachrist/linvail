@@ -3,7 +3,7 @@
 import { ok as assert } from "node:assert";
 import { identity } from "./identity.mjs";
 import { env } from "node:process";
-import * as Linvail from "../../lib/linvail.mjs";
+import * as Linvail from "../../lib/library.mjs";
 
 const {
   globalThis: global,

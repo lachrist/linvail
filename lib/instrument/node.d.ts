@@ -8,12 +8,6 @@ import type {
   Effect as GenericEffect,
   Expression as GenericExpression,
 } from "aran";
-import type { Advice } from "../advice";
-
-export type Convertion = Exclude<
-  keyof Advice,
-  "apply" | "construct" | "enterClosure"
->;
 
 export { Intrinsic, Parameter };
 export type Variable = { __brand: "Variable" } & string;

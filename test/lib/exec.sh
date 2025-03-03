@@ -19,7 +19,7 @@ npx c8 \
   --exclude lib/runtime/region/_.test.inst.mjs \
   -- node test/lib/deploy.mjs lib/runtime/region/_.test.mjs
 
-echo "test runtime/library...";
+echo "test library...";
 npx c8 \
-  --include lib/runtime/library.mjs \
-  -- node test/lib/deploy.mjs lib/runtime/library.test.mjs
+  --include lib/library/create.mjs \
+  -- node test/lib/deploy.mjs lib/library/_.test.mjs

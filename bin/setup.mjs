@@ -51,7 +51,7 @@ const compileFunctionCode = (parts) => {
  *   config: import("./config").Config,
  * ) => void}
  */
-const setup = (evalScript, { global_dynamic_code, global_object }) => {
+const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   const { trans, weave, retro } = compile({ global_object });
   /**
    * @type {import("aran").IntrinsicRecord}
@@ -147,7 +147,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
     };
     intrinsics.globalThis.Reflect.construct = /** @type {any} */ (construct);
   }
-  const { advice, library } = createRuntime(intrinsics, { dir });
+  const { advice, library } = createRuntime(intrinsics, { dir, count });
   evalScript(
     `
       let ${advice_global_variable};

@@ -14,6 +14,7 @@ import type { IntrinsicRecord } from "../intrinsic";
 import type { WeakSet, WeakMap, Map, Set } from "../../util/collection";
 
 export type Region = IntrinsicRecord & {
+  counter: null | { value: number };
   naming: Map<ExternalValue, string>;
   createIntegrityFunction: () => Function;
   createIntegrityArrow: () => Function;

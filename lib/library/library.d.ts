@@ -94,7 +94,7 @@ export type LinvailMapPrototype = {
   forEach: <T, K, V>(
     this: LinvailMap<K, V>,
     callback: (this: T, key: K, val: V, map: LinvailMap<K, V>) => void,
-    this_arg: T,
+    this_arg?: T,
   ) => undefined;
 };
 

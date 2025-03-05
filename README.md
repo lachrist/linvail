@@ -17,6 +17,9 @@ implication holds:
 
 [demo](https://lachrist.github.io/aran/page/demo/track.html)
 
+Provenancial equality forms the foundation for advanced dynamic program
+analyses, such as taint analysis and concolic testing.
+
 ## Basic Usage in Node
 
 ```mjs

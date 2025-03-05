@@ -15,6 +15,8 @@ implication holds:
 (x eq_prov y) => (x eq_ref y) => (x eq_struct y)
 ```
 
+[demo](https://lachrist.github.io/aran/page/demo/track.html)
+
 ## Basic Usage in Node
 
 ```mjs

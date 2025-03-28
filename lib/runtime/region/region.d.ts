@@ -4,7 +4,6 @@ import type {
   GuestExternalReference,
   GuestInternalReference,
   InternalPrimitive,
-  InternalReference,
   InternalValue,
   PlainExternalReference,
   PlainInternalClosure,
@@ -22,8 +21,8 @@ export type Region = IntrinsicRecord & {
   async_generator_prototype_prototype: PlainExternalReference;
   listening: {
     active: boolean;
-    capture: null | Set<InternalReference>;
-    release: null | Set<InternalReference>;
+    capture: null | Map<symbol, (primitive: InternalPrimitive) => void>;
+    release: null | Map<symbol, (primitive: InternalPrimitive) => void>;
   };
   guest_internal_reference_registery: WeakSet<GuestInternalReference>;
   internal_primitive_registery: WeakSet<InternalPrimitive>;

@@ -121,11 +121,11 @@ export type Library = {
   Set: LinvailSetConstructor;
   Map: LinvailMapConstructor;
   addEventListener: (
-    type: "capture" | "release",
+    event_name: "capture" | "release",
     listener: (event: Primitive) => void,
-  ) => void;
+  ) => symbol;
   removeEventListener: (
-    type: "capture" | "release",
-    listener: (event: Primitive) => void,
-  ) => void;
+    event_name: "capture" | "release",
+    listener_symbol: symbol,
+  ) => boolean;
 };

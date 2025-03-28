@@ -16,6 +16,11 @@ import type {
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
+  addEventListener: (
+    event: "capture" | "release",
+    listener: (primitive: InternalPrimitive) => void,
+  ) => symbol;
+  removeEventListener: (event: "capture" | "release", token: symbol) => boolean;
   internalize: (
     reference: PlainExternalReference,
     config: {

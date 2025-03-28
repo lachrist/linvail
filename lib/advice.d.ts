@@ -18,7 +18,7 @@ import type { Program, ClosureKind } from "aran";
 export type Advice = {
   addEventListener: (
     event: "capture" | "release",
-    listener: (primitive: InternalPrimitive) => void,
+    listener: (value: InternalValue) => void,
   ) => symbol;
   removeEventListener: (event: "capture" | "release", token: symbol) => boolean;
   internalize: (
@@ -28,6 +28,12 @@ export type Advice = {
     },
   ) => PlainInternalReference;
   weaveEvalProgram: (root: Program<any>) => Program;
+  isGuestInternalReference: (
+    value: InternalValue,
+  ) => value is GuestInternalReference;
+  isPlainInternalReference: (
+    value: InternalValue,
+  ) => value is PlainInternalReference;
   isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
   enterPrimitive: (primitive: ExternalPrimitive) => InternalPrimitive;
   leavePrimitive: (primitive: InternalPrimitive) => ExternalPrimitive;

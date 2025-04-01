@@ -1,4 +1,4 @@
-import { createRuntime } from "../lib/runtime.mjs";
+import { setupRuntime } from "../lib/runtime.mjs";
 import { register } from "node:module";
 import { setupile } from "aran";
 import { generate } from "astring";
@@ -8,14 +8,13 @@ import {
   compile,
   intrinsic_global_variable,
 } from "./common.mjs";
-import { library_hidden_variable } from "../lib/library/library-variable.mjs";
 import { env, stderr } from "node:process";
 import { listConfigWarning, toConfig } from "./config.mjs";
 import { runInThisContext } from "node:vm";
 
 const {
   String,
-  Reflect: { apply, defineProperty },
+  Reflect: { apply },
   JSON: { parse },
   Array: {
     from: toArray,
@@ -147,21 +146,13 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
     };
     intrinsics.globalThis.Reflect.construct = /** @type {any} */ (construct);
   }
-  const { advice, library } = createRuntime(intrinsics, { dir, count });
+  const advice = setupRuntime(intrinsics, { dir, count });
   evalScript(
     `
       let ${advice_global_variable};
       (advice) => { ${advice_global_variable} = advice; };
     `,
   )(advice);
-  const descriptor = {
-    __proto__: null,
-    value: library,
-    writable: true,
-    enumerable: false,
-    configurable: true,
-  };
-  defineProperty(intrinsics.globalThis, library_hidden_variable, descriptor);
   advice.weaveEvalProgram = weave;
   intrinsics["aran.transpileEvalCode"] = (code, situ, hash) =>
     trans(`dynamic://eval/local/${hash}`, "eval", parse(situ), code);

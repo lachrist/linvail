@@ -16,4 +16,12 @@ export const createRuntime: (
   advice: Advice;
 };
 
+export const setupRuntime: (
+  intrinsics: IntrinsicRecord,
+  config: {
+    dir: (value: unknown) => void;
+    count: boolean;
+  },
+) => Advice;
+
 export const standard_pointcut: StandardAspectKind[];

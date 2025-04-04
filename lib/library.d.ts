@@ -4,6 +4,7 @@ export const {
   is,
   dir,
   addEventListener,
+  isGuestReference,
   removeEventListener,
   Map,
   Set,

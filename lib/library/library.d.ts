@@ -116,6 +116,7 @@ export type LinvailMapConstructor = {
 export type Library = {
   dir: (value: unknown) => undefined;
   is: (value1: unknown, value2: unknown) => boolean;
+  isGuestReference: (value: unknown) => boolean;
   WeakSet: LinvailWeakSetConstructor;
   WeakMap: LinvailWeakMapConstructor;
   Set: LinvailSetConstructor;

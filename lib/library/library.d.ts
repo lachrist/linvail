@@ -1,4 +1,4 @@
-import type { Primitive } from "../util/primitive";
+import type { Primitive } from "../util/primitive.d.ts";
 
 /////////////
 // WeakSet //

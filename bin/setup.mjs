@@ -47,7 +47,7 @@ const compileFunctionCode = (parts) => {
 /**
  * @type {(
  *   evalScript: (code: string) => any,
- *   config: import("./config").Config,
+ *   config: import("./config.d.ts").Config,
  * ) => void}
  */
 const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
@@ -160,7 +160,7 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   if (global_object === "internal") {
     const { internalize, leavePlainInternalReference } = advice;
     {
-      /** @type {import("../lib/linvail").PlainExternalReference} */
+      /** @type {import("../lib/linvail.d.ts").PlainExternalReference} */
       const external1 = /** @type {any} */ (
         intrinsics["aran.global_declarative_record"]
       );
@@ -171,7 +171,7 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
       intrinsics["aran.global_declarative_record"] = external2;
     }
     {
-      /** @type {import("../lib/linvail").PlainExternalReference} */
+      /** @type {import("../lib/linvail.d.ts").PlainExternalReference} */
       const external1 = /** @type {any} */ (intrinsics.globalThis);
       const internal = internalize(external1, {
         prototype: "global.Object.prototype",

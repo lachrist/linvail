@@ -12,7 +12,7 @@ import type {
   ExternalPrimitive,
   PlainInternalReference,
   GuestExternalReference,
-} from "./runtime/domain";
+} from "./runtime/domain.d.ts";
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {

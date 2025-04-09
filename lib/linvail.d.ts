@@ -4,6 +4,6 @@ export type * from "./instrument/node.d.ts";
 export type * from "./library/library.d.ts";
 export type * from "./advice.d.ts";
 
-export * from "./library";
-export * from "./runtime";
-export * from "./instrument";
+export type * from "./library.d.ts";
+export type * from "./runtime.d.ts";
+export type * from "./instrument.d.ts";

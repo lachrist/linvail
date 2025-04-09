@@ -78,7 +78,7 @@ const regions = ["internal", "external"];
 
 /**
  * @type {(
- *   config: import("./config").Config,
+ *   config: import("./config.d.ts").Config,
  * ) => string[]}
  */
 export const listConfigWarning = ({
@@ -115,7 +115,7 @@ const default_config = {
 /**
  * @type {(
  *   env: {[k in string]?: string},
- * ) => import("./config").Config}
+ * ) => import("./config.d.ts").Config}
  */
 export const toConfig = (env) => {
   for (const key of getOwnPropertyNames(env)) {

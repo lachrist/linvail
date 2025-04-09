@@ -1,4 +1,4 @@
-import type { Library } from "./library/library";
+import type { Library } from "./library/library.d.ts";
 
 export const {
   is,

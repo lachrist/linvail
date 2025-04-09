@@ -1,11 +1,11 @@
-import type { Region } from "./region";
+import type { Region } from "./region.d.ts";
 import type {
   DefineDescriptor,
   Descriptor,
   ExternalReference,
   ExternalValue,
   PlainInternalReference,
-} from "../domain";
+} from "../domain.d.ts";
 
 export type Target = {
   target: PlainInternalReference;

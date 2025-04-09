@@ -9,10 +9,10 @@
     "noEmit": true,
     "strict": true,
     "resolveJsonModule": false,
-    "moduleResolution": "bundler",
+    "moduleResolution": "nodenext",
     "lib": ["es2024"],
-    "target": "es2022",
-    "module": "Preserve",
+    "target": "es2024",
+    "module": "NodeNext",
     "typeRoots": ["./node_modules/@types"],
     "exactOptionalPropertyTypes": true
   },

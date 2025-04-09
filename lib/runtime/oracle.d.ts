@@ -1,5 +1,5 @@
-import type { InternalReference, InternalValue } from "./domain";
-import type { Region } from "./region/region";
+import type { InternalReference, InternalValue } from "./domain.d.ts";
+import type { Region } from "./region/region.d.ts";
 
 export type ApplyOracle = (
   region: Region,

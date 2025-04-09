@@ -2,7 +2,7 @@
  * @type {(
  *   location: string,
  *   base: string,
- * ) => import("./config").Specifier}
+ * ) => import("./config.d.ts").Specifier}
  */
 export const toSpecifier = (location, base) => {
   const parts1 = location.split("/");
@@ -24,5 +24,5 @@ export const toSpecifier = (location, base) => {
   } else {
     parts1.unshift(".");
   }
-  return /** @type {import("./config").Specifier} */ (parts1.join("/"));
+  return /** @type {import("./config.d.ts").Specifier} */ (parts1.join("/"));
 };

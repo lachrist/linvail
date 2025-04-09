@@ -1,7 +1,10 @@
 import type { IntrinsicRecord } from "aran";
-import type { StandardAdvice, StandardAspectKind } from "./runtime/standard";
-import type { Advice } from "./advice";
-import type { Library } from "./library/library";
+import type {
+  StandardAdvice,
+  StandardAspectKind,
+} from "./runtime/standard.d.ts";
+import type { Advice } from "./advice.d.ts";
+import type { Library } from "./library/library.d.ts";
 
 export const toStandardAdvice: <T>(advice: Advice) => StandardAdvice<T>;
 

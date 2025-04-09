@@ -18,8 +18,8 @@ import type {
   PlainInternalObjectWithExternalPrototype,
   PlainInternalReference,
   RawPlainInternalClosure,
-} from "./domain";
-import type { Primitive } from "../util/primitive";
+} from "./domain.d.ts";
+import type { Primitive } from "../util/primitive.d.ts";
 
 export type IntrinsicRecord = {
   // Other //

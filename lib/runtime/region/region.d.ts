@@ -8,9 +8,9 @@ import type {
   PlainExternalReference,
   PlainInternalClosure,
   PlainInternalReference,
-} from "../domain";
-import type { IntrinsicRecord } from "../intrinsic";
-import type { WeakSet, WeakMap, Map, Set } from "../../util/collection";
+} from "../domain.d.ts";
+import type { IntrinsicRecord } from "../intrinsic.d.ts";
+import type { WeakSet, WeakMap, Map, Set } from "../../util/collection.d.ts";
 
 export type Region = IntrinsicRecord & {
   counter: null | { value: number };

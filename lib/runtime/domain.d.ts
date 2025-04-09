@@ -1,4 +1,4 @@
-import type { Primitive as ExternalPrimitive } from "../util/primitive";
+import type { Primitive as ExternalPrimitive } from "../util/primitive.d.ts";
 
 export { ExternalPrimitive };
 

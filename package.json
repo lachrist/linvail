@@ -1,7 +1,7 @@
 {
   "name": "linvail",
   "description": "Provenancial Equality for JavaScript",
-  "version": "7.6.5",
+  "version": "7.6.1",
   "author": {
     "name": "Laurent Christophe",
     "email": "laurent.christophe.terken@gmail.com"
@@ -58,7 +58,7 @@
   ],
   "dependencies": {
     "acorn": "^8.14.0",
-    "aran": "^5.0.0",
+    "aran": "^5.2.0",
     "astring": "^1.9.0",
     "minimatch": "^10.0.1",
     "virtual-proxy": "^0.3.1"

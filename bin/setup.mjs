@@ -1,11 +1,10 @@
 import { setupRuntime } from "../lib/runtime.mjs";
 import { register } from "node:module";
-import { setupile } from "aran";
-import { generate } from "astring";
+import { compileIntrinsicRecord } from "aran/runtime";
 import { dir } from "./console.mjs";
 import {
-  advice_global_variable,
   compile,
+  advice_global_variable,
   intrinsic_global_variable,
 } from "./common.mjs";
 import { env, stderr } from "node:process";
@@ -52,17 +51,8 @@ const compileFunctionCode = (parts) => {
  */
 const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   const { trans, weave, retro } = compile({ global_object });
-  /**
-   * @type {import("aran").IntrinsicRecord}
-   */
-  const intrinsics = evalScript(
-    generate(
-      setupile({
-        global_object_variable: "globalThis",
-        intrinsic_global_variable,
-      }),
-    ),
-  );
+  const intrinsics = compileIntrinsicRecord(globalThis);
+  /** @type {any} */ (globalThis)[intrinsic_global_variable] = intrinsics;
   if (global_dynamic_code === "internal") {
     const {
       Reflect: { apply: applyIntrinsic, construct: constructIntrinsic },
@@ -154,8 +144,16 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
     `,
   )(advice);
   advice.weaveEvalProgram = weave;
-  intrinsics["aran.transpileEvalCode"] = (code, situ, hash) =>
+  /**
+   * @type {(
+   *   code: string,
+   *   situ: string,
+   *   hash: number | string,
+   * ) => import("aran").Program<import("aran").Atom>}
+   */
+  const transpileEvalCode = (code, situ, hash) =>
     trans(`dynamic://eval/local/${hash}`, "eval", parse(situ), code);
+  intrinsics["aran.transpileEvalCode"] = transpileEvalCode;
   intrinsics["aran.retropileEvalCode"] = retro;
   if (global_object === "internal") {
     const { internalize, leavePlainInternalReference } = advice;

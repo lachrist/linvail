@@ -38,7 +38,12 @@ export type Advice = {
   apply: (callee: Wrapper, that: Wrapper, args: Wrapper[]) => Wrapper;
   construct: (callee: Wrapper, args: Wrapper[]) => ReferenceWrapper;
   // other //
-  internalize: (reference: GuestReference) => HostReferenceWrapper;
+  internalize: (
+    reference: GuestReference,
+    config: {
+      prototype: "none" | "copy" | "Object.prototype";
+    },
+  ) => HostReferenceWrapper;
   weaveEvalProgram: (root: Program<any>) => Program;
 };
 

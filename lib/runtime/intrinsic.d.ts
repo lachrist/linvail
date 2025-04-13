@@ -1,33 +1,30 @@
 import type {
-  DataDescriptor,
-  DefineDescriptor,
-  Descriptor,
-  ExternalPrototype,
-  ExternalReference,
-  ExternalValue,
-  GuestExternalReference,
-  InternalPrototype,
-  InternalReference,
-  InternalValue,
+  Primitive,
+  Reference,
+  Value,
+  ProxyReference,
+  HostReferenceWrapper,
+  Wrapper,
   NonLengthPropertyKey,
-  PlainExternalReference,
-  PlainInternalArray,
-  PlainInternalArrayWithExternalPrototype,
-  PlainInternalClosure,
-  PlainInternalObject,
-  PlainInternalObjectWithExternalPrototype,
-  PlainInternalReference,
-  RawPlainInternalClosure,
+  GuestReference,
+  FreshHostClosure,
+  HostReferenceKind,
+  FreshHostGeneratorResult,
+  HostReference,
+  GuestDefineDescriptor,
+  HostDefineDescriptor,
+  GuestDescriptor,
+  HostDescriptor,
+  DataDescriptor,
 } from "./domain.d.ts";
-import type { Primitive } from "../util/primitive.d.ts";
 
 export type IntrinsicRecord = {
   // Other //
-  "global.isNaN": (value: ExternalValue) => boolean;
-  "global.Proxy": new (target: any, handler: any) => GuestExternalReference;
+  "global.isNaN": (value: Value) => boolean;
+  "global.Proxy": new (target: any, handler: any) => ProxyReference;
   "global.String": {
-    (value: ExternalValue): string;
-    new (value: ExternalValue): PlainExternalReference;
+    (value: Value): string;
+    new (value: Value): GuestReference;
   };
   "global.Error": new (message: string) => Error;
   "global.TypeError": new (message: string) => Error;
@@ -35,189 +32,175 @@ export type IntrinsicRecord = {
   "global.undefined": undefined;
   // Function //
   "global.Function": new (...source: string[]) => Function;
-  "global.Function.prototype": PlainExternalReference;
-  "global.Function.prototype.arguments@get": PlainExternalReference;
-  "global.Function.prototype.arguments@set": PlainExternalReference;
+  "global.Function.prototype": GuestReference;
+  "global.Function.prototype.arguments@get": GuestReference;
+  "global.Function.prototype.arguments@set": GuestReference;
   // Number //
   "global.Number": {
-    (value: ExternalValue): number;
-    new (value: ExternalValue): PlainExternalReference;
+    (value: Value): number;
+    new (value: Value): GuestReference;
   };
   "global.Number.MAX_SAFE_INTEGER": number;
   "global.Number.MIN_SAFE_INTEGER": number;
   // Symbol //
+  "global.Symbol.keyFor": (symbol: symbol) => string | undefined;
   "global.Symbol.iterator": symbol;
   "global.Symbol.species": symbol;
   "global.Symbol.isConcatSpreadable": symbol;
   "global.Symbol.toStringTag": symbol;
   // Reflect //
   "global.Reflect.apply": {
-    (target: Primitive, that: unknown, args: unknown): never;
     (
-      target: PlainInternalReference,
-      that: InternalValue,
-      args: InternalValue[],
-    ): InternalValue | PlainExternalReference;
+      target: HostReference<"arrow" | "method" | "function">,
+      that: Wrapper,
+      args: Wrapper[],
+    ): Wrapper;
     (
-      target: PlainExternalReference,
-      that: ExternalValue,
-      args: ExternalValue[],
-    ): ExternalValue;
+      target: HostReference<"async-arrow" | "async-method" | "async-function">,
+      that: Wrapper,
+      args: Wrapper[],
+    ): GuestReference;
+    (
+      target: HostReference<"generator" | "async-generator">,
+      that: Wrapper,
+      args: Wrapper[],
+    ): FreshHostGeneratorResult;
+    (target: GuestReference, that: Value, args: Value[]): Value;
     <T, Y>(target: () => Y, that: T, args: []): Y;
     <T, X, Y>(target: (...args: X[]) => Y, that: T, args: X[]): Y;
   };
   "global.Reflect.construct": {
     (target: Primitive, args: unknown, new_target: unknown): never;
+    (target: GuestReference, args: Value[], new_target: Value): Reference;
     (
-      target: PlainExternalReference,
-      args: ExternalValue[],
-      new_target: ExternalValue,
-    ): ExternalReference;
-    (
-      target: PlainInternalReference,
-      args: InternalValue[],
-      new_target: InternalValue,
-    ): InternalReference;
+      target: HostReference,
+      args: Wrapper[],
+      new_target: Value,
+    ): HostReferenceWrapper;
   };
   "global.Reflect.preventExtensions": {
     (target: Primitive): never;
-    (target: PlainExternalReference): boolean;
-    (target: PlainInternalReference): boolean;
+    (target: GuestReference): boolean;
+    (target: HostReference): boolean;
   };
   "global.Reflect.isExtensible": {
     (target: Primitive): never;
-    (target: PlainExternalReference): boolean;
-    (target: PlainInternalReference): boolean;
+    (target: GuestReference): boolean;
+    (target: HostReference): boolean;
   };
   "global.Reflect.getPrototypeOf": {
     (target: Primitive): never;
-    (target: PlainExternalReference): ExternalPrototype;
-    (target: PlainInternalReference): InternalPrototype;
-    (target: PlainInternalArrayWithExternalPrototype): ExternalPrototype;
-    (target: PlainInternalObjectWithExternalPrototype): ExternalPrototype;
-    (target: RawPlainInternalClosure): ExternalPrototype;
+    (target: GuestReference | HostReference): null | Reference;
+    (target: FreshHostGeneratorResult): Wrapper;
   };
   "global.Reflect.setPrototypeOf": {
     (target: Primitive, prototype: unknown): never;
-    (target: PlainExternalReference, prototype: ExternalPrototype): boolean;
-    (target: PlainInternalReference, prototype: InternalPrototype): boolean;
     (
-      target: PlainInternalArrayWithExternalPrototype,
-      prototype: InternalPrototype,
-    ): boolean;
-    (
-      target: PlainInternalObjectWithExternalPrototype,
-      prototype: InternalPrototype,
+      target: GuestReference | HostReference,
+      prototype: null | Reference,
     ): boolean;
   };
   "global.Reflect.ownKeys": {
     (target: Primitive): never;
-    (target: PlainExternalReference): (string | symbol)[];
-    (target: PlainInternalReference): (string | symbol)[];
+    (target: GuestReference): (string | symbol)[];
+    (target: HostReference): (string | symbol)[];
   };
   "global.Reflect.deleteProperty": {
     (target: Primitive, key: unknown): never;
-    (target: PlainExternalReference, key: ExternalValue): boolean;
-    (target: PlainInternalReference, key: ExternalValue): boolean;
+    (target: GuestReference, key: Value): boolean;
+    (target: HostReference, key: Value): boolean;
   };
   "global.Reflect.getOwnPropertyDescriptor": {
     (target: Primitive, key: unknown): never;
+    (target: GuestReference, key: Value): GuestDescriptor | undefined;
     (
-      target: PlainExternalReference,
-      key: ExternalValue,
-    ): Descriptor<ExternalValue, ExternalReference> | undefined;
+      target: HostReference<Exclude<HostReferenceKind, "array">>,
+      key: Value,
+    ): HostDescriptor | undefined;
     (
-      target: PlainInternalClosure | PlainInternalObject,
-      key: ExternalValue,
-    ): Descriptor<InternalValue, InternalReference> | undefined;
-    (
-      target: PlainInternalArray,
+      target: HostReference<"array">,
       key: NonLengthPropertyKey,
-    ): Descriptor<InternalValue, InternalReference> | undefined;
-    (target: PlainInternalArray, key: "length"): DataDescriptor<number>;
+    ): HostDescriptor | undefined;
+    (target: HostReference<"array">, key: "length"): DataDescriptor<number>;
+    (
+      target: FreshHostClosure,
+      key: "prototype" | "name" | "length",
+    ): DataDescriptor<GuestReference>;
   };
   "global.Reflect.defineProperty": {
     (target: Primitive, key: unknown, descriptor: unknown): never;
     (
-      target: PlainExternalReference,
-      key: ExternalValue,
-      descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
+      target: GuestReference,
+      key: Value,
+      descriptor: GuestDefineDescriptor,
     ): boolean;
     (
-      target: PlainInternalClosure | PlainInternalObject,
-      key: ExternalValue,
-      descriptor: DefineDescriptor<InternalValue, InternalValue>,
+      target: HostReference<Exclude<HostReferenceKind, "array">>,
+      key: Value,
+      descriptor: HostDefineDescriptor,
     ): boolean;
     (
-      target: PlainInternalArray,
+      target: HostReference<"array">,
       key: NonLengthPropertyKey,
-      descriptor: DefineDescriptor<InternalValue, InternalValue>,
+      descriptor: HostDefineDescriptor,
     ): boolean;
     (
-      target: PlainInternalArray,
+      target: HostReference<"array">,
       key: number | symbol,
-      descriptor: DefineDescriptor<InternalValue, InternalValue>,
+      descriptor: HostDefineDescriptor,
     ): boolean;
     (
-      target: PlainInternalArray,
+      target: HostReference<"array">,
       key: "length",
-      descriptor: DefineDescriptor<ExternalValue, ExternalValue>,
+      descriptor: GuestDefineDescriptor,
     ): boolean;
   };
   "global.Reflect.has": {
     (target: Primitive, key: unknown): never;
-    (target: PlainExternalReference, key: ExternalValue): boolean;
+    (target: GuestReference, key: Value): boolean;
   };
   "global.Reflect.get": {
-    (target: Primitive, key: unknown, receiver: unknown): never;
-    (
-      target: PlainExternalReference,
-      key: ExternalValue,
-      receiver: ExternalValue,
-    ): ExternalValue;
-    (target: PlainInternalArray, key: "length"): number;
+    (target: Value, key: Value, receiver: Value): Value;
+    (target: HostReference<"array">, key: "length"): number;
   };
   "global.Reflect.set": {
     (target: Primitive, key: unknown, value: unknown, receiver: unknown): never;
     (
-      target: PlainExternalReference,
-      key: ExternalValue,
-      value: ExternalValue,
-      receiver: ExternalValue,
+      target: GuestReference,
+      key: Value,
+      value: Value,
+      receiver: Value,
     ): boolean;
   };
   // Object //
-  "global.Object": PlainExternalReference & {
-    (): PlainInternalReference & {
+  "global.Object": GuestReference & {
+    (): HostReference & {
       __type: "Object";
       __prototype: "External";
     };
-    (value: Primitive): PlainExternalReference;
+    (value: Primitive | symbol): GuestReference;
   };
   "global.Object.create": {
-    (prototype: InternalPrototype): PlainInternalObject;
-    (prototype: ExternalPrototype): PlainExternalReference;
+    (prototype: null | Reference): HostReference<"object">;
   };
   "global.Object.hasOwn": {
-    (target: PlainExternalReference, key: ExternalValue): boolean;
-    (target: PlainInternalReference, key: ExternalValue): boolean;
+    (target: GuestReference, key: Value): boolean;
+    (target: HostReference, key: Value): boolean;
   };
-  "global.Object.is": (value1: ExternalValue, value2: ExternalValue) => boolean;
+  "global.Object.is": (value1: Value, value2: Value) => boolean;
   // Object.prototype //
-  "global.Object.prototype": PlainExternalReference;
+  "global.Object.prototype": GuestReference;
   // Array //
   "global.Array": {
-    new (length: number): PlainInternalArrayWithExternalPrototype;
-    new (...elements: InternalValue[]): PlainInternalArrayWithExternalPrototype;
+    new (length: number): HostReference<"array">;
+    new (...elements: Wrapper[]): HostReference<"array">;
   };
-  "global.Array.of": (
-    ...elements: InternalValue[]
-  ) => PlainInternalArrayWithExternalPrototype;
+  "global.Array.of": (...elements: Wrapper[]) => HostReference<"array">;
   "global.Array.isArray": {
-    (value: PlainInternalReference): boolean;
-    (value: PlainExternalReference): boolean;
+    (value: HostReference): boolean;
+    (value: GuestReference): boolean;
   };
   // Array.prototype //
-  "global.Array.prototype": PlainExternalReference;
-  "global.Array.prototype[@@iterator]": PlainExternalReference;
+  "global.Array.prototype": GuestReference;
+  "global.Array.prototype[@@iterator]": GuestReference;
 };

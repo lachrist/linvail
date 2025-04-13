@@ -3,8 +3,8 @@ import type { Library } from "./library/library.d.ts";
 export const {
   is,
   dir,
+  getKind,
   addEventListener,
-  isGuestReference,
   removeEventListener,
   Map,
   Set,

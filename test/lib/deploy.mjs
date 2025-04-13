@@ -94,7 +94,7 @@ const main = async (argv) => {
       }),
     ),
   );
-  const { advice, library } = createRuntime(intrinsics, { dir, count: true });
+  const { advice, library } = createRuntime(intrinsics, { dir });
   /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
   /** @type {any} */ (globalThis)[library_hidden_variable] = library;
   await import(toModuleSpecifier(await instrumentTarget(target)));

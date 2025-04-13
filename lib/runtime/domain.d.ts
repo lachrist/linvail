@@ -1,6 +1,111 @@
-import type { Primitive as ExternalPrimitive } from "../util/primitive.d.ts";
+import type { ClosureKind } from "aran";
 
-export { ExternalPrimitive };
+//////////////
+// External //
+//////////////
+
+export type StandardPrimitive =
+  | null
+  | undefined
+  | string
+  | number
+  | boolean
+  | bigint;
+
+export type Primitive = StandardPrimitive | symbol;
+
+export type GuestReferenceKind = "object" | "function";
+
+type GuestReferenceTyping = {
+  [K in GuestReferenceKind]: {
+    __brand: "GuestReference";
+    __kind: K;
+  };
+};
+
+export type GuestReference<K extends GuestReferenceKind = GuestReferenceKind> =
+  GuestReferenceTyping[K];
+
+export type ProxyReference = {
+  __brand: "ProxyReference";
+};
+
+export type Reference = GuestReference | ProxyReference;
+
+export type Value = Primitive | Reference;
+
+//////////////
+// Internal //
+//////////////
+
+export type HostReferenceKind = "object" | "array" | ClosureKind;
+
+type HostReferenceTyping = {
+  [K in HostReferenceKind]: {
+    __brand: "HostReference";
+    __kind: K;
+  };
+};
+
+export type HostReference<K extends HostReferenceKind = HostReferenceKind> =
+  HostReferenceTyping[K];
+
+export type PrimitiveWrapper = {
+  type: "primitive";
+  base: Primitive;
+  meta: any;
+  index: number;
+};
+
+type HostReferenceWrapperTyping = {
+  [K in HostReferenceKind]: {
+    type: "host";
+    base: ProxyReference;
+    meta: any;
+    index: number;
+    kind: K;
+    plain: HostReference<K>;
+  };
+};
+
+export type HostReferenceWrapper<
+  K extends HostReferenceKind = HostReferenceKind,
+> = HostReferenceWrapperTyping[K];
+
+type GuestReferenceWrapperTyping = {
+  [K in GuestReferenceKind]: {
+    type: "guest";
+    base: GuestReference<K>;
+    meta: any;
+    index: number;
+    kind: K;
+    name: null | string;
+  };
+};
+
+export type GuestReferenceWrapper<
+  K extends GuestReferenceKind = GuestReferenceKind,
+> = GuestReferenceWrapperTyping[K];
+
+export type ReferenceWrapper = HostReferenceWrapper | GuestReferenceWrapper;
+
+export type Wrapper = PrimitiveWrapper | ReferenceWrapper;
+
+/////////////
+// Bastard //
+/////////////
+
+export type FreshHostClosure = {
+  __brand: "RawHostClosure";
+};
+
+export type FreshHostGeneratorResult = {
+  __brand: "RawHostGeneratorResult";
+};
+
+//////////////
+// Property //
+//////////////
 
 export type DefineDescriptor<D, A> = {
   __proto__?: null;
@@ -32,77 +137,10 @@ export type NonLengthPropertyKey = PropertyKey & {
   __brand: "NonLengthPropertyKey";
 };
 
-export type InternalPrimitive = {
-  __brand: "InternalPrimitive";
-};
+export type HostDescriptor = Descriptor<Wrapper, Reference>;
 
-export type PlainExternalReference = {
-  __brand: "PlainExternalReference";
-};
+export type GuestDescriptor = Descriptor<Value, Reference>;
 
-export type GuestExternalReference = {
-  __brand: "GuestExternalReference";
-};
+export type HostDefineDescriptor = DefineDescriptor<Wrapper, Value>;
 
-export type GuestInternalReference = {
-  __brand: "GuestInternalReference";
-};
-
-export type PlainInternalArrayWithExternalPrototype = {
-  __brand: "PlainInternalArrayWithExternalPrototype";
-};
-
-export type PlainInternalObjectWithExternalPrototype = {
-  __brand: "PlainInternalObjectWithExternalPrototype";
-};
-
-export type RawPlainInternalClosure = {
-  __brand: "RawPlainClosure";
-};
-
-export type PlainInternalArray = {
-  __brand: "PlainInternalArray";
-};
-
-export type PlainInternalClosure = {
-  __brand: "PlainInternalClosure";
-};
-
-export type PlainInternalObject = {
-  __brand: "PlainInternalObject";
-};
-
-export type PlainInternalReference =
-  | PlainInternalArray
-  | PlainInternalClosure
-  | PlainInternalObject;
-
-export type InternalReference = PlainInternalReference | GuestInternalReference;
-
-export type InternalValue = InternalReference | InternalPrimitive;
-
-export type ExternalReference = PlainExternalReference | GuestExternalReference;
-
-export type ExternalValue = ExternalReference | ExternalPrimitive;
-
-export type InternalAccessor = undefined | InternalReference;
-
-export type ExternalAccessor = undefined | ExternalReference;
-
-export type InternalPrototype = null | InternalReference;
-
-export type ExternalPrototype = null | ExternalReference;
-
-export type InternalDescriptor = Descriptor<InternalValue, InternalAccessor>;
-
-export type ExternalDescriptor = Descriptor<ExternalValue, ExternalAccessor>;
-
-export type InternalDefineDescriptor = DefineDescriptor<
-  InternalValue,
-  InternalAccessor
->;
-
-export type ExternalDefineDescriptor = DefineDescriptor<
-  ExternalValue,
-  ExternalAccessor
->;
+export type GuestDefineDescriptor = DefineDescriptor<Value, Value>;

@@ -1,5 +1,3 @@
-import type { Primitive } from "../util/primitive.d.ts";
-
 /////////////
 // WeakSet //
 /////////////
@@ -116,14 +114,14 @@ export type LinvailMapConstructor = {
 export type Library = {
   dir: (value: unknown) => undefined;
   is: (value1: unknown, value2: unknown) => boolean;
-  isGuestReference: (value: unknown) => value is object;
+  getKind: (value: unknown) => "primitive" | "guest" | "host";
   WeakSet: LinvailWeakSetConstructor;
   WeakMap: LinvailWeakMapConstructor;
   Set: LinvailSetConstructor;
   Map: LinvailMapConstructor;
   addEventListener: (
     event_name: "capture" | "release",
-    listener: (event: Primitive) => void,
+    listener: (value: unknown) => void,
   ) => symbol;
   removeEventListener: (
     event_name: "capture" | "release",

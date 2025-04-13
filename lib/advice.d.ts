@@ -1,65 +1,53 @@
 import type {
-  ExternalValue,
-  InternalReference,
-  InternalValue,
-  InternalPrimitive,
-  GuestInternalReference,
-  PlainExternalReference,
-  PlainInternalClosure,
-  PlainInternalArray,
-  RawPlainInternalClosure,
-  PlainInternalArrayWithExternalPrototype,
-  ExternalPrimitive,
-  PlainInternalReference,
-  GuestExternalReference,
+  Value,
+  Wrapper,
+  GuestReference,
+  FreshHostClosure,
+  HostReference,
+  PrimitiveWrapper,
+  ReferenceWrapper,
+  Reference,
+  HostReferenceWrapper,
+  StandardPrimitive,
 } from "./runtime/domain.d.ts";
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
+  // event //
   addEventListener: (
     event: "capture" | "release",
-    listener: (value: InternalValue) => void,
+    listener: (value: Wrapper) => void,
   ) => symbol;
   removeEventListener: (event: "capture" | "release", token: symbol) => boolean;
-  internalize: (
-    reference: PlainExternalReference,
-    config: {
-      prototype: null | "global.Object.prototype" | "global.Array.prototype";
-    },
-  ) => PlainInternalReference;
+  // leave //
+  leaveValue: <W extends Wrapper>(value: W) => W["base"];
+  // enter //
+  enterValue: (value: Value) => Wrapper;
+  enterStandardPrimitive: (primitive: StandardPrimitive) => PrimitiveWrapper;
+  enterSymbolPrimitive: (symbol: symbol) => PrimitiveWrapper;
+  enterReference: (reference: Reference) => ReferenceWrapper;
+  enterFreshHostArray: (reference: HostReference) => ReferenceWrapper;
+  enterHostClosure: <K extends ClosureKind>(
+    closure: HostReference<K>,
+  ) => HostReferenceWrapper<K>;
+  enterFreshHostClosure: <K extends ClosureKind>(
+    closure: FreshHostClosure,
+    kind: K,
+  ) => HostReferenceWrapper<K>;
+  // combine //
+  apply: (callee: Wrapper, that: Wrapper, args: Wrapper[]) => Wrapper;
+  construct: (callee: Wrapper, args: Wrapper[]) => ReferenceWrapper;
+  // other //
+  internalize: (reference: GuestReference) => HostReferenceWrapper;
   weaveEvalProgram: (root: Program<any>) => Program;
-  isGuestInternalReference: (
-    value: InternalValue,
-  ) => value is GuestInternalReference;
-  isPlainInternalReference: (
-    value: InternalValue,
-  ) => value is PlainInternalReference;
-  isInternalPrimitive: (value: InternalValue) => value is InternalPrimitive;
-  enterPrimitive: (primitive: ExternalPrimitive) => InternalPrimitive;
-  leavePrimitive: (primitive: InternalPrimitive) => ExternalPrimitive;
-  leaveBoolean: (value: InternalValue) => boolean;
-  enterValue: (value: ExternalValue) => InternalValue;
-  leaveValue: (value: InternalValue) => ExternalValue;
-  apply: (
-    callee: InternalValue,
-    that: InternalValue,
-    args: InternalValue[],
-  ) => InternalValue;
-  construct: (
-    callee: InternalValue,
-    args: InternalValue[],
-  ) => InternalReference;
-  enterClosure: (
-    closure: RawPlainInternalClosure,
-    kind: ClosureKind,
-  ) => PlainInternalClosure;
-  enterArgumentList: (
-    reference: PlainInternalArrayWithExternalPrototype,
-  ) => PlainInternalArray;
-  leavePlainInternalReference: (
-    reference: PlainInternalReference,
-  ) => GuestExternalReference;
-  enterPlainExternalReference: (
-    reference: PlainExternalReference,
-  ) => GuestInternalReference;
 };
+
+// leavePlainInternalReference: (reference: HostReference) => ProxyReference;
+// enterPlainExternalReference: (
+//   reference: GuestReference,
+// ) => GuestInternalReference;
+// isGuestInternalReference: (value: Wrapper) => value is GuestInternalReference;
+// isPlainInternalReference: (value: Wrapper) => value is HostReference;
+// isInternalPrimitive: (value: Wrapper) => value is InternalPrimitive;
+// leavePrimitive: (wrapper: PrimitiveWrapper) => Primitive;
+// leaveBoolean: (value: Wrapper) => boolean;

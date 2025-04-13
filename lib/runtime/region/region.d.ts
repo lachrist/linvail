@@ -1,49 +1,47 @@
-import type { ClosureKind } from "aran";
 import type {
-  ExternalValue,
-  GuestExternalReference,
-  GuestInternalReference,
-  InternalPrimitive,
-  InternalValue,
-  PlainExternalReference,
-  PlainInternalClosure,
-  PlainInternalReference,
+  ProxyReference,
+  Wrapper,
+  GuestReference,
+  ReferenceWrapper,
+  HostReference,
+  HostReferenceWrapper,
+  Value,
+  PrimitiveWrapper,
 } from "../domain.d.ts";
 import type { IntrinsicRecord } from "../intrinsic.d.ts";
-import type { WeakSet, WeakMap, Map, Set } from "../../util/collection.d.ts";
+import type {
+  SafeWeakMap,
+  SafeMap,
+  SafeWeakSet,
+  SafeSet,
+} from "../../util/collection.d.ts";
+import type { ClosureKind } from "aran";
 
 export type Region = IntrinsicRecord & {
-  counter: null | { value: number };
-  naming: Map<ExternalValue, string>;
+  counter: { value: number };
+  naming: SafeMap<Value, string>;
   createIntegrityFunction: () => Function;
   createIntegrityArrow: () => Function;
-  generator_prototype_prototype: PlainExternalReference;
-  async_generator_prototype_prototype: PlainExternalReference;
+  generator_prototype_prototype: GuestReference;
+  async_generator_prototype_prototype: GuestReference;
   listening: {
     active: boolean;
-    capture: null | Map<symbol, (primitive: InternalValue) => void>;
-    release: null | Map<symbol, (primitive: InternalValue) => void>;
+    capture: null | SafeMap<symbol, (primitive: Wrapper) => void>;
+    release: null | SafeMap<symbol, (primitive: Wrapper) => void>;
   };
-  guest_internal_reference_registery: WeakSet<GuestInternalReference>;
-  internal_primitive_registery: WeakSet<InternalPrimitive>;
-  plain_internal_closure_kind_mapping: WeakMap<
-    PlainInternalClosure,
-    ClosureKind
+  reference_registery: SafeWeakMap<
+    GuestReference | ProxyReference,
+    ReferenceWrapper
   >;
-  plain_internal_reference_mapping: WeakMap<
-    PlainInternalReference,
-    GuestExternalReference
+  host_closure_registery: SafeWeakMap<
+    HostReference<ClosureKind>,
+    HostReferenceWrapper<ClosureKind>
   >;
-  guest_external_reference_mapping: WeakMap<
-    GuestExternalReference,
-    PlainInternalReference
-  >;
-  map_registery: WeakMap<InternalValue, Map<InternalValue, InternalValue>>;
-  set_registery: WeakMap<InternalValue, Set<InternalValue>>;
-  weak_map_registery: WeakMap<
-    InternalValue,
-    WeakMap<InternalValue, InternalValue>
-  >;
-  weak_set_registery: WeakMap<InternalValue, WeakSet<InternalValue>>;
-  dir: (value: InternalValue) => void;
+  symbol_registery: SafeWeakMap<symbol, PrimitiveWrapper>;
+  shared_symbol_registery: SafeMap<string, PrimitiveWrapper>;
+  map_registery: SafeWeakMap<Wrapper, SafeMap<Wrapper, Wrapper>>;
+  set_registery: SafeWeakMap<Wrapper, SafeSet<Wrapper>>;
+  weak_map_registery: SafeWeakMap<Wrapper, SafeWeakMap<Wrapper, Wrapper>>;
+  weak_set_registery: SafeWeakMap<Wrapper, SafeWeakSet<Wrapper>>;
+  dir: (value: Wrapper) => void;
 };

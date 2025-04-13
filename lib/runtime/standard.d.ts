@@ -1,5 +1,5 @@
 import type { StandardAdvice as GenericStandardAdvice } from "aran";
-import type { ExternalValue, InternalValue } from "./domain.d.ts";
+import type { Value, Wrapper } from "./domain.d.ts";
 
 export type StandardAspectKind =
   | "block@declaration-overwrite"
@@ -23,7 +23,7 @@ export type StandardAdvice<T> = GenericStandardAdvice<{
   Kind: StandardAspectKind;
   Tag: T;
   State: null;
-  ScopeValue: InternalValue;
-  StackValue: InternalValue;
-  OtherValue: InternalValue | ExternalValue;
+  ScopeValue: Wrapper;
+  StackValue: Wrapper;
+  OtherValue: Wrapper | Value;
 }>;

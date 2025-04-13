@@ -156,28 +156,22 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   intrinsics["aran.transpileEvalCode"] = transpileEvalCode;
   intrinsics["aran.retropileEvalCode"] = retro;
   if (global_object === "internal") {
-    const { internalize, leavePlainInternalReference } = advice;
+    const { internalize, leaveValue } = advice;
     {
-      /** @type {import("../lib/linvail.d.ts").PlainExternalReference} */
+      /** @type {import("../lib/linvail.d.ts").GuestReference} */
       const external1 = /** @type {any} */ (
         intrinsics["aran.global_declarative_record"]
       );
-      const internal = internalize(external1, {
-        prototype: null,
-      });
-      const external2 = leavePlainInternalReference(internal);
+      const internal = internalize(external1);
+      const external2 = leaveValue(internal);
       intrinsics["aran.global_declarative_record"] = external2;
     }
     {
-      /** @type {import("../lib/linvail.d.ts").PlainExternalReference} */
+      /** @type {import("../lib/linvail.d.ts").GuestReference} */
       const external1 = /** @type {any} */ (intrinsics.globalThis);
-      const internal = internalize(external1, {
-        prototype: "global.Object.prototype",
-      });
+      const internal = internalize(external1);
       /** @type {typeof globalThis} */
-      const external2 = /** @type {any} */ (
-        leavePlainInternalReference(internal)
-      );
+      const external2 = /** @type {any} */ (leaveValue(internal));
       intrinsics.globalThis = external2;
       intrinsics["aran.global_object"] = external2;
     }

@@ -2,55 +2,40 @@ import type { Region } from "./region.d.ts";
 import type {
   DefineDescriptor,
   Descriptor,
-  ExternalReference,
-  ExternalValue,
-  PlainInternalReference,
+  Reference,
+  Value,
+  HostReferenceWrapper,
 } from "../domain.d.ts";
 
 export type Target = {
-  target: PlainInternalReference;
+  target: HostReferenceWrapper;
   region: Region;
 };
 
 export type GuestProxyHandler = {
-  apply: (
-    target: Target,
-    that: ExternalValue,
-    args: ExternalValue[],
-  ) => ExternalValue;
-  construct: (
-    target: Target,
-    args: ExternalValue[],
-    new_target: ExternalReference,
-  ) => ExternalValue;
-  getPrototypeOf: (target: Target) => ExternalReference | null;
-  setPrototypeOf: (
-    target: Target,
-    prototype: ExternalReference | null,
-  ) => boolean;
+  apply: (target: Target, that: Value, args: Value[]) => Value;
+  construct: (target: Target, args: Value[], new_target: Reference) => Value;
+  getPrototypeOf: (target: Target) => Reference | null;
+  setPrototypeOf: (target: Target, prototype: Reference | null) => boolean;
   isExtensible: (target: Target) => boolean;
   preventExtensions: (target: Target) => boolean;
   getOwnPropertyDescriptor: (
     target: Target,
     key: PropertyKey,
-  ) => undefined | Descriptor<ExternalValue, ExternalValue>;
+  ) => undefined | Descriptor<Value, Value>;
   defineProperty: (
     target: Target,
     key: PropertyKey,
-    descriptor: DefineDescriptor<ExternalValue, ExternalReference>,
+    descriptor: DefineDescriptor<Value, Reference>,
   ) => boolean;
   deleteProperty: (target: Target, key: PropertyKey) => boolean;
   ownKeys: (target: Target) => (string | symbol)[];
   has: (target: Target, key: PropertyKey) => boolean;
-  get: (
-    target: Target,
-    key: PropertyKey,
-    receiver: ExternalValue,
-  ) => ExternalValue;
+  get: (target: Target, key: PropertyKey, receiver: Value) => Value;
   set: (
     target: Target,
     key: PropertyKey,
-    value: ExternalValue,
-    receiver: ExternalValue,
+    value: Value,
+    receiver: Value,
   ) => boolean;
 };

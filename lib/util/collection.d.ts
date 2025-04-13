@@ -1,21 +1,31 @@
-export type WeakMap<K, V> = {
-  readonly __brand: "WeakMap";
-  readonly __key: K;
-  readonly __val: V;
+export type SafeWeakMap<K, V> = {
+  $has(key: K): boolean;
+  $get(key: K): V | undefined;
+  $set(key: K, val: V): void;
+  $delete(key: K): boolean;
 };
 
-export type Map<K, V> = {
-  readonly __brand: "Map";
-  readonly __key: K;
-  readonly __val: V;
+export type SafeWeakSet<K> = {
+  $has(key: K): boolean;
+  $add(key: K): void;
+  $delete(key: K): boolean;
 };
 
-export type Set<K> = {
-  readonly __brand: "Set";
-  readonly __key: K;
+export type SafeMap<K, V> = {
+  $has(key: K): boolean;
+  $get(key: K): V | undefined;
+  $set(key: K, value: V): void;
+  $delete(key: K): boolean;
+  $clear(): void;
+  $forEach(each: (val: V, key: K, map: SafeMap<K, V>) => void): void;
+  $getSize(): number;
 };
 
-export type WeakSet<K> = {
-  readonly __brand: "WeakSet";
-  readonly __key: K;
+export type SafeSet<K> = {
+  $has(key: K): boolean;
+  $add(key: K): void;
+  $delete(key: K): boolean;
+  $clear(): void;
+  $forEach(each: (key: K, val: K, set: SafeSet<K>) => void): void;
+  $getSize(): number;
 };

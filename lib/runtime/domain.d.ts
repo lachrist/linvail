@@ -38,6 +38,14 @@ export type Value = Primitive | Reference;
 // Internal //
 //////////////
 
+export type PrimitiveWrapper = {
+  __proto__: null;
+  type: "primitive";
+  base: Primitive;
+  meta: any;
+  index: number;
+};
+
 export type HostReferenceKind = "object" | "array" | ClosureKind;
 
 type HostReferenceTyping = {
@@ -50,15 +58,9 @@ type HostReferenceTyping = {
 export type HostReference<K extends HostReferenceKind = HostReferenceKind> =
   HostReferenceTyping[K];
 
-export type PrimitiveWrapper = {
-  type: "primitive";
-  base: Primitive;
-  meta: any;
-  index: number;
-};
-
 type HostReferenceWrapperTyping = {
   [K in HostReferenceKind]: {
+    __proto__: null;
     type: "host";
     base: ProxyReference;
     meta: any;
@@ -74,6 +76,7 @@ export type HostReferenceWrapper<
 
 type GuestReferenceWrapperTyping = {
   [K in GuestReferenceKind]: {
+    __proto__: null;
     type: "guest";
     base: GuestReference<K>;
     meta: any;
@@ -96,11 +99,11 @@ export type Wrapper = PrimitiveWrapper | ReferenceWrapper;
 /////////////
 
 export type FreshHostClosure = {
-  __brand: "RawHostClosure";
+  __brand: "FeshHostClosure";
 };
 
 export type FreshHostGeneratorResult = {
-  __brand: "RawHostGeneratorResult";
+  __brand: "FreshHostGeneratorResult";
 };
 
 //////////////

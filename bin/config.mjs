@@ -55,23 +55,6 @@ const getEnumeration = (value, valids, location) => {
 };
 
 /**
- * @type {<X extends string>(
- *   value: string,
- *   name: string,
- * ) => boolean}
- */
-const getBoolean = (value, location) => {
-  value = value.toLowerCase();
-  if (value === "true" || value === "1" || value === "on") {
-    return true;
-  } else if (value === "false" || value === "0" || value === "off") {
-    return false;
-  } else {
-    throw new Error(`Invalid boolean value for ${location}, got: ${value}`);
-  }
-};
-
-/**
  * @type {["internal", "external"]}
  */
 const regions = ["internal", "external"];
@@ -130,7 +113,6 @@ export const toConfig = (env) => {
   const inclusions = compileGlobRegExpArray(config.LINVAIL_INCLUDE);
   const exclusions = compileGlobRegExpArray(config.LINVAIL_EXCLUDE);
   return {
-    count: getBoolean(config.LINVAIL_COUNT, "LINVAIL_COUNT"),
     global_dynamic_code: getEnumeration(
       config.LINVAIL_GLOBAL_DYNAMIC_CODE,
       regions,

@@ -18,7 +18,7 @@ export type PrimitiveWrapper = {
   inner: Primitive;
 };
 
-export type GuestReferenceWrapper<> = {
+export type GuestReferenceWrapper = {
   type: "guest";
   kind: GuestReferenceKind;
   inner: object;

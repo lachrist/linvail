@@ -13,8 +13,6 @@ import type {
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
-  // unwrap //
-  unwrap: <W extends Wrapper>(value: W) => W["inner"];
   // wrap //
   wrap: (value: Value) => Wrapper;
   wrapStandardPrimitive: (primitive: StandardPrimitive) => PrimitiveWrapper;

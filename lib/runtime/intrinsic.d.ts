@@ -91,14 +91,14 @@ export type IntrinsicRecord = {
   };
   "global.Reflect.getPrototypeOf": {
     (target: Primitive): never;
-    (target: GuestReference | HostReference): null | Reference;
+    (target: GuestReference): null | Reference;
+    (target: HostReference): null | Reference;
     (target: FreshHostGeneratorResult): Wrapper;
   };
   "global.Reflect.setPrototypeOf": {
     (target: Primitive, prototype: unknown): never;
     (target: GuestReference, prototype: null | Reference): boolean;
-    // Reference not specified to draw attention to cyclic prototype chains
-    (target: HostReference, prototype: null): boolean;
+    (target: HostReference, prototype: null | Reference): boolean;
   };
   "global.Reflect.ownKeys": {
     (target: Primitive): never;

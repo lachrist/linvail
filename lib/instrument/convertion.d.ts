@@ -1,6 +1,8 @@
-import type { Advice } from "../advice.d.ts";
-
-export type Convertion = Exclude<
-  keyof Advice,
-  "apply" | "construct" | "enterClosure"
->;
+export type Convertion =
+  | "wrap"
+  | "wrapStandardPrimitive"
+  | "wrapSymbolPrimitive"
+  | "wrapReference"
+  | "wrapFreshHostArray"
+  | "wrapHostClosure"
+  | "weaveEvalProgram";

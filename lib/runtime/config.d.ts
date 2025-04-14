@@ -12,16 +12,16 @@ import type {
 import type { ApplyOracle, ConstructOracle } from "./oracle.d.ts";
 
 export type Config = {
-  wrapGuestReference: <K extends GuestReferenceKind>(
-    guest: GuestReference<K>,
-    kind: K,
+  wrapGuestReference: (
+    guest: GuestReference<any>,
+    kind: GuestReferenceKind,
     apply: null | ApplyOracle,
     construct: null | ConstructOracle,
-  ) => GuestReferenceWrapper<K>;
-  wrapHostReference: <K extends HostReferenceKind>(
-    host: HostReference<K>,
-    kind: K,
-  ) => IncompleteHostReferenceWrapper<K>;
+  ) => GuestReferenceWrapper;
+  wrapHostReference: (
+    host: HostReference<any>,
+    kind: HostReferenceKind,
+  ) => IncompleteHostReferenceWrapper;
   wrapPrimitive: (primitive: Primitive) => PrimitiveWrapper;
   dir: (value: Wrapper) => void;
 };

@@ -40,7 +40,6 @@ export type Value = Primitive | Reference;
 //////////////
 
 export type PrimitiveWrapper = {
-  __brand: "PrimitiveWrapper";
   type: "primitive";
   inner: Primitive;
 };
@@ -59,7 +58,6 @@ export type HostReference<K extends HostReferenceKind = HostReferenceKind> =
 
 type HostReferenceWrapperTyping<Complete extends boolean> = {
   [K in HostReferenceKind]: {
-    __brand: "HostReferenceWrapper";
     type: "host";
     kind: K;
     inner: Complete extends true ? ProxyReference : null;
@@ -77,7 +75,6 @@ export type IncompleteHostReferenceWrapper<
 
 type GuestReferenceWrapperTyping = {
   [K in GuestReferenceKind]: {
-    __brand: "GuestReferenceWrapper";
     type: "guest";
     kind: K;
     inner: GuestReference<K>;

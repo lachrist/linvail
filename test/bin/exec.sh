@@ -4,7 +4,7 @@ echo "Normal..."
 node --import ./bin/setup.mjs ./test/bin/main.mjs
 
 echo "With identity module exclusion..."
-LINVAIL_EXCLUDE='**/identity.mjs' node --import ./bin/setup.mjs ./test/bin/main.mjs
+LINVAIL_COUNT=1 LINVAIL_EXCLUDE='**/identity.mjs' node --import ./bin/setup.mjs ./test/bin/main.mjs
 
 echo "Without global dynamic code instrumentation..."
 LINVAIL_GLOBAL_DYNAMIC_CODE=external node --import ./bin/setup.mjs ./test/bin/main.mjs

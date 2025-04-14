@@ -1,7 +1,7 @@
-import { setupRuntime } from "../lib/runtime.mjs";
 import { register } from "node:module";
+import { dir as dirNode } from "node:console";
+import { setupRuntime } from "../lib/runtime.mjs";
 import { compileIntrinsicRecord } from "aran/runtime";
-import { dir } from "./console.mjs";
 import {
   compile,
   advice_global_variable,
@@ -20,6 +20,49 @@ const {
     prototype: { join },
   },
 } = globalThis;
+
+const dir = (/** @type {unknown} */ value) => {
+  dirNode(value, { showProxy: true, showHidden: true });
+};
+
+/**
+ * @type {(
+ *   options: {
+ *     count: boolean,
+ *   },
+ * ) => Partial<import("../lib/runtime/config.d.ts").Config>}
+ */
+export const compileRuntimeConfig = ({ count }) => {
+  if (count) {
+    let count = 0;
+    return {
+      dir,
+      wrapPrimitive: (primitive) => ({
+        __proto__: null,
+        type: "primitive",
+        inner: primitive,
+        index: count++,
+      }),
+      wrapGuestReference: (reference, kind, apply, construct) => ({
+        type: "guest",
+        kind,
+        inner: reference,
+        apply,
+        construct,
+        index: count++,
+      }),
+      wrapHostReference: (reference, kind) => ({
+        type: "host",
+        kind,
+        inner: null,
+        plain: reference,
+        index: count++,
+      }),
+    };
+  } else {
+    return { dir };
+  }
+};
 
 /**
  * @type {(
@@ -49,7 +92,7 @@ const compileFunctionCode = (parts) => {
  *   config: import("./config.d.ts").Config,
  * ) => void}
  */
-const setup = (evalScript, { global_dynamic_code, global_object }) => {
+const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   const { trans, weave, retro } = compile({ global_object });
   const intrinsics = compileIntrinsicRecord(globalThis);
   /** @type {any} */ (globalThis)[intrinsic_global_variable] = intrinsics;
@@ -136,7 +179,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
     };
     intrinsics.globalThis.Reflect.construct = /** @type {any} */ (construct);
   }
-  const advice = setupRuntime(intrinsics, { dir });
+  const advice = setupRuntime(intrinsics, compileRuntimeConfig({ count }));
   evalScript(
     `
       let ${advice_global_variable};

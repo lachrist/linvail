@@ -19,6 +19,7 @@ const {
   const foo1 = 123;
   const foo2 = foo1;
   assert(Linvail.is(foo1, foo2));
+  Linvail.dir(foo1);
 }
 
 ///////////////

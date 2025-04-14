@@ -1,14 +1,19 @@
 import { argv } from "node:process";
+import { dir as dirNode } from "node:console";
 import { parse } from "acorn";
 import { generate } from "astring";
 import { weave } from "../../lib/instrument.mjs";
 import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRuntime } from "../../lib/runtime/runtime.mjs";
-import { dir } from "./console.mjs";
 import { library_hidden_variable } from "../../lib/library/library-variable.mjs";
 
 const { eval: evalGlobal, Error } = globalThis;
+
+/** @type {(value: unknown) => void} */
+const dir = (value) => {
+  dirNode(value, { showProxy: true, showHidden: true });
+};
 
 const ADVICE_VARIABLE = "_LINVAIL_ADVICE_";
 const INTRINSIC_VARIABLE = "_ARAN_INTRINSIC_";

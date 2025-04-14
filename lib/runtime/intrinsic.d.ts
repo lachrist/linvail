@@ -96,10 +96,9 @@ export type IntrinsicRecord = {
   };
   "global.Reflect.setPrototypeOf": {
     (target: Primitive, prototype: unknown): never;
-    (
-      target: GuestReference | HostReference,
-      prototype: null | Reference,
-    ): boolean;
+    (target: GuestReference, prototype: null | Reference): boolean;
+    // Reference not specified to draw attention to cyclic prototype chains
+    (target: HostReference, prototype: null): boolean;
   };
   "global.Reflect.ownKeys": {
     (target: Primitive): never;

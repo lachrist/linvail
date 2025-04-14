@@ -11,7 +11,7 @@ export const toStandardAdvice: <T>(advice: Advice) => StandardAdvice<T>;
 
 export const createRuntime: (
   intrinsics: IntrinsicRecord,
-  config: Config,
+  config: Partial<Config>,
 ) => {
   library: Library;
   advice: Advice;
@@ -19,7 +19,7 @@ export const createRuntime: (
 
 export const setupRuntime: (
   intrinsics: IntrinsicRecord,
-  config: Config,
+  config: Partial<Config>,
 ) => Advice;
 
 export const standard_pointcut: StandardAspectKind[];

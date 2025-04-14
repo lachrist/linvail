@@ -9,7 +9,7 @@ import type {
   Wrapper,
   PrimitiveWrapper,
 } from "./domain.d.ts";
-import type { ApplyOracle, ConstructOracle } from "./oracle.js";
+import type { ApplyOracle, ConstructOracle } from "./oracle.d.ts";
 
 export type Config = {
   wrapGuestReference: <K extends GuestReferenceKind>(

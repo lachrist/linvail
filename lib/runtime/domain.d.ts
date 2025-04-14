@@ -1,5 +1,5 @@
 import type { ClosureKind } from "aran";
-import type { ApplyOracle, ConstructOracle } from "./oracle.js";
+import type { ApplyOracle, ConstructOracle } from "./oracle.d.ts";
 
 //////////////
 // External //

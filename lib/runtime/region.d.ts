@@ -23,15 +23,15 @@ export type Region = IntrinsicRecord &
     createIntegrityArrow: () => Function;
     generator_prototype_prototype: GuestReference;
     async_generator_prototype_prototype: GuestReference;
-    reference_registery: SafeWeakMap<Reference, ReferenceWrapper>;
-    host_closure_registery: SafeWeakMap<
+    reference_registry: SafeWeakMap<Reference, ReferenceWrapper>;
+    host_closure_registry: SafeWeakMap<
       HostReference<ClosureKind>,
       HostReferenceWrapper<ClosureKind>
     >;
-    symbol_registery: SafeWeakMap<symbol, PrimitiveWrapper>;
-    shared_symbol_registery: SafeMap<string, PrimitiveWrapper>;
-    map_registery: SafeWeakMap<Wrapper, SafeMap<Wrapper, Wrapper>>;
-    set_registery: SafeWeakMap<Wrapper, SafeSet<Wrapper>>;
-    weak_map_registery: SafeWeakMap<Wrapper, SafeWeakMap<Wrapper, Wrapper>>;
-    weak_set_registery: SafeWeakMap<Wrapper, SafeWeakSet<Wrapper>>;
+    symbol_registry: SafeWeakMap<symbol, PrimitiveWrapper>;
+    shared_symbol_registry: SafeMap<string, PrimitiveWrapper>;
+    map_registry: SafeWeakMap<Wrapper, SafeMap<Wrapper, Wrapper>>;
+    set_registry: SafeWeakMap<Wrapper, SafeSet<Wrapper>>;
+    weak_map_registry: SafeWeakMap<Wrapper, SafeWeakMap<Wrapper, Wrapper>>;
+    weak_set_registry: SafeWeakMap<Wrapper, SafeWeakSet<Wrapper>>;
   };

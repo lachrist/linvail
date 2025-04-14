@@ -156,7 +156,7 @@ const setup = (evalScript, { global_dynamic_code, global_object }) => {
   intrinsics["aran.transpileEvalCode"] = transpileEvalCode;
   intrinsics["aran.retropileEvalCode"] = retro;
   if (global_object === "internal") {
-    const { internalize, leaveValue } = advice;
+    const { toHostReferenceWrapper: internalize, unwrap: leaveValue } = advice;
     {
       /** @type {import("../lib/linvail.d.ts").GuestReference} */
       const external1 = /** @type {any} */ (

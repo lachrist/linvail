@@ -13,18 +13,18 @@ import type {
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
-  // leave //
-  leaveValue: <W extends Wrapper>(value: W) => W["inner"];
-  // enter //
-  enterValue: (value: Value) => Wrapper;
-  enterStandardPrimitive: (primitive: StandardPrimitive) => PrimitiveWrapper;
-  enterSymbolPrimitive: (symbol: symbol) => PrimitiveWrapper;
-  enterReference: (reference: Reference) => ReferenceWrapper;
-  enterFreshHostArray: (reference: HostReference) => ReferenceWrapper;
-  enterHostClosure: <K extends ClosureKind>(
+  // unwrap //
+  unwrap: <W extends Wrapper>(value: W) => W["inner"];
+  // wrap //
+  wrap: (value: Value) => Wrapper;
+  wrapStandardPrimitive: (primitive: StandardPrimitive) => PrimitiveWrapper;
+  wrapSymbolPrimitive: (symbol: symbol) => PrimitiveWrapper;
+  wrapReference: (reference: Reference) => ReferenceWrapper;
+  wrapFreshHostArray: (reference: HostReference) => ReferenceWrapper;
+  wrapHostClosure: <K extends ClosureKind>(
     closure: HostReference<K>,
   ) => HostReferenceWrapper<K>;
-  enterFreshHostClosure: <K extends ClosureKind>(
+  wrapFreshHostClosure: <K extends ClosureKind>(
     closure: FreshHostClosure,
     kind: K,
   ) => HostReferenceWrapper<K>;
@@ -32,7 +32,7 @@ export type Advice = {
   apply: (callee: Wrapper, that: Wrapper, args: Wrapper[]) => Wrapper;
   construct: (callee: Wrapper, args: Wrapper[]) => ReferenceWrapper;
   // other //
-  internalize: (
+  toHostReferenceWrapper: (
     reference: GuestReference,
     config: {
       prototype: "none" | "copy" | "Object.prototype";
@@ -40,13 +40,3 @@ export type Advice = {
   ) => HostReferenceWrapper;
   weaveEvalProgram: (root: Program<any>) => Program;
 };
-
-// leavePlainInternalReference: (reference: HostReference) => ProxyReference;
-// enterPlainExternalReference: (
-//   reference: GuestReference,
-// ) => GuestInternalReference;
-// isGuestInternalReference: (value: Wrapper) => value is GuestInternalReference;
-// isPlainInternalReference: (value: Wrapper) => value is HostReference;
-// isInternalPrimitive: (value: Wrapper) => value is InternalPrimitive;
-// leavePrimitive: (wrapper: PrimitiveWrapper) => Primitive;
-// leaveBoolean: (value: Wrapper) => boolean;

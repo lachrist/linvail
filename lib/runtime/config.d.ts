@@ -1,7 +1,6 @@
 import type {
   Primitive,
   GuestReference,
-  GuestReferenceKind,
   GuestReferenceWrapper,
   HostReference,
   HostReferenceKind,
@@ -13,8 +12,7 @@ import type { ApplyOracle, ConstructOracle } from "./oracle.d.ts";
 
 export type Config = {
   wrapGuestReference: (
-    guest: GuestReference<any>,
-    kind: GuestReferenceKind,
+    guest: GuestReference,
     apply: null | ApplyOracle,
     construct: null | ConstructOracle,
   ) => GuestReferenceWrapper;

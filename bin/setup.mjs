@@ -43,9 +43,8 @@ export const compileRuntimeConfig = ({ count }) => {
         inner: primitive,
         index: count++,
       }),
-      wrapGuestReference: (reference, kind, apply, construct) => ({
+      wrapGuestReference: (reference, apply, construct) => ({
         type: "guest",
-        kind,
         inner: reference,
         apply,
         construct,

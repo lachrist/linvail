@@ -15,17 +15,9 @@ export type StandardPrimitive =
 
 export type Primitive = StandardPrimitive | symbol;
 
-export type GuestReferenceKind = "array" | "object" | "function";
-
-type GuestReferenceTyping = {
-  [K in GuestReferenceKind]: {
-    __brand: "GuestReference";
-    __kind: K;
-  };
+export type GuestReference = {
+  __brand: "GuestReference";
 };
-
-export type GuestReference<K extends GuestReferenceKind = GuestReferenceKind> =
-  GuestReferenceTyping[K];
 
 export type ProxyReference = {
   __brand: "ProxyReference";
@@ -73,19 +65,12 @@ export type IncompleteHostReferenceWrapper<
   K extends HostReferenceKind = HostReferenceKind,
 > = HostReferenceWrapperTyping<false>[K];
 
-type GuestReferenceWrapperTyping = {
-  [K in GuestReferenceKind]: {
-    type: "guest";
-    kind: K;
-    inner: GuestReference<K>;
-    apply: null | ApplyOracle;
-    construct: null | ConstructOracle;
-  };
+export type GuestReferenceWrapper = {
+  type: "guest";
+  inner: GuestReference;
+  apply: null | ApplyOracle;
+  construct: null | ConstructOracle;
 };
-
-export type GuestReferenceWrapper<
-  K extends GuestReferenceKind = GuestReferenceKind,
-> = GuestReferenceWrapperTyping[K];
 
 export type ReferenceWrapper = HostReferenceWrapper | GuestReferenceWrapper;
 

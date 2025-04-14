@@ -1,10 +1,10 @@
 import type { Region } from "./region.d.ts";
 import type {
-  DefineDescriptor,
-  Descriptor,
   Reference,
   Value,
   HostReferenceWrapper,
+  GuestDescriptor,
+  GuestDefineDescriptor,
 } from "../domain.d.ts";
 
 export type Target = {
@@ -22,11 +22,11 @@ export type GuestProxyHandler = {
   getOwnPropertyDescriptor: (
     target: Target,
     key: PropertyKey,
-  ) => undefined | Descriptor<Value, Value>;
+  ) => undefined | GuestDescriptor;
   defineProperty: (
     target: Target,
     key: PropertyKey,
-    descriptor: DefineDescriptor<Value, Reference>,
+    descriptor: GuestDefineDescriptor,
   ) => boolean;
   deleteProperty: (target: Target, key: PropertyKey) => boolean;
   ownKeys: (target: Target) => (string | symbol)[];

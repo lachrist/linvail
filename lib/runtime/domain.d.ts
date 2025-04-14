@@ -108,14 +108,14 @@ export type FreshHostGeneratorResult = {
 // Property //
 //////////////
 
-export type DefineDescriptor<D, A> = {
+export type DefineDescriptor<D> = {
   __proto__?: null;
   value?: D;
-  writable?: boolean;
-  get?: A | undefined;
-  set?: A | undefined;
-  configurable?: boolean;
-  enumerable?: boolean;
+  writable?: Value;
+  get?: Value;
+  set?: Value;
+  configurable?: Value;
+  enumerable?: Value;
 };
 
 export type DataDescriptor<D> = {
@@ -125,23 +125,23 @@ export type DataDescriptor<D> = {
   enumerable: boolean;
 };
 
-export type AccessorDescriptor<A> = {
-  get: A | undefined;
-  set: A | undefined;
+export type AccessorDescriptor = {
+  get: Reference | undefined;
+  set: Reference | undefined;
   configurable: boolean;
   enumerable: boolean;
 };
 
-export type Descriptor<D, A> = DataDescriptor<D> | AccessorDescriptor<A>;
+export type Descriptor<D> = DataDescriptor<D> | AccessorDescriptor;
 
 export type NonLengthPropertyKey = PropertyKey & {
   __brand: "NonLengthPropertyKey";
 };
 
-export type HostDescriptor = Descriptor<Wrapper, Reference>;
+export type HostDescriptor = Descriptor<Wrapper>;
 
-export type GuestDescriptor = Descriptor<Value, Reference>;
+export type GuestDescriptor = Descriptor<Value>;
 
-export type HostDefineDescriptor = DefineDescriptor<Wrapper, Value>;
+export type HostDefineDescriptor = DefineDescriptor<Wrapper>;
 
-export type GuestDefineDescriptor = DefineDescriptor<Value, Value>;
+export type GuestDefineDescriptor = DefineDescriptor<Value>;

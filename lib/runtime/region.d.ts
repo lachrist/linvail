@@ -5,7 +5,6 @@ import type {
   ReferenceWrapper,
   HostReference,
   HostReferenceWrapper,
-  Value,
   PrimitiveWrapper,
 } from "./domain.d.ts";
 import type { IntrinsicRecord } from "./intrinsic.d.ts";
@@ -24,7 +23,6 @@ export type Region = IntrinsicRecord &
     createIntegrityArrow: () => Function;
     generator_prototype_prototype: GuestReference;
     async_generator_prototype_prototype: GuestReference;
-    naming: SafeMap<Value, string>;
     reference_registery: SafeWeakMap<
       GuestReference | ProxyReference,
       ReferenceWrapper

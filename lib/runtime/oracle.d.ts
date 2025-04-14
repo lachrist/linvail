@@ -13,10 +13,7 @@ export type ConstructOracle = (
   new_target: ReferenceWrapper,
 ) => ReferenceWrapper;
 
-export type ApplyOracleMapping<K extends string> = {
-  [k in K]: null | ApplyOracle;
-};
-
-export type ConstructOracleMapping<K extends string> = {
-  [k in K]: null | ConstructOracle;
+export type Oracle = {
+  apply: null | ApplyOracle;
+  construct: null | ConstructOracle;
 };

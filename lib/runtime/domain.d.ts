@@ -1,4 +1,5 @@
 import type { ClosureKind } from "aran";
+import type { ApplyOracle, ConstructOracle } from "./oracle.js";
 
 //////////////
 // External //
@@ -80,7 +81,8 @@ type GuestReferenceWrapperTyping = {
     type: "guest";
     kind: K;
     inner: GuestReference<K>;
-    name: null | string;
+    apply: null | ApplyOracle;
+    construct: null | ConstructOracle;
   };
 };
 

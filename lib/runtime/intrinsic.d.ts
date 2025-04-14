@@ -198,8 +198,8 @@ export type IntrinsicRecord = {
   };
   "global.Array.of": (...elements: Wrapper[]) => HostReference<"array">;
   "global.Array.isArray": {
-    (value: HostReference): boolean;
-    (value: GuestReference): boolean;
+    (value: HostReference): value is HostReference<"array">;
+    (value: GuestReference): value is GuestReference<"array">;
   };
   // Array.prototype //
   "global.Array.prototype": GuestReference;

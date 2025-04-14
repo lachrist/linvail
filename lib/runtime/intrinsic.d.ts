@@ -30,6 +30,7 @@ export type IntrinsicRecord = {
   "global.TypeError": new (message: string) => Error;
   "global.RangeError": new (message: string) => Error;
   "global.undefined": undefined;
+  "global.eval": (code: string) => any;
   // Function //
   "global.Function": new (...source: string[]) => Function;
   "global.Function.prototype": GuestReference;

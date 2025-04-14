@@ -14,7 +14,7 @@ export type StandardPrimitive =
 
 export type Primitive = StandardPrimitive | symbol;
 
-export type GuestReferenceKind = "object" | "function";
+export type GuestReferenceKind = "array" | "object" | "function";
 
 type GuestReferenceTyping = {
   [K in GuestReferenceKind]: {
@@ -39,11 +39,9 @@ export type Value = Primitive | Reference;
 //////////////
 
 export type PrimitiveWrapper = {
-  __proto__: null;
+  __brand: "PrimitiveWrapper";
   type: "primitive";
-  base: Primitive;
-  meta: any;
-  index: number;
+  inner: Primitive;
 };
 
 export type HostReferenceKind = "object" | "array" | ClosureKind;
@@ -58,30 +56,30 @@ type HostReferenceTyping = {
 export type HostReference<K extends HostReferenceKind = HostReferenceKind> =
   HostReferenceTyping[K];
 
-type HostReferenceWrapperTyping = {
+type HostReferenceWrapperTyping<Complete extends boolean> = {
   [K in HostReferenceKind]: {
-    __proto__: null;
+    __brand: "HostReferenceWrapper";
     type: "host";
-    base: ProxyReference;
-    meta: any;
-    index: number;
     kind: K;
+    inner: Complete extends true ? ProxyReference : null;
     plain: HostReference<K>;
   };
 };
 
 export type HostReferenceWrapper<
   K extends HostReferenceKind = HostReferenceKind,
-> = HostReferenceWrapperTyping[K];
+> = HostReferenceWrapperTyping<true>[K];
+
+export type IncompleteHostReferenceWrapper<
+  K extends HostReferenceKind = HostReferenceKind,
+> = HostReferenceWrapperTyping<false>[K];
 
 type GuestReferenceWrapperTyping = {
   [K in GuestReferenceKind]: {
-    __proto__: null;
+    __brand: "GuestReferenceWrapper";
     type: "guest";
-    base: GuestReference<K>;
-    meta: any;
-    index: number;
     kind: K;
+    inner: GuestReference<K>;
     name: null | string;
   };
 };

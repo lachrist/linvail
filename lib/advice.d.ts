@@ -13,14 +13,8 @@ import type {
 import type { Program, ClosureKind } from "aran";
 
 export type Advice = {
-  // event //
-  addEventListener: (
-    event: "capture" | "release",
-    listener: (value: Wrapper) => void,
-  ) => symbol;
-  removeEventListener: (event: "capture" | "release", token: symbol) => boolean;
   // leave //
-  leaveValue: <W extends Wrapper>(value: W) => W["base"];
+  leaveValue: <W extends Wrapper>(value: W) => W["inner"];
   // enter //
   enterValue: (value: Value) => Wrapper;
   enterStandardPrimitive: (primitive: StandardPrimitive) => PrimitiveWrapper;

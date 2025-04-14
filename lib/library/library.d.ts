@@ -119,12 +119,4 @@ export type Library = {
   WeakMap: LinvailWeakMapConstructor;
   Set: LinvailSetConstructor;
   Map: LinvailMapConstructor;
-  addEventListener: (
-    event_name: "capture" | "release",
-    listener: (value: unknown) => void,
-  ) => symbol;
-  removeEventListener: (
-    event_name: "capture" | "release",
-    listener_symbol: symbol,
-  ) => boolean;
 };

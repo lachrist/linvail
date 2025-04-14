@@ -7,16 +7,16 @@ import type {
   HostReferenceWrapper,
   Value,
   PrimitiveWrapper,
-} from "../domain.d.ts";
-import type { IntrinsicRecord } from "../intrinsic.d.ts";
+} from "./domain.d.ts";
+import type { IntrinsicRecord } from "./intrinsic.d.ts";
 import type {
   SafeWeakMap,
   SafeMap,
   SafeWeakSet,
   SafeSet,
-} from "../../util/collection.d.ts";
+} from "../util/collection.d.ts";
 import type { ClosureKind } from "aran";
-import type { Config } from "../config.js";
+import type { Config } from "./config.d.ts";
 
 export type Region = IntrinsicRecord &
   Config & {

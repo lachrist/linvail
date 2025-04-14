@@ -1,5 +1,5 @@
 import type { ReferenceWrapper, Wrapper } from "./domain.d.ts";
-import type { Region } from "./region/region.d.ts";
+import type { Region } from "./region.d.ts";
 
 export type ApplyOracle = (
   region: Region,

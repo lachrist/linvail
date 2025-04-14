@@ -13,7 +13,7 @@ import type {
   Primitive,
   PrimitiveWrapper,
   Wrapper,
-} from "./runtime/domain.js";
+} from "./runtime/domain.d.ts";
 
 export const toStandardAdvice: <T>(advice: Advice) => StandardAdvice<T>;
 

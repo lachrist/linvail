@@ -1,4 +1,4 @@
-import type { Region } from "./region.d.ts";
+import type { Region } from "../region.d.ts";
 import type {
   Reference,
   Value,

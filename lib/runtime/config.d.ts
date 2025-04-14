@@ -8,7 +8,7 @@ import type {
   IncompleteHostReferenceWrapper,
   Wrapper,
   PrimitiveWrapper,
-} from "./domain.js";
+} from "./domain.d.ts";
 
 export type Config = {
   wrapGuestReference: <K extends GuestReferenceKind>(

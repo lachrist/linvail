@@ -76,6 +76,7 @@ Configuration options can be passed to the CLI using environment variables:
 - `is(value1, value2)`: Provenancial equality.
 - `dir(value)`: Bypass the access control system and log the value to the
   console.
+- `refresh(value)`: Refresh the provenance of the given value.
 - `Set`, `Map`, `WeakSet`, and `WeakMap`: Similar to their standard counter part
   but keys are compared using provenancial equality.
   ```mjs

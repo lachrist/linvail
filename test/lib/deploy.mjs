@@ -99,7 +99,15 @@ const main = async (argv) => {
       }),
     ),
   );
-  const { advice, library } = createRuntime(intrinsics, { dir });
+  let counter = 0;
+  const { advice, library } = createRuntime(intrinsics, {
+    dir,
+    wrapPrimitive: (inner) => ({
+      type: "primitive",
+      inner,
+      index: counter++,
+    }),
+  });
   /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
   /** @type {any} */ (globalThis)[library_hidden_variable] = library;
   await import(toModuleSpecifier(await instrumentTarget(target)));

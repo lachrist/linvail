@@ -9,6 +9,7 @@ import type {
   HostReferenceWrapper,
   ProxyReference,
 } from "./runtime/domain.d.ts";
+import type { Reflect } from "./runtime/reflect.js";
 
 export type Region = { __brand: "Region" };
 
@@ -60,6 +61,12 @@ export const cloneGuestReference: (
     prototype: "none" | "copy" | "Object.prototype";
   },
 ) => ProxyReference;
+
+/**
+ * Creates an object that ressembles the ECMAScript `Reflect` API, but operates
+ * on Linvail wrapper objects.
+ */
+export const createReflect: (region: Region) => Reflect;
 
 ////////////////
 // Deprecated //

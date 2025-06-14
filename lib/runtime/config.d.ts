@@ -20,6 +20,7 @@ export type RegionConfig = {
   ) => IncompleteHostReferenceWrapper;
   wrapPrimitive: (primitive: Primitive) => PrimitiveWrapper;
   dir: (value: Wrapper) => void;
+  warn: (message: string) => void;
 };
 
 export type PartialRegionConfig = null | undefined | Partial<RegionConfig>;

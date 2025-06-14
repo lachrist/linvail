@@ -10,8 +10,10 @@ import { env, stderr } from "node:process";
 import { listConfigWarning, toConfig } from "./config.mjs";
 import { runInThisContext } from "node:vm";
 import {
+  createLibrary,
   createCustomAdvice,
   createRegion,
+  exposeLibrary,
   internalizeGuestReference,
 } from "../lib/runtime.mjs";
 
@@ -183,6 +185,7 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   }
   const region = createRegion(intrinsics, compileRuntimeConfig({ count }));
   const advice = createCustomAdvice(region, { weaveEvalProgram: weave });
+  exposeLibrary(createLibrary(region));
   evalScript(
     `
       let ${advice_global_variable};

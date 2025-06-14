@@ -9,7 +9,7 @@ const dir = (/** @type {unknown} */ value) => {
  *   options: {
  *     count: boolean,
  *   },
- * ) => Partial<import("../lib/runtime/config.d.ts").Config>}
+ * ) => Partial<import("../lib/runtime/config.d.ts").RegionConfig>}
  */
 export const compileRuntimeConfig = ({ count }) => {
   if (count) {
@@ -22,11 +22,10 @@ export const compileRuntimeConfig = ({ count }) => {
         inner: primitive,
         index: count++,
       }),
-      wrapGuestReference: (reference, apply, construct) => ({
+      wrapGuestReference: (reference, name) => ({
         type: "guest",
         inner: reference,
-        apply,
-        construct,
+        name,
         index: count++,
       }),
       wrapHostReference: (reference, kind) => ({

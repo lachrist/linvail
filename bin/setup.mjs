@@ -1,6 +1,5 @@
 import { register } from "node:module";
 import { dir as dirNode } from "node:console";
-import { setupRuntime } from "../lib/runtime.mjs";
 import { compileIntrinsicRecord } from "aran/runtime";
 import {
   compile,
@@ -10,6 +9,11 @@ import {
 import { env, stderr } from "node:process";
 import { listConfigWarning, toConfig } from "./config.mjs";
 import { runInThisContext } from "node:vm";
+import {
+  createCustomAdvice,
+  createRegion,
+  internalizeGuestReference,
+} from "../lib/runtime.mjs";
 
 const {
   String,
@@ -30,7 +34,7 @@ const dir = (/** @type {unknown} */ value) => {
  *   options: {
  *     count: boolean,
  *   },
- * ) => Partial<import("../lib/runtime/config.d.ts").Config>}
+ * ) => Partial<import("../lib/runtime/config.d.ts").RegionConfig>}
  */
 export const compileRuntimeConfig = ({ count }) => {
   if (count) {
@@ -43,11 +47,10 @@ export const compileRuntimeConfig = ({ count }) => {
         inner: primitive,
         index: count++,
       }),
-      wrapGuestReference: (reference, apply, construct) => ({
+      wrapGuestReference: (reference, name) => ({
         type: "guest",
         inner: reference,
-        apply,
-        construct,
+        name,
         index: count++,
       }),
       wrapHostReference: (reference, kind) => ({
@@ -178,14 +181,14 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
     };
     intrinsics.globalThis.Reflect.construct = /** @type {any} */ (construct);
   }
-  const advice = setupRuntime(intrinsics, compileRuntimeConfig({ count }));
+  const region = createRegion(intrinsics, compileRuntimeConfig({ count }));
+  const advice = createCustomAdvice(region, { weaveEvalProgram: weave });
   evalScript(
     `
       let ${advice_global_variable};
       (advice) => { ${advice_global_variable} = advice; };
     `,
   )(advice);
-  advice.weaveEvalProgram = weave;
   /**
    * @type {(
    *   code: string,
@@ -198,19 +201,20 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   intrinsics["aran.transpileEvalCode"] = transpileEvalCode;
   intrinsics["aran.retropileEvalCode"] = retro;
   if (global_object === "internal") {
-    const { toHostReferenceWrapper } = advice;
     {
       /** @type {import("../lib/linvail.d.ts").GuestReference} */
       const external1 = /** @type {any} */ (
         intrinsics["aran.global_declarative_record"]
       );
-      const internal = toHostReferenceWrapper(external1, { prototype: "none" });
+      const internal = internalizeGuestReference(region, external1, {
+        prototype: "none",
+      });
       intrinsics["aran.global_declarative_record"] = internal.inner;
     }
     {
       /** @type {import("../lib/linvail.d.ts").GuestReference} */
       const external1 = /** @type {any} */ (intrinsics.globalThis);
-      const internal = toHostReferenceWrapper(external1, {
+      const internal = internalizeGuestReference(region, external1, {
         prototype: "Object.prototype",
       });
       /** @type {typeof globalThis} */

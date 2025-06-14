@@ -15,10 +15,10 @@ import type {
   SafeSet,
 } from "../util/collection.d.ts";
 import type { ClosureKind } from "aran";
-import type { Config } from "./config.d.ts";
+import type { RegionConfig } from "./config.d.ts";
 
 export type Region = IntrinsicRecord &
-  Config & {
+  RegionConfig & {
     createIntegrityFunction: () => Function;
     createIntegrityArrow: () => Function;
     generator_prototype_prototype: GuestReference;

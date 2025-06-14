@@ -1,5 +1,5 @@
 import type { StandardAdvice as GenericStandardAdvice } from "aran";
-import type { Value, Wrapper } from "./domain.d.ts";
+import type { Value, Wrapper } from "../domain.js";
 
 export type StandardAspectKind =
   | "block@declaration-overwrite"

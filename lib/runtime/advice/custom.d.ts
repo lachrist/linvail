@@ -1,7 +1,6 @@
 import type {
   Value,
   Wrapper,
-  GuestReference,
   FreshHostClosure,
   HostReference,
   PrimitiveWrapper,
@@ -9,10 +8,10 @@ import type {
   Reference,
   HostReferenceWrapper,
   StandardPrimitive,
-} from "./runtime/domain.d.ts";
+} from "../domain.js";
 import type { Program, ClosureKind } from "aran";
 
-export type Advice = {
+export type CustomAdvice = {
   // wrap //
   wrap: (value: Value) => Wrapper;
   wrapStandardPrimitive: (primitive: StandardPrimitive) => PrimitiveWrapper;
@@ -29,12 +28,6 @@ export type Advice = {
   // combine //
   apply: (callee: Wrapper, that: Wrapper, args: Wrapper[]) => Wrapper;
   construct: (callee: Wrapper, args: Wrapper[]) => ReferenceWrapper;
-  // other //
-  toHostReferenceWrapper: (
-    reference: GuestReference,
-    config: {
-      prototype: "none" | "copy" | "Object.prototype";
-    },
-  ) => HostReferenceWrapper;
+  // eval //
   weaveEvalProgram: (root: Program<any>) => Program;
 };

@@ -8,13 +8,11 @@ import type {
   Wrapper,
   PrimitiveWrapper,
 } from "./domain.d.ts";
-import type { ApplyOracle, ConstructOracle } from "./oracle.d.ts";
 
-export type Config = {
+export type RegionConfig = {
   wrapGuestReference: (
     guest: GuestReference,
-    apply: null | ApplyOracle,
-    construct: null | ConstructOracle,
+    name: null | string,
   ) => GuestReferenceWrapper;
   wrapHostReference: (
     host: HostReference<any>,
@@ -23,3 +21,5 @@ export type Config = {
   wrapPrimitive: (primitive: Primitive) => PrimitiveWrapper;
   dir: (value: Wrapper) => void;
 };
+
+export type PartialRegionConfig = null | undefined | Partial<RegionConfig>;

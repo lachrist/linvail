@@ -1,5 +1,4 @@
 import type { ClosureKind } from "aran";
-import type { ApplyOracle, ConstructOracle } from "./oracle.d.ts";
 
 //////////////
 // External //
@@ -68,8 +67,7 @@ export type IncompleteHostReferenceWrapper<
 export type GuestReferenceWrapper = {
   type: "guest";
   inner: GuestReference;
-  apply: null | ApplyOracle;
-  construct: null | ConstructOracle;
+  name: null | string;
 };
 
 export type ReferenceWrapper = HostReferenceWrapper | GuestReferenceWrapper;

@@ -5,7 +5,11 @@ import { generate } from "astring";
 import { weave } from "../../lib/instrument.mjs";
 import { setupile, retropile, transpile } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
-import { createRuntime } from "../../lib/runtime/runtime.mjs";
+import {
+  createRegion,
+  createCustomAdvice,
+  createLibrary,
+} from "../../lib/runtime.mjs";
 import { library_hidden_variable } from "../../lib/library/library-variable.mjs";
 
 const { eval: evalGlobal, Error } = globalThis;
@@ -100,7 +104,7 @@ const main = async (argv) => {
     ),
   );
   let counter = 0;
-  const { advice, library } = createRuntime(intrinsics, {
+  const region = createRegion(intrinsics, {
     dir,
     wrapPrimitive: (inner) => ({
       type: "primitive",
@@ -108,8 +112,9 @@ const main = async (argv) => {
       index: counter++,
     }),
   });
-  /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = advice;
-  /** @type {any} */ (globalThis)[library_hidden_variable] = library;
+  /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = createCustomAdvice(region);
+  /** @type {any} */ (globalThis)[library_hidden_variable] =
+    createLibrary(region);
   await import(toModuleSpecifier(await instrumentTarget(target)));
 };
 

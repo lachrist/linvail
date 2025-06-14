@@ -14,7 +14,7 @@ import {
   createCustomAdvice,
   createRegion,
   exposeLibrary,
-  internalizeGuestReference,
+  cloneGuestReference,
 } from "../lib/runtime.mjs";
 
 const {
@@ -204,26 +204,22 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   intrinsics["aran.transpileEvalCode"] = transpileEvalCode;
   intrinsics["aran.retropileEvalCode"] = retro;
   if (global_object === "internal") {
+    intrinsics["aran.global_declarative_record"] = cloneGuestReference(
+      region,
+      /** @type {any} */ (intrinsics["aran.global_declarative_record"]),
+      { prototype: "none" },
+    );
     {
-      /** @type {import("../lib/linvail.d.ts").GuestReference} */
-      const external1 = /** @type {any} */ (
-        intrinsics["aran.global_declarative_record"]
-      );
-      const internal = internalizeGuestReference(region, external1, {
-        prototype: "none",
-      });
-      intrinsics["aran.global_declarative_record"] = internal.inner;
-    }
-    {
-      /** @type {import("../lib/linvail.d.ts").GuestReference} */
-      const external1 = /** @type {any} */ (intrinsics.globalThis);
-      const internal = internalizeGuestReference(region, external1, {
-        prototype: "Object.prototype",
-      });
       /** @type {typeof globalThis} */
-      const external2 = /** @type {any} */ (internal.inner);
-      intrinsics.globalThis = external2;
-      intrinsics["aran.global_object"] = external2;
+      const global = /** @type {any} */ (
+        cloneGuestReference(
+          region,
+          /** @type {any} */ (intrinsics.globalThis),
+          { prototype: "Object.prototype" },
+        )
+      );
+      intrinsics.globalThis = global;
+      intrinsics["aran.global_object"] = global;
     }
   }
 };

@@ -40,27 +40,27 @@ const dir = (/** @type {unknown} */ value) => {
  */
 export const compileRuntimeConfig = ({ count }) => {
   if (count) {
-    let count = 0;
+    let counter = 0;
     return {
       dir,
       wrapPrimitive: (primitive) => ({
         __proto__: null,
         type: "primitive",
         inner: primitive,
-        index: count++,
+        index: counter++,
       }),
       wrapGuestReference: (reference, name) => ({
         type: "guest",
         inner: reference,
         name,
-        index: count++,
+        index: counter++,
       }),
       wrapHostReference: (reference, kind) => ({
         type: "host",
         kind,
         inner: null,
         plain: reference,
-        index: count++,
+        index: counter++,
       }),
     };
   } else {

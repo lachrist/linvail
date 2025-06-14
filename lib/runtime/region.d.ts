@@ -16,9 +16,11 @@ import type {
 } from "../util/collection.d.ts";
 import type { ClosureKind } from "aran";
 import type { RegionConfig } from "./config.d.ts";
+import type { Oracle } from "./oracle.js";
 
 export type Region = IntrinsicRecord &
   RegionConfig & {
+    oracle: { [key in string]: Oracle };
     createIntegrityFunction: () => Function;
     createIntegrityArrow: () => Function;
     generator_prototype_prototype: GuestReference;

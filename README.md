@@ -116,11 +116,11 @@ const advice_global_variable = "__LINVAIL_ADVICE__";
 
 const intrinsics = evalGlobal(generate(setupile()));
 
-const { advice, library } = createRuntime(intrinsics, { dir });
+const region = createRegion(intrinsics, { dir });
 
 defineProperty(globalThis, advice_global_variable, {
   __proto__: null,
-  value: advice,
+  value: createCustomAdvice(region),
   writable: false,
   enumerable: false,
   configurable: false,
@@ -148,7 +148,7 @@ const main = evalGlobal(
   ),
 );
 
-log(main(library)); // true
+log(main(createLibrary(region))); // true
 ```
 
 ```

@@ -1,8 +1,5 @@
 import type { IntrinsicRecord } from "aran";
-import type {
-  StandardAdvice,
-  StandardAspectKind,
-} from "./runtime/advice/standard.js";
+import type { StandardAdvice } from "./runtime/advice/standard.js";
 import type { CustomAdvice } from "./runtime/advice/custom.js";
 import type { Library } from "./library/library.d.ts";
 import type { PartialRegionConfig } from "./runtime/config.d.ts";
@@ -51,12 +48,6 @@ export const createStandardAdvice: <T>(
   region: Region,
   config?: PartialAdviceConfig,
 ) => StandardAdvice<T>;
-
-/**
- * The advice created by `createStandardAdvice` requires this pointcut to be
- * provided to `aran.weaveStandard` in order to implement Linvail's membrane.
- */
-export const standard_pointcut: StandardAspectKind[];
 
 /**
  * Creates a host reference by shallow-cloning a guest reference. The result is

@@ -49,7 +49,7 @@ export const createCustomAdvice: (
  */
 export const createStandardAdvice: <T>(
   region: Region,
-  config: PartialAdviceConfig,
+  config?: PartialAdviceConfig,
 ) => StandardAdvice<T>;
 
 /**

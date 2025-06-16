@@ -9,12 +9,12 @@ import type {
   HostReferenceWrapper,
   ProxyReference,
 } from "./runtime/domain.d.ts";
-import type { Reflect } from "./runtime/reflect.js";
+import type { Membrane } from "./runtime/membrane.js";
 
 export type Region = { __brand: "Region" };
 
 /**
- * Creates a Linvail region, which represents the state required to maintain its
+ * Create a Linvail region, which represents the state required to maintain its
  * membrane.
  */
 export const createRegion: (
@@ -23,17 +23,26 @@ export const createRegion: (
 ) => Region;
 
 /**
- * Creates a Linvail library.
+ * Create a library of functions which includes wrapping and reflective
+ * operations.
+ */
+export const createMembrane: (region: Region) => Membrane;
+
+/**
+ * Create a Linvail library.
  */
 export const createLibrary: (region: Region) => Library;
 
 /**
- * Exposes a Linvail’s library for import via `linvail/library`.
+ * Expose a Linvail’s library for import via `linvail/library`.
  */
-export const exposeLibrary: (library: Library) => void;
+export const exposeLibrary: (
+  library: Library,
+  config: { global: typeof globalThis },
+) => void;
 
 /**
- * Creates a Linvail-custom advice that implements Linvail's membrane. Requires
+ * Create a Linvail-custom advice that implements Linvail's membrane. Requires
  * instrumentation via `linvail.weave`.
  */
 export const createCustomAdvice: (
@@ -42,7 +51,7 @@ export const createCustomAdvice: (
 ) => CustomAdvice;
 
 /**
- * Creates an Aran-standard advice that implements Linvail's membrane. Requires
+ * Create an Aran-standard advice that implements Linvail's membrane. Requires
  * instrumentation via `aran.weaveStandard`.
  */
 export const createStandardAdvice: <T>(
@@ -51,7 +60,7 @@ export const createStandardAdvice: <T>(
 ) => StandardAdvice<T>;
 
 /**
- * Creates a host reference by shallow-cloning a guest reference. The result is
+ * Create a host reference by shallow-cloning a guest reference. The result is
  * a proxy reference that mediates access to the host reference.
  */
 export const cloneGuestReference: (
@@ -63,10 +72,13 @@ export const cloneGuestReference: (
 ) => ProxyReference;
 
 /**
- * Creates an object that ressembles the ECMAScript `Reflect` API, but operates
- * on Linvail wrapper objects.
+ * Register the Aran-specific intrinsic into the oracle to improve the
+ * precision of Linvail's membrane.
  */
-export const createReflect: (region: Region) => Reflect;
+export const registerAranIntrinsicRecord: (
+  region: Region,
+  intrinsics: IntrinsicRecord,
+) => void;
 
 ////////////////
 // Deprecated //
@@ -74,9 +86,7 @@ export const createReflect: (region: Region) => Reflect;
 
 export type toHostReferenceWrapper = (
   reference: GuestReference,
-  config: {
-    prototype: "none" | "copy" | "Object.prototype";
-  },
+  config: { kind: "object" | "array" },
 ) => HostReferenceWrapper;
 
 /**

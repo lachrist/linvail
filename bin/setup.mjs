@@ -14,7 +14,8 @@ import {
   createCustomAdvice,
   createRegion,
   exposeLibrary,
-  cloneGuestReference,
+  createMembrane,
+  registerAranIntrinsicRecord,
 } from "../lib/runtime.mjs";
 
 const {
@@ -183,9 +184,14 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
     };
     intrinsics.globalThis.Reflect.construct = /** @type {any} */ (construct);
   }
-  const region = createRegion(intrinsics, compileRuntimeConfig({ count }));
+  const region = createRegion(
+    intrinsics.globalThis,
+    compileRuntimeConfig({ count }),
+  );
+  registerAranIntrinsicRecord(region, intrinsics);
   const advice = createCustomAdvice(region, { weaveEvalProgram: weave });
-  exposeLibrary(createLibrary(region));
+  const { wrapCloneGuestReference, setPrototypeOf } = createMembrane(region);
+  exposeLibrary(createLibrary(region), { global: intrinsics.globalThis });
   evalScript(
     `
       let ${advice_global_variable};
@@ -204,22 +210,31 @@ const setup = (evalScript, { global_dynamic_code, global_object, count }) => {
   intrinsics["aran.transpileEvalCode"] = transpileEvalCode;
   intrinsics["aran.retropileEvalCode"] = retro;
   if (global_object === "internal") {
-    intrinsics["aran.global_declarative_record"] = cloneGuestReference(
-      region,
-      /** @type {any} */ (intrinsics["aran.global_declarative_record"]),
-      { prototype: "none" },
-    );
     {
-      /** @type {typeof globalThis} */
-      const global = /** @type {any} */ (
-        cloneGuestReference(
-          region,
-          /** @type {any} */ (intrinsics.globalThis),
-          { prototype: "Object.prototype" },
-        )
+      const { inner } = wrapCloneGuestReference(
+        /** @type {import("../lib/linvail.js").GuestReference} */ (
+          /** @type {unknown} */ (intrinsics["aran.global_declarative_record"])
+        ),
+        { kind: "object" },
       );
-      intrinsics.globalThis = global;
-      intrinsics["aran.global_object"] = global;
+      intrinsics["aran.global_declarative_record"] = inner;
+    }
+    {
+      const wrapper = wrapCloneGuestReference(
+        /** @type {import("../lib/linvail.js").GuestReference} */ (
+          /** @type {unknown} */ (intrinsics.globalThis)
+        ),
+        { kind: "object" },
+      );
+      setPrototypeOf(
+        wrapper,
+        /** @type {import("../lib/linvail.js").GuestReference} */ (
+          intrinsics["Object.prototype"]
+        ),
+      );
+      const { inner } = wrapper;
+      intrinsics.globalThis = /** @type {any} */ (inner);
+      intrinsics["aran.global_object"] = /** @type {any} */ (inner);
     }
   }
 };

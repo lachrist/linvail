@@ -3,16 +3,20 @@ import { dir as dirNode } from "node:console";
 import { parse } from "acorn";
 import { generate } from "astring";
 import { weave } from "../../lib/instrument.mjs";
-import { setupile, retropile, transpile } from "aran";
+import { retropile, transpile, compileIntrinsicRecord } from "aran";
 import { readFile, writeFile } from "node:fs/promises";
 import {
   createRegion,
   createCustomAdvice,
   createLibrary,
+  registerAranIntrinsicRecord,
 } from "../../lib/runtime.mjs";
 import { library_hidden_variable } from "../../lib/library/library-variable.mjs";
 
-const { eval: evalGlobal, Error } = globalThis;
+const {
+  Error,
+  Reflect: { defineProperty },
+} = globalThis;
 
 /** @type {(value: unknown) => void} */
 const dir = (value) => {
@@ -96,15 +100,17 @@ const toModuleSpecifier = (path) => `../../${path}`;
  */
 const main = async (argv) => {
   const target = argv[0];
-  const intrinsics = evalGlobal(
-    generate(
-      setupile({
-        intrinsic_global_variable: INTRINSIC_VARIABLE,
-      }),
-    ),
-  );
+  const intrinsics = compileIntrinsicRecord(globalThis);
+  defineProperty(globalThis, INTRINSIC_VARIABLE, {
+    // @ts-ignore
+    __proto__: null,
+    value: intrinsics,
+    writable: true,
+    enumerable: false,
+    configurable: true,
+  });
   let counter = 0;
-  const region = createRegion(intrinsics, {
+  const region = createRegion(globalThis, {
     dir,
     wrapPrimitive: (inner) => ({
       type: "primitive",
@@ -112,6 +118,7 @@ const main = async (argv) => {
       index: counter++,
     }),
   });
+  registerAranIntrinsicRecord(region, intrinsics);
   /** @type {any} */ (globalThis)[ADVICE_VARIABLE] = createCustomAdvice(region);
   /** @type {any} */ (globalThis)[library_hidden_variable] =
     createLibrary(region);

@@ -112,11 +112,32 @@ export type LinvailMapConstructor = {
 /////////////
 
 export type Library = {
+  /**
+   * Bypass the membrane and dump the content of the given value.
+   */
   dir: (value: unknown) => undefined;
+  /**
+   * Differentiate values based on their provenance.
+   */
   is: (value1: unknown, value2: unknown) => boolean;
+  /**
+   * Refresh the provenance of the given value.
+   */
   refresh: (value: unknown) => unknown;
+  /**
+   * Similar to ES6 `WeakSet` but provenance-sensitive.
+   */
   WeakSet: LinvailWeakSetConstructor;
+  /**
+   * Similar to ES6 `WeakMap` but provenance-sensitive.
+   */
   WeakMap: LinvailWeakMapConstructor;
+  /**
+   * Similar to ES6 `Set` but provenance-sensitive.
+   */
   Set: LinvailSetConstructor;
+  /**
+   * Similar to ES6 `Map` but provenance-sensitive.
+   */
   Map: LinvailMapConstructor;
 };

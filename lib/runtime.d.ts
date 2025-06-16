@@ -18,7 +18,7 @@ export type Region = { __brand: "Region" };
  * membrane.
  */
 export const createRegion: (
-  intrinsics: IntrinsicRecord,
+  global: typeof globalThis,
   config?: PartialRegionConfig,
 ) => Region;
 
